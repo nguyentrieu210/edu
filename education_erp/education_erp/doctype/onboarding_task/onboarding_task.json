@@ -1,0 +1,66 @@
+{
+ "actions": [],
+ "creation": "2026-06-19 02:49:59.640988",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "program_enrollment",
+  "task_name",
+  "is_completed"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "H\u1ecdc vi\u00ean",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "\u0110\u0103ng k\u00fd h\u1ecdc",
+   "options": "Program Enrollment"
+  },
+  {
+   "fieldname": "task_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "T\u00ean c\u00f4ng vi\u1ec7c (Ph\u00e1t s\u00e1ch, Zalo...)",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_completed",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "\u0110\u00e3 ho\u00e0n th\u00e0nh"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 02:50:12.155506",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Onboarding Task",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

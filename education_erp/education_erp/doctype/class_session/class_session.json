@@ -1,0 +1,120 @@
+{
+ "actions": [],
+ "creation": "2026-06-19 02:49:57.234940",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "class_id",
+  "lesson_topic",
+  "classroom",
+  "session_date",
+  "start_time",
+  "end_time",
+  "teacher",
+  "session_status",
+  "session_type",
+  "replaces_session",
+  "teacher_attendance_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "class_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "L\u1edbp h\u1ecdc",
+   "options": "Class",
+   "reqd": 1
+  },
+  {
+   "fieldname": "classroom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Ph\u00f2ng h\u1ecdc",
+   "options": "Classroom"
+  },
+  {
+   "fieldname": "session_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Ng\u00e0y h\u1ecdc",
+   "reqd": 1
+  },
+  {
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Gi\u1edd b\u1eaft \u0111\u1ea7u",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "label": "Gi\u1edd k\u1ebft th\u00fac",
+   "reqd": 1
+  },
+  {
+   "fieldname": "teacher",
+   "fieldtype": "Link",
+   "label": "Gi\u00e1o vi\u00ean d\u1ea1y",
+   "options": "Teacher"
+  },
+  {
+   "fieldname": "lesson_topic",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "N\u1ed9i dung b\u00e0i h\u1ecdc"
+  },
+  {
+   "fieldname": "teacher_attendance_status",
+   "fieldtype": "Select",
+   "label": "\u0110i\u1ec3m danh GV",
+   "options": "\nPresent\nAbsent"
+  },
+  {
+   "default": "Scheduled",
+   "fieldname": "session_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Tr\u1ea1ng th\u00e1i bu\u1ed5i h\u1ecdc",
+   "options": "Scheduled\nIn Progress\nCompleted\nCancelled\nLocked"
+  },
+  {
+   "default": "Regular",
+   "fieldname": "session_type",
+   "fieldtype": "Select",
+   "label": "Lo\u1ea1i bu\u1ed5i h\u1ecdc",
+   "options": "Regular\nMake-up\nRescheduled"
+  },
+  {
+   "fieldname": "replaces_session",
+   "fieldtype": "Link",
+   "label": "Thay th\u1ebf bu\u1ed5i h\u1ecdc",
+   "options": "Class Session"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 02:50:11.741023",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Class Session",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,111 @@
+{
+ "actions": [],
+ "autoname": "LED-.YYYY.-.####",
+ "creation": "2026-06-19 02:49:55.736968",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "lead_name",
+  "phone",
+  "email",
+  "source",
+  "status",
+  "date_of_birth",
+  "gender",
+  "occupation",
+  "guardian_name",
+  "guardian_phone",
+  "lost_reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "lead_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "T\u00ean \u1ee9ng vi\u00ean",
+   "reqd": 1
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "S\u1ed1 \u0111i\u1ec7n tho\u1ea1i"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "default": "Website",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Ngu\u1ed3n \u0111\u0103ng k\u00fd",
+   "options": "Website\nFacebook\nHotline\nWord of Mouth\nOther"
+  },
+  {
+   "default": "New",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tr\u1ea1ng th\u00e1i",
+   "options": "New\nConsulting\nTesting\nTrial\nEnrolled\nLost"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Ng\u00e0y sinh"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "label": "Gi\u1edbi t\u00ednh",
+   "options": "\nNam\nN\u1eef\nKh\u00e1c"
+  },
+  {
+   "fieldname": "occupation",
+   "fieldtype": "Data",
+   "label": "Ng\u00e0nh ngh\u1ec1"
+  },
+  {
+   "fieldname": "guardian_name",
+   "fieldtype": "Data",
+   "label": "T\u00ean ng\u01b0\u1eddi gi\u00e1m h\u1ed9"
+  },
+  {
+   "fieldname": "guardian_phone",
+   "fieldtype": "Data",
+   "label": "S\u1ed1 \u0111i\u1ec7n tho\u1ea1i ng\u01b0\u1eddi gi\u00e1m h\u1ed9"
+  },
+  {
+   "fieldname": "lost_reason",
+   "fieldtype": "Text",
+   "label": "L\u00fd do th\u1ea5t b\u1ea1i"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 02:50:11.578367",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Student Lead",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

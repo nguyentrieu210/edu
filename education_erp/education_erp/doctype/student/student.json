@@ -1,0 +1,146 @@
+{
+ "actions": [],
+ "autoname": "STU-.YYYY.-.####",
+ "creation": "2026-06-19 02:49:55.138189",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "full_name",
+  "guardian",
+  "progress",
+  "attendance_status",
+  "average_score",
+  "health_status",
+  "date_of_birth",
+  "gender",
+  "email",
+  "phone",
+  "source",
+  "occupation",
+  "rating",
+  "message_response",
+  "siblings",
+  "student_status"
+ ],
+ "fields": [
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "H\u1ecd v\u00e0 t\u00ean h\u1ecdc vi\u00ean",
+   "reqd": 1
+  },
+  {
+   "fieldname": "guardian",
+   "fieldtype": "Link",
+   "label": "Ng\u01b0\u1eddi gi\u00e1m h\u1ed9",
+   "options": "Guardian"
+  },
+  {
+   "fieldname": "progress",
+   "fieldtype": "Data",
+   "label": "Ti\u1ebfn \u0111\u1ed9 h\u1ecdc t\u1eadp (V\u00ed d\u1ee5: Bu\u1ed5i 8/30)"
+  },
+  {
+   "fieldname": "attendance_status",
+   "fieldtype": "Select",
+   "label": "Tr\u1ea1ng th\u00e1i \u0111i\u1ec3m danh",
+   "options": "\nV\u1eafng c\u00f3 ph\u00e9p\nKh\u00f4ng ph\u00e9p"
+  },
+  {
+   "fieldname": "average_score",
+   "fieldtype": "Float",
+   "label": "\u0110i\u1ec3m trung b\u00ecnh"
+  },
+  {
+   "fieldname": "siblings",
+   "fieldtype": "Table",
+   "label": "Anh ch\u1ecb em ru\u1ed9t",
+   "options": "Student Sibling"
+  },
+  {
+   "default": "\u0110ang h\u1ecdc \u0111\u1ec1u",
+   "fieldname": "health_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "T\u00ecnh tr\u1ea1ng h\u1ecdc t\u1eadp",
+   "options": "\u0110ang h\u1ecdc \u0111\u1ec1u\nC\u1ea7n theo d\u00f5i\nC\u1ea3nh b\u00e1o\nKh\u1ea9n c\u1ea5p\nNg\u1eebng h\u1ecdc"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Ng\u00e0y sinh"
+  },
+  {
+   "fieldname": "gender",
+   "fieldtype": "Select",
+   "label": "Gi\u1edbi t\u00ednh",
+   "options": "\nNam\nN\u1eef\nKh\u00e1c"
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Ngu\u1ed3n",
+   "options": "\nWebsite\nFacebook\nGoogle\nKh\u00e1c"
+  },
+  {
+   "fieldname": "occupation",
+   "fieldtype": "Data",
+   "label": "Ng\u00e0nh ngh\u1ec1"
+  },
+  {
+   "fieldname": "rating",
+   "fieldtype": "Select",
+   "label": "\u0110\u00e1nh gi\u00e1",
+   "options": "\n1 Sao\n2 Sao\n3 Sao\n4 Sao\n5 Sao"
+  },
+  {
+   "fieldname": "message_response",
+   "fieldtype": "Select",
+   "label": "Ph\u1ea3n h\u1ed3i tin nh\u1eafn",
+   "options": "\nT\u1ed1t\nB\u00ecnh th\u01b0\u1eddng\nCh\u1eadm\nKh\u00f4ng tr\u1ea3 l\u1eddi"
+  },
+  {
+   "default": "M\u1edbi nh\u1eadp h\u1ecdc",
+   "fieldname": "student_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tr\u1ea1ng th\u00e1i V\u00f2ng \u0111\u1eddi",
+   "options": "M\u1edbi nh\u1eadp h\u1ecdc\n\u0110ang h\u1ecdc\nB\u1ea3o l\u01b0u\n\u0110\u00e3 t\u1ed1t nghi\u1ec7p\nNgh\u1ec9 h\u1ecdc"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 02:50:11.550650",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Student",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

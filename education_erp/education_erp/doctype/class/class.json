@@ -1,0 +1,130 @@
+{
+ "actions": [],
+ "autoname": "CLS-.YYYY.-.####",
+ "creation": "2026-06-19 02:49:57.045925",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "class_name",
+  "course",
+  "teacher",
+  "substitute_teacher",
+  "classroom",
+  "start_date",
+  "schedule_template",
+  "start_time",
+  "end_time",
+  "total_sessions",
+  "max_capacity",
+  "standard_fee",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "class_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "T\u00ean l\u1edbp h\u1ecdc",
+   "reqd": 1
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Kh\u00f3a h\u1ecdc",
+   "options": "Course",
+   "reqd": 1
+  },
+  {
+   "fieldname": "teacher",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Gi\u00e1o vi\u00ean ch\u1ee7 nhi\u1ec7m",
+   "options": "Teacher"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Ng\u00e0y khai gi\u1ea3ng"
+  },
+  {
+   "default": "Upcoming",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tr\u1ea1ng th\u00e1i",
+   "options": "Upcoming\nOngoing\nCompleted\nClosed"
+  },
+  {
+   "fieldname": "schedule_template",
+   "fieldtype": "Select",
+   "label": "M\u1eabu l\u1ecbch h\u1ecdc",
+   "options": "\n2-4-6\n3-5-7\nT7-CN\nCustom"
+  },
+  {
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "label": "Gi\u1edd b\u1eaft \u0111\u1ea7u"
+  },
+  {
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "label": "Gi\u1edd k\u1ebft th\u00fac"
+  },
+  {
+   "fieldname": "total_sessions",
+   "fieldtype": "Int",
+   "label": "T\u1ed5ng s\u1ed1 bu\u1ed5i h\u1ecdc"
+  },
+  {
+   "fieldname": "substitute_teacher",
+   "fieldtype": "Link",
+   "label": "Gi\u00e1o vi\u00ean thay th\u1ebf",
+   "options": "Teacher"
+  },
+  {
+   "fieldname": "classroom",
+   "fieldtype": "Link",
+   "label": "Ph\u00f2ng h\u1ecdc",
+   "options": "Classroom"
+  },
+  {
+   "default": "0",
+   "description": "S\u0129 s\u1ed1 t\u1ed1i \u0111a. \u0110\u1ec3 0 n\u1ebfu kh\u00f4ng gi\u1edbi h\u1ea1n.",
+   "fieldname": "max_capacity",
+   "fieldtype": "Int",
+   "label": "S\u0129 s\u1ed1 t\u1ed1i \u0111a"
+  },
+  {
+   "description": "H\u1ecdc ph\u00ed chu\u1ea9n c\u1ee7a l\u1edbp. D\u00f9ng l\u00e0m gi\u00e1 ni\u00eam y\u1ebft khi \u0111\u0103ng k\u00fd n\u1ebfu kh\u00f4ng nh\u1eadp tay.",
+   "fieldname": "standard_fee",
+   "fieldtype": "Currency",
+   "label": "H\u1ecdc ph\u00ed chu\u1ea9n"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 02:50:11.720327",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Class",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

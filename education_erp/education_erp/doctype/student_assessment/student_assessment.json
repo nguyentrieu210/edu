@@ -1,0 +1,116 @@
+{
+ "actions": [],
+ "autoname": "ASM-.YYYY.-.####",
+ "creation": "2026-06-19 02:49:58.640451",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "class_id",
+  "program_enrollment",
+  "class_session",
+  "assessment_name",
+  "assessment_type",
+  "score",
+  "max_score",
+  "weight",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "H\u1ecdc vi\u00ean",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "class_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "L\u1edbp h\u1ecdc",
+   "options": "Class",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "\u0110\u0103ng k\u00fd h\u1ecdc",
+   "options": "Program Enrollment",
+   "search_index": 1
+  },
+  {
+   "fieldname": "class_session",
+   "fieldtype": "Link",
+   "label": "Bu\u1ed5i h\u1ecdc",
+   "options": "Class Session",
+   "search_index": 1
+  },
+  {
+   "fieldname": "assessment_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "T\u00ean b\u00e0i ki\u1ec3m tra",
+   "reqd": 1
+  },
+  {
+   "default": "Other",
+   "fieldname": "assessment_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Lo\u1ea1i \u0111\u00e1nh gi\u00e1",
+   "options": "Kanji\nVocabulary\nGrammar\nReading\nListening\nKaiwa\nHomework\nJLPT Mini Test\nBJT Practice\nOther"
+  },
+  {
+   "fieldname": "score",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "\u0110i\u1ec3m s\u1ed1",
+   "reqd": 1
+  },
+  {
+   "default": "100",
+   "fieldname": "max_score",
+   "fieldtype": "Float",
+   "label": "\u0110i\u1ec3m t\u1ed1i \u0111a"
+  },
+  {
+   "default": "1",
+   "description": "Tr\u1ecdng s\u1ed1 trong \u0111i\u1ec3m trung b\u00ecnh c\u00f3 tr\u1ecdng s\u1ed1.",
+   "fieldname": "weight",
+   "fieldtype": "Float",
+   "label": "Tr\u1ecdng s\u1ed1"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text",
+   "label": "Nh\u1eadn x\u00e9t c\u1ee7a gi\u00e1o vi\u00ean"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 02:50:11.959776",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Student Assessment",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

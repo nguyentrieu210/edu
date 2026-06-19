@@ -1,0 +1,67 @@
+{
+ "actions": [],
+ "creation": "2026-06-19 02:49:59.473300",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student",
+  "card_number",
+  "issue_date",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "H\u1ecdc vi\u00ean",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "card_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "M\u00e3 th\u1ebb / Barcode",
+   "reqd": 1
+  },
+  {
+   "fieldname": "issue_date",
+   "fieldtype": "Date",
+   "label": "Ng\u00e0y c\u1ea5p",
+   "reqd": 1
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tr\u1ea1ng th\u00e1i",
+   "options": "Active\nLost\nRevoked"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 02:50:12.127013",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Student Card",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

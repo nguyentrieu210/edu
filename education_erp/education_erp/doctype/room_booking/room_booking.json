@@ -1,0 +1,90 @@
+{
+ "actions": [],
+ "autoname": "RBK-.YYYY.-.####",
+ "creation": "2026-06-19 02:49:59.823627",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "classroom",
+  "booking_date",
+  "start_time",
+  "end_time",
+  "purpose",
+  "booked_by",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "classroom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Ph\u00f2ng h\u1ecdc",
+   "options": "Classroom",
+   "reqd": 1
+  },
+  {
+   "fieldname": "booking_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Ng\u00e0y \u0111\u1eb7t",
+   "reqd": 1
+  },
+  {
+   "fieldname": "start_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "Gi\u1edd b\u1eaft \u0111\u1ea7u",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_time",
+   "fieldtype": "Time",
+   "label": "Gi\u1edd k\u1ebft th\u00fac",
+   "reqd": 1
+  },
+  {
+   "fieldname": "purpose",
+   "fieldtype": "Data",
+   "label": "M\u1ee5c \u0111\u00edch s\u1eed d\u1ee5ng"
+  },
+  {
+   "fieldname": "booked_by",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Ng\u01b0\u1eddi \u0111\u1eb7t"
+  },
+  {
+   "default": "Booked",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tr\u1ea1ng th\u00e1i",
+   "options": "Booked\nCompleted\nCancelled"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 02:50:12.185709",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Room Booking",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

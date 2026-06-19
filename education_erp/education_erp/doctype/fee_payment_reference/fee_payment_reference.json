@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "creation": "2026-06-19 02:49:58.140319",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "invoice",
+  "allocated_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "invoice",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "H\u00f3a \u0111\u01a1n li\u00ean k\u1ebft",
+   "options": "Fee Invoice",
+   "reqd": 1
+  },
+  {
+   "fieldname": "allocated_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "S\u1ed1 ti\u1ec1n thanh to\u00e1n",
+   "reqd": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-19 02:50:11.874578",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Fee Payment Reference",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

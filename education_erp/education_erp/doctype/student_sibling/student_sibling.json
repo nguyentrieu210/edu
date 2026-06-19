@@ -1,0 +1,38 @@
+{
+ "actions": [],
+ "creation": "2026-06-19 02:49:55.342923",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "student_id",
+  "same_institute"
+ ],
+ "fields": [
+  {
+   "fieldname": "student_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "M\u00e3 h\u1ecdc vi\u00ean",
+   "options": "Student"
+  },
+  {
+   "default": "0",
+   "fieldname": "same_institute",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "H\u1ecdc c\u00f9ng trung t\u00e2m"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-19 02:50:11.521918",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Student Sibling",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

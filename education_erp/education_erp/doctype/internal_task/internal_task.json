@@ -1,0 +1,80 @@
+{
+ "actions": [],
+ "creation": "2026-06-19 02:50:00.016581",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "description",
+  "assigned_to",
+  "due_date",
+  "priority",
+  "status"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Ti\u00eau \u0111\u1ec1 c\u00f4ng vi\u1ec7c",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "M\u00f4 t\u1ea3 chi ti\u1ebft"
+  },
+  {
+   "fieldname": "assigned_to",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Ng\u01b0\u1eddi ph\u1ee5 tr\u00e1ch (Email/T\u00ean)"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "H\u1ea1n ch\u00f3t"
+  },
+  {
+   "default": "Medium",
+   "fieldname": "priority",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "\u0110\u1ed9 \u01b0u ti\u00ean",
+   "options": "Low\nMedium\nHigh"
+  },
+  {
+   "default": "To Do",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Tr\u1ea1ng th\u00e1i",
+   "options": "To Do\nIn Progress\nDone"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 02:50:12.216939",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Internal Task",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
