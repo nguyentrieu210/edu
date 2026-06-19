@@ -635,6 +635,110 @@ def create_enrollment(
     }
 
 
+def _get_active_enrollment(program_enrollment):
+    enr = frappe.db.get_value(
+        "Program Enrollment", program_enrollment,
+        ["name", "student", "class_id", "docstatus", "enrollment_status"],
+        as_dict=True,
+    )
+    if not enr:
+        frappe.throw("Đăng ký học không tồn tại.")
+    if enr.docstatus != 1:
+        frappe.throw("Chỉ thao tác trên đăng ký đã duyệt (submitted).")
+    return enr
+
+
+@frappe.whitelist()
+def defer_enrollment(program_enrollment, leave_from_date, leave_to_date, reason=None):
+    """Bảo lưu (§10.2): Active -> Deferred, lưu bản ghi Student Deferment (audit)."""
+    enr = _get_active_enrollment(program_enrollment)
+    if enr.enrollment_status != "Active":
+        frappe.throw(f"Chỉ bảo lưu đăng ký đang Active (hiện tại: {enr.enrollment_status}).")
+
+    deferment = frappe.get_doc({
+        "doctype": "Student Deferment", "student": enr.student, "class_id": enr.class_id,
+        "leave_from_date": leave_from_date, "leave_to_date": leave_to_date,
+        "reason": reason, "status": "Approved",
+    })
+    deferment.insert()
+    deferment.submit()
+    frappe.db.set_value("Program Enrollment", enr.name, "enrollment_status", "Deferred")
+    frappe.db.set_value("Student", enr.student, "student_status", "Bảo lưu")
+    return {"enrollment_status": "Deferred", "deferment": deferment.name}
+
+
+@frappe.whitelist()
+def resume_enrollment(program_enrollment):
+    """Tiếp tục học (§10.2): Deferred -> Active."""
+    enr = _get_active_enrollment(program_enrollment)
+    if enr.enrollment_status != "Deferred":
+        frappe.throw(f"Chỉ tiếp tục đăng ký đang bảo lưu (hiện tại: {enr.enrollment_status}).")
+    frappe.db.set_value("Program Enrollment", enr.name, "enrollment_status", "Active")
+    frappe.db.set_value("Student", enr.student, "student_status", "Đang học")
+    return {"enrollment_status": "Active"}
+
+
+@frappe.whitelist()
+def drop_enrollment(program_enrollment, reason=None, refund_invoice=None, refund_amount=0, refund_date=None):
+    """Nghỉ học (§10.3): -> Dropped. Giữ nguyên lịch sử. Tùy chọn tạo Fee Refund (Draft)
+    để vai trò tài chính duyệt; KHÔNG tự chốt số tiền hoàn (chính sách là quyết định nghiệp vụ §22).
+    """
+    enr = _get_active_enrollment(program_enrollment)
+    if enr.enrollment_status in ("Dropped", "Completed", "Transferred"):
+        frappe.throw(f"Đăng ký đã ở trạng thái {enr.enrollment_status}, không thể nghỉ học.")
+
+    frappe.db.set_value("Program Enrollment", enr.name, "enrollment_status", "Dropped")
+    frappe.db.set_value("Student", enr.student, "student_status", "Nghỉ học")
+
+    refund = None
+    if refund_invoice and flt(refund_amount) > 0:
+        ref = frappe.get_doc({
+            "doctype": "Fee Refund", "student": enr.student, "invoice_reference": refund_invoice,
+            "refund_amount": flt(refund_amount), "refund_date": refund_date or nowdate(),
+            "reason": reason or "Nghỉ học", "status": "Draft",
+        })
+        ref.insert()  # để finance submit sau
+        refund = ref.name
+
+    metrics.recompute_student_metrics(enr.student)
+    return {"enrollment_status": "Dropped", "refund": refund}
+
+
+@frappe.whitelist()
+def transfer_enrollment(program_enrollment, to_class, transfer_date=None, reason=None,
+                        new_list_price=None, new_discount_type=None, new_discount_value=0,
+                        new_discount_reason=None):
+    """Chuyển lớp (§10.1, REQ-TRF-001) trong một transaction:
+    lưu Class Transfer (audit) -> đóng enrollment cũ (Transferred) -> tạo enrollment mới ở lớp đích.
+    Lịch sử attendance/assessment/payment giữ nguyên ở enrollment cũ.
+    """
+    enr = _get_active_enrollment(program_enrollment)
+    if enr.enrollment_status != "Active":
+        frappe.throw(f"Chỉ chuyển lớp khi đăng ký đang Active (hiện tại: {enr.enrollment_status}).")
+    if to_class == enr.class_id:
+        frappe.throw("Lớp đích trùng với lớp hiện tại.")
+    if not frappe.db.exists("Class", to_class):
+        frappe.throw("Lớp đích không tồn tại.")
+
+    transfer = frappe.get_doc({
+        "doctype": "Class Transfer", "student": enr.student, "from_class": enr.class_id,
+        "to_class": to_class, "transfer_date": transfer_date or nowdate(),
+        "reason": reason, "status": "Approved",
+    })
+    transfer.insert()
+    transfer.submit()
+
+    frappe.db.set_value("Program Enrollment", enr.name, "enrollment_status", "Transferred")
+
+    new_enr = create_enrollment(
+        student=enr.student, class_id=to_class, enrollment_date=transfer_date or nowdate(),
+        list_price=new_list_price, discount_type=new_discount_type,
+        discount_value=new_discount_value, discount_reason=new_discount_reason, submit=1,
+    )
+    metrics.recompute_student_metrics(enr.student)
+    return {"old_status": "Transferred", "transfer": transfer.name, "new_enrollment": new_enr["name"]}
+
+
 @frappe.whitelist()
 def ai_chat(messages, temperature=0.7, max_tokens=1024, response_format=None, model=None):
     """Proxy gọi Groq (OpenAI-compatible) phía server để không lộ API key ra trình duyệt.

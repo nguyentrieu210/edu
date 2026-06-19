@@ -89,6 +89,7 @@
               <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Trạng Thái</th>
               <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Học Phí (net)</th>
               <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Ngày ĐK</th>
+              <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Thao Tác</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-border bg-white">
@@ -107,6 +108,13 @@
               </td>
               <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-bold text-ink-2 tabular-nums">{{ formatCurrency(e.net_fee) }}</td>
               <td class="whitespace-nowrap px-6 py-4 text-sm text-muted">{{ e.enrollment_date || '—' }}</td>
+              <td class="whitespace-nowrap px-6 py-4 text-right">
+                <button v-if="e.docstatus === 1 && ['Active', 'Deferred'].includes(e.enrollment_status)" @click="openAction(e)"
+                  class="px-3 py-1.5 text-xs font-medium text-ink-2 border border-border rounded-lg hover:bg-hover/40 transition-colors">
+                  Thao tác
+                </button>
+                <span v-else class="text-xs text-faint">—</span>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -165,13 +173,68 @@
         </div>
       </div>
     </div>
+
+    <!-- Lifecycle Action Modal -->
+    <div v-if="showActionModal" @click.self="showActionModal = false" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm overflow-y-auto cursor-pointer">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 my-8 cursor-default">
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="text-lg font-bold text-ink-2">Thao tác đăng ký</h2>
+          <button @click="showActionModal = false" class="text-faint hover:text-muted transition-colors">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <p class="text-xs text-muted mb-4">{{ actionEnr?.name }} · {{ actionEnr?.student }} · lớp {{ actionEnr?.class_id }}</p>
+
+        <div class="space-y-4">
+          <FormControl type="select" label="Hành động *" v-model="actionType" :options="actionOptions" @change="onActionTypeChange" />
+
+          <!-- Defer -->
+          <template v-if="actionType === 'defer'">
+            <div class="grid grid-cols-2 gap-4">
+              <FormControl type="date" label="Bảo lưu từ *" v-model="actionForm.leave_from_date" />
+              <FormControl type="date" label="Đến ngày *" v-model="actionForm.leave_to_date" />
+            </div>
+            <FormControl type="textarea" label="Lý do" v-model="actionForm.reason" />
+          </template>
+
+          <!-- Transfer -->
+          <template v-else-if="actionType === 'transfer'">
+            <FormControl type="select" label="Chuyển sang lớp *" v-model="actionForm.to_class" :options="transferClassOptions" />
+            <FormControl type="date" label="Ngày chuyển" v-model="actionForm.transfer_date" />
+            <FormControl type="textarea" label="Lý do" v-model="actionForm.reason" />
+            <p class="text-xs text-amber-600">Lưu ý: đăng ký mới sẽ chốt học phí chuẩn của lớp đích. Chênh lệch/credit do bộ phận tài chính xử lý riêng.</p>
+          </template>
+
+          <!-- Drop -->
+          <template v-else-if="actionType === 'drop'">
+            <FormControl type="textarea" label="Lý do nghỉ học" v-model="actionForm.reason" />
+            <label class="flex items-center gap-2 text-sm text-ink-2">
+              <input type="checkbox" v-model="actionForm.makeRefund" class="w-4 h-4 rounded border-border text-brand focus:ring-brand" />
+              Tạo phiếu hoàn phí (Draft) để tài chính duyệt
+            </label>
+            <template v-if="actionForm.makeRefund">
+              <FormControl type="select" label="Hóa đơn gốc *" v-model="actionForm.refund_invoice" :options="studentInvoiceOptions" />
+              <FormControl type="text" label="Số tiền hoàn *" v-model="actionForm.refund_amount" placeholder="0" />
+            </template>
+          </template>
+
+          <!-- Resume -->
+          <p v-else-if="actionType === 'resume'" class="text-sm text-muted">Kích hoạt lại đăng ký này về trạng thái Đang học (Active).</p>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6 border-t border-divider pt-4">
+          <button @click="showActionModal = false" class="flex-1 py-2 text-sm font-medium text-muted border border-border rounded-lg hover:bg-hover/40 transition-colors">Hủy</button>
+          <button @click="submitAction" :disabled="actionSaving || !actionType" class="flex-1 py-2 text-sm font-medium text-white bg-brand rounded-lg hover:bg-brand-deep transition-colors disabled:opacity-50">{{ actionSaving ? 'Đang xử lý...' : 'Xác nhận' }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { FormControl, LoadingIndicator } from 'frappe-ui'
-import { apiResource, call } from '../api'
+import { apiResource, call, db } from '../api'
 
 const showCreateModal = ref(false)
 const saving = ref(false)
@@ -289,6 +352,90 @@ const saveEnrollment = async () => {
     alert('Lỗi khi đăng ký: ' + (err.messages?.join('\n') || err.message || 'Vui lòng kiểm tra lại.'))
   } finally {
     saving.value = false
+  }
+}
+
+// --- Lifecycle actions ---
+const showActionModal = ref(false)
+const actionSaving = ref(false)
+const actionEnr = ref(null)
+const actionType = ref('')
+const studentInvoices = ref([])
+const actionForm = ref({})
+
+const actionOptions = computed(() => {
+  const base = [{ label: 'Chọn hành động...', value: '' }]
+  if (actionEnr.value?.enrollment_status === 'Active') {
+    base.push({ label: 'Bảo lưu', value: 'defer' }, { label: 'Chuyển lớp', value: 'transfer' }, { label: 'Nghỉ học', value: 'drop' })
+  } else if (actionEnr.value?.enrollment_status === 'Deferred') {
+    base.push({ label: 'Tiếp tục học', value: 'resume' }, { label: 'Nghỉ học', value: 'drop' })
+  }
+  return base
+})
+
+const transferClassOptions = computed(() => [
+  { label: 'Chọn lớp đích...', value: '' },
+  ...classesList.value.filter(c => c.name !== actionEnr.value?.class_id).map(c => ({ label: `${c.name} - ${c.class_name}`, value: c.name })),
+])
+
+const studentInvoiceOptions = computed(() => [
+  { label: 'Chọn hóa đơn...', value: '' },
+  ...studentInvoices.value.map(i => ({ label: `${i.name} (${formatCurrency(i.total_amount)})`, value: i.name })),
+])
+
+const openAction = async (e) => {
+  actionEnr.value = e
+  actionType.value = ''
+  actionForm.value = { transfer_date: new Date().toISOString().substring(0, 10), makeRefund: false }
+  showActionModal.value = true
+  if (!classesList.value.length) {
+    try { classesList.value = await call('get_classes') || [] } catch (err) { console.error(err) }
+  }
+}
+
+const onActionTypeChange = async () => {
+  if (actionType.value === 'drop' && actionEnr.value) {
+    try {
+      studentInvoices.value = await db.getList('Fee Invoice', {
+        filters: { student: actionEnr.value.student, docstatus: 1 },
+        fields: ['name', 'total_amount'], order_by: 'creation desc',
+      }) || []
+    } catch (err) { console.error(err) }
+  }
+}
+
+const submitAction = async () => {
+  const enr = actionEnr.value
+  const f = actionForm.value
+  actionSaving.value = true
+  try {
+    if (actionType.value === 'defer') {
+      if (!f.leave_from_date || !f.leave_to_date) { alert('Vui lòng nhập ngày bảo lưu.'); actionSaving.value = false; return }
+      await call('defer_enrollment', { program_enrollment: enr.name, leave_from_date: f.leave_from_date, leave_to_date: f.leave_to_date, reason: f.reason || undefined })
+    } else if (actionType.value === 'resume') {
+      await call('resume_enrollment', { program_enrollment: enr.name })
+    } else if (actionType.value === 'transfer') {
+      if (!f.to_class) { alert('Vui lòng chọn lớp đích.'); actionSaving.value = false; return }
+      await call('transfer_enrollment', { program_enrollment: enr.name, to_class: f.to_class, transfer_date: f.transfer_date || undefined, reason: f.reason || undefined })
+    } else if (actionType.value === 'drop') {
+      const params = { program_enrollment: enr.name, reason: f.reason || undefined }
+      if (f.makeRefund) {
+        if (!f.refund_invoice || !(Number(f.refund_amount) > 0)) { alert('Vui lòng chọn hóa đơn và nhập số tiền hoàn.'); actionSaving.value = false; return }
+        params.refund_invoice = f.refund_invoice
+        params.refund_amount = Number(f.refund_amount)
+      }
+      await call('drop_enrollment', params)
+    } else {
+      alert('Vui lòng chọn hành động.'); actionSaving.value = false; return
+    }
+    showActionModal.value = false
+    enrollments.fetch()
+    alert('Đã cập nhật trạng thái đăng ký.')
+  } catch (err) {
+    console.error(err)
+    alert('Lỗi: ' + (err.messages?.join('\n') || err.message || ''))
+  } finally {
+    actionSaving.value = false
   }
 }
 
