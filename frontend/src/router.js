@@ -101,6 +101,17 @@ const routes = [
     name: 'TaskBoard',
     component: () => import('./pages/TaskBoard.vue'),
   },
+  // Portal theo vai trò
+  {
+    path: '/teacher-portal',
+    name: 'TeacherPortal',
+    component: () => import('./pages/TeacherPortal.vue'),
+  },
+  {
+    path: '/student-portal',
+    name: 'StudentPortal',
+    component: () => import('./pages/StudentPortal.vue'),
+  },
 ]
 
 const router = createRouter({

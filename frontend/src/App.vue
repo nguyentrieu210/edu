@@ -258,6 +258,15 @@ const menuGroups = ref([
     ]
   },
 
+  // --- PORTAL VAI TRÒ ---
+  {
+    label: 'Portal', icon: 'log-in', isOpen: false,
+    children: [
+      { label: 'Cổng Giáo viên', path: '/teacher-portal' },
+      { label: 'Cổng Học viên', path: '/student-portal' },
+    ]
+  },
+
   // --- VẬN HÀNH ---
   {
     label: 'Vận hành', icon: 'settings', isOpen: false,
@@ -312,6 +321,8 @@ const currentRouteName = computed(() => {
     '/enrollments': 'Đăng Ký Lớp Học',
     '/curriculum': 'Chương Trình & Giáo Án',
     '/homework': 'Bài Tập & Tài Liệu',
+    '/teacher-portal': 'Cổng Giáo Viên',
+    '/student-portal': 'Cổng Học Viên',
     '/room-booking': 'Thuê Phòng Học',
     '/attendance': 'Điểm Danh Học Viên',
     '/assessments': 'Bảng Điểm Thi Cử',
