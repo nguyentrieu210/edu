@@ -9,6 +9,7 @@
   "guardian",
   "progress",
   "attendance_status",
+  "attendance_rate",
   "average_score",
   "health_status",
   "date_of_birth",
@@ -47,9 +48,18 @@
    "options": "\nV\u1eafng c\u00f3 ph\u00e9p\nKh\u00f4ng ph\u00e9p"
   },
   {
+   "description": "T\u1ef7 l\u1ec7 chuy\u00ean c\u1ea7n (% bu\u1ed5i \u0111\u00e3 ho\u00e0n th\u00e0nh c\u00f3 m\u1eb7t h\u1ee3p l\u1ec7). T\u1ef1 t\u00ednh.",
+   "fieldname": "attendance_rate",
+   "fieldtype": "Percent",
+   "label": "T\u1ef7 l\u1ec7 chuy\u00ean c\u1ea7n",
+   "read_only": 1
+  },
+  {
+   "description": "\u0110i\u1ec3m trung b\u00ecnh c\u00f3 tr\u1ecdng s\u1ed1 (0-100). T\u1ef1 t\u00ednh t\u1eeb Student Assessment.",
    "fieldname": "average_score",
    "fieldtype": "Float",
-   "label": "\u0110i\u1ec3m trung b\u00ecnh"
+   "label": "\u0110i\u1ec3m trung b\u00ecnh",
+   "read_only": 1
   },
   {
    "fieldname": "siblings",

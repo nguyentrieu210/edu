@@ -6,12 +6,22 @@
         <h3 class="text-xl font-bold text-ink-2">Điểm Danh Lớp Học</h3>
         <p class="text-xs text-muted mt-1">Điểm danh theo từng buổi học (Class Session); mỗi học viên một bản ghi duy nhất / buổi.</p>
       </div>
-      <button @click="saveAttendance" :disabled="saving" v-if="sessionLoaded" class="flex items-center gap-2 px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-deep transition-colors shadow-sm shadow-emerald-600/20">
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-1.5-1.5M12 14l3-3m-3 3V4" />
-        </svg>
-        Lưu Điểm Danh
-      </button>
+      <div v-if="sessionLoaded" class="flex items-center gap-2">
+        <button @click="saveAttendance" :disabled="saving || completing" class="flex items-center gap-2 px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-deep transition-colors shadow-sm shadow-emerald-600/20 disabled:opacity-50">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-1.5-1.5M12 14l3-3m-3 3V4" />
+          </svg>
+          Lưu Điểm Danh
+        </button>
+        <button v-if="currentSession.session_status !== 'Completed'" @click="completeSession" :disabled="saving || completing" class="flex items-center gap-2 px-4 py-2 bg-white text-ink-2 border border-border text-sm font-medium rounded-lg hover:bg-hover/40 transition-colors disabled:opacity-50">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          {{ completing ? 'Đang xử lý...' : 'Hoàn tất buổi' }}
+        </button>
+        <span v-else class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700">
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+          Đã hoàn tất
+        </span>
+      </div>
     </div>
 
     <!-- Filters Toolbar -->
@@ -167,6 +177,7 @@ const sessions = ref([])
 const loadingSessions = ref(false)
 const loading = ref(false)
 const saving = ref(false)
+const completing = ref(false)
 const searched = ref(false)
 const sessionLoaded = ref(false)
 const currentSession = ref({})
@@ -249,6 +260,32 @@ const saveAttendance = async () => {
     alert('Lỗi khi lưu: ' + (err.messages?.join('\n') || err.message || ''))
   } finally {
     saving.value = false
+  }
+}
+
+const completeSession = async () => {
+  if (!confirm('Hoàn tất buổi học này? Hệ thống sẽ tính lại tiến độ lớp và chuyên cần.')) return
+  completing.value = true
+  try {
+    await call('save_session_attendance', {
+      class_session: selectedSession.value,
+      rows: JSON.stringify(students.value.map(s => ({
+        program_enrollment: s.program_enrollment,
+        student: s.student,
+        status: s.status,
+        attendance_type: s.attendance_type,
+        minutes_late: s.status === 'Late' ? Number(s.minutes_late || 0) : 0,
+      }))),
+      teacher_attendance_status: teacherStatus.value || undefined,
+    })
+    await call('complete_class_session', { class_session: selectedSession.value })
+    alert('Đã hoàn tất buổi học và cập nhật tiến độ/chuyên cần.')
+    loadSessionData()
+  } catch (err) {
+    console.error(err)
+    alert('Lỗi: ' + (err.messages?.join('\n') || err.message || ''))
+  } finally {
+    completing.value = false
   }
 }
 

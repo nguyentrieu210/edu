@@ -17,6 +17,7 @@
   "total_sessions",
   "max_capacity",
   "standard_fee",
+  "progress",
   "status"
  ],
  "fields": [
@@ -100,6 +101,13 @@
    "fieldname": "standard_fee",
    "fieldtype": "Currency",
    "label": "H\u1ecdc ph\u00ed chu\u1ea9n"
+  },
+  {
+   "description": "Ti\u1ebfn \u0111\u1ed9 l\u1edbp (% bu\u1ed5i \u0111\u00e3 ho\u00e0n th\u00e0nh / t\u1ed5ng s\u1ed1 bu\u1ed5i). T\u1ef1 t\u00ednh.",
+   "fieldname": "progress",
+   "fieldtype": "Percent",
+   "label": "Ti\u1ebfn \u0111\u1ed9 l\u1edbp",
+   "read_only": 1
   }
  ],
  "links": [],

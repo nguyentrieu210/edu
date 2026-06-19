@@ -7,6 +7,7 @@ from frappe.utils import getdate, add_days, flt, nowdate
 from education_erp.education_erp.doctype.class_session.class_session import (
     find_session_conflicts,
 )
+from education_erp.education_erp import metrics
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
@@ -323,7 +324,63 @@ def save_session_attendance(class_session, rows, teacher_attendance_status=None)
         frappe.db.set_value(
             "Class Session", class_session, "teacher_attendance_status", teacher_attendance_status
         )
+
+    # Tính lại chuyên cần cho các học viên vừa điểm danh.
+    for st in {r.get("student") for r in rows if r.get("student")}:
+        metrics.recompute_student_metrics(st)
     return {"saved": saved}
+
+
+@frappe.whitelist()
+def complete_class_session(class_session):
+    """Hoàn tất buổi học (§5, §15.2): yêu cầu đã điểm danh đủ học viên Active,
+    đặt session_status = Completed, rồi tính lại tiến độ lớp + metrics học viên.
+    """
+    session = frappe.get_doc("Class Session", class_session)
+
+    active = frappe.get_all(
+        "Program Enrollment",
+        filters={"class_id": session.class_id, "docstatus": 1, "enrollment_status": "Active"},
+        pluck="name",
+    )
+    if active:
+        marked = set(
+            frappe.get_all(
+                "Student Attendance",
+                filters={"class_session": class_session, "program_enrollment": ["in", active]},
+                pluck="program_enrollment",
+            )
+        )
+        missing = [a for a in active if a not in marked]
+        if missing:
+            frappe.throw(
+                f"Chưa thể hoàn tất: còn {len(missing)} học viên Active chưa được điểm danh."
+            )
+
+    session.session_status = "Completed"
+    session.save()
+
+    metrics.recompute_class_progress(session.class_id)
+    students = frappe.get_all(
+        "Program Enrollment",
+        filters={"class_id": session.class_id, "docstatus": 1, "enrollment_status": "Active"},
+        pluck="student",
+    )
+    for st in set(students):
+        metrics.recompute_student_metrics(st)
+
+    return {"session_status": "Completed"}
+
+
+@frappe.whitelist()
+def recompute_student_metrics(student):
+    return metrics.recompute_student_metrics(student)
+
+
+@frappe.whitelist()
+def recompute_all_metrics():
+    metrics.recompute_all_metrics()
+    return {"ok": True}
 
 
 @frappe.whitelist()
