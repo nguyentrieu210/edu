@@ -5,7 +5,7 @@
 import { frappeRequest, createResource } from 'frappe-ui'
 
 // Mọi phương thức whitelisted của app nằm dưới namespace này.
-const API_NS = 'education_erp.education_erp.api'
+const API_NS = 'edu.education_erp.api'
 
 // Cho phép truyền tên ngắn ('get_students') hoặc full path ('frappe.client.x').
 function resolve(method) {
@@ -58,18 +58,17 @@ export const db = {
 
   // insert({ doctype: 'Teacher', ... })
   insert(doc) {
-    return frappeRequest({ url: 'frappe.client.insert', method: 'POST', params: { doc } })
+    return call('create_document', { doc })
   },
 
   // setValue('Doctype', name, 'field', value)  hoặc  setValue('Doctype', name, { f1, f2 })
   setValue(doctype, name, fieldname, value) {
-    const params = { doctype, name, fieldname }
-    if (value !== undefined) params.value = value
-    return frappeRequest({ url: 'frappe.client.set_value', method: 'POST', params })
+    const values = fieldname && typeof fieldname === 'object' ? fieldname : { [fieldname]: value }
+    return call('update_document', { doctype, name, values })
   },
 
   // delete('Doctype', name)
   delete(doctype, name) {
-    return frappeRequest({ url: 'frappe.client.delete', method: 'POST', params: { doctype, name } })
+    return call('delete_document', { doctype, name })
   },
 }

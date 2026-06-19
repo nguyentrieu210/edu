@@ -1,179 +1,140 @@
 <template>
-  <div class="flex h-screen bg-canvas font-sans text-ink antialiased overflow-hidden">
+  <div class="flex h-screen font-sans antialiased overflow-hidden text-ink bg-canvas">
 
     <!-- Command Palette -->
     <CommandPalette ref="paletteRef" />
 
-    <!-- Sidebar -->
+    <!-- ===================== PRIMARY SIDEBAR ===================== -->
     <aside
-      class="flex flex-col bg-paper border-r border-border flex-shrink-0 select-none transition-all duration-300 ease-in-out relative z-30"
-      :class="isSidebarExpanded ? 'w-64' : 'w-14'"
+      class="flex flex-col flex-shrink-0 select-none transition-all duration-200 ease-out relative z-30"
+      :class="isSidebarExpanded ? 'w-[240px]' : 'w-16'"
+      style="background: var(--bg-sidebar); border-right: 1px solid var(--border);"
     >
-      <!-- Logo Header -->
-      <div class="flex h-14 items-center border-b border-border overflow-hidden"
-        :class="!isSidebarExpanded ? 'justify-center px-0' : 'px-5 gap-3'">
-
-        <!-- Icon Google-style -->
-        <div class="h-8 w-8 rounded-lg bg-brand text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-brand/10">
-          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/></svg>
+      <!-- Brand -->
+      <div class="flex items-center gap-2.5 overflow-hidden"
+        :class="isSidebarExpanded ? 'px-3 pt-4 pb-3' : 'justify-center px-0 pt-4 pb-3'">
+        <div class="flex-none flex items-center justify-center text-white font-bold"
+          style="width:32px;height:32px;border-radius:7px;background:var(--brand);font-size:13px;letter-spacing:.5px;">
+          IKE
         </div>
-
-        <!-- Wordmark ẩn khi collapsed -->
         <transition name="fade-slide">
-          <div v-if="isSidebarExpanded" class="leading-tight overflow-hidden whitespace-nowrap">
-            <div class="ff-display text-[15px] font-bold tracking-tight text-ink">IKE Ohashi</div>
-            <div class="text-[10.5px] font-medium text-muted uppercase tracking-wider">education · erp</div>
+          <div v-if="isSidebarExpanded" class="min-w-0 leading-tight">
+            <div style="font-weight:600;font-size:14px;color:var(--ink);line-height:1.1;">Education ERP</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">日本語 · IKE Ohashi</div>
           </div>
         </transition>
       </div>
 
-      <!-- Toggle button -->
+      <!-- Collapse toggle -->
       <button
         @click="collapsed = !collapsed"
-        class="absolute -right-3 top-16 z-10 w-6 h-6 rounded-full bg-paper border border-border shadow-sm flex items-center justify-center hover:bg-hover transition-all duration-200 hover:shadow"
+        class="absolute -right-3 top-14 z-10 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+        style="background:#fff;border:1px solid var(--border);"
+        :aria-label="collapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'"
       >
-        <svg class="h-3 w-3 text-muted transition-transform duration-300" :class="collapsed ? 'rotate-180' : ''"
-          fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-        </svg>
+        <FeatherIcon :name="collapsed ? 'chevron-right' : 'chevron-left'" class="h-3.5 w-3.5" style="color:var(--muted);" />
       </button>
 
-      <!-- Menu Navigation -->
-      <nav class="flex-1 overflow-y-auto py-4 scrollbar-thin"
-        :class="!isSidebarExpanded ? 'px-1.5 space-y-1' : 'px-3 space-y-1'">
+      <!-- Quick actions -->
+      <div class="flex flex-col gap-2" :class="isSidebarExpanded ? 'px-2.5 pb-2 pt-1' : 'px-2 pb-2 pt-1'">
+        <button
+          @click="paletteRef?.open()"
+          class="flex items-center justify-center gap-2 btn-ghost press"
+          :class="isSidebarExpanded ? 'h-[38px] px-3' : 'h-10 w-10 mx-auto'"
+          style="border-radius:6px;font-size:14px;font-weight:500;"
+        >
+          <FeatherIcon name="plus" class="h-[17px] w-[17px]" />
+          <span v-if="isSidebarExpanded">Tạo mới</span>
+        </button>
+        <button
+          v-if="isSidebarExpanded"
+          @click="paletteRef?.open()"
+          class="flex items-center gap-2 h-9 px-2.5 w-full transition-colors"
+          style="border-radius:6px;background:#fff;border:1px solid var(--border);"
+        >
+          <FeatherIcon name="search" class="h-[15px] w-[15px]" style="color:var(--muted);" />
+          <span style="font-size:13px;color:var(--muted);">Tìm kiếm</span>
+          <span class="ml-auto" style="font-size:11px;color:var(--faint);border:1px solid var(--border);border-radius:5px;padding:1px 5px;">Ctrl K</span>
+        </button>
+      </div>
 
-        <div v-for="(group, idx) in menuGroups" :key="idx">
+      <!-- Navigation -->
+      <nav class="sk-scroll flex-1 overflow-y-auto" :class="isSidebarExpanded ? 'px-2.5 pb-3' : 'px-2 pb-3'">
+        <template v-for="(section, sIdx) in menu" :key="sIdx">
+          <div v-if="section.label && isSidebarExpanded" class="eyebrow" style="padding:14px 8px 6px;">
+            {{ section.label }}
+          </div>
+          <div v-else-if="section.label && sIdx > 0" class="my-2 mx-2" style="border-top:1px solid var(--border);"></div>
 
-          <!-- Collapsed: chỉ show icon, tooltip -->
-          <template v-if="!isSidebarExpanded">
-            <router-link
-              v-if="!group.children"
-              :to="group.path"
-              class="flex items-center justify-center w-10 h-10 mx-auto rounded-full text-muted hover:bg-hover hover:text-ink transition-all duration-150 relative group"
-              active-class="bg-brand-soft text-brand font-medium"
-              :title="group.label"
-            >
-              <FeatherIcon :name="group.icon" class="h-4.5 w-4.5" />
-              <span class="absolute left-full ml-2 px-2.5 py-1.5 text-xs font-medium bg-ink text-paper rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg">
-                {{ group.label }}
-              </span>
-            </router-link>
+          <router-link
+            v-for="item in section.items"
+            :key="item.path"
+            :to="item.path"
+            class="group relative flex items-center transition-colors duration-100 rounded-md"
+            :class="[
+              isSidebarExpanded ? 'gap-2.5 h-9 px-2.5 mb-0.5' : 'justify-center h-10 w-10 mx-auto mb-1',
+              isActive(item.path) ? 'font-semibold' : 'font-medium',
+            ]"
+            :style="navStyle(item.path)"
+            :title="!isSidebarExpanded ? item.label : null"
+          >
+            <FeatherIcon :name="item.icon" class="flex-none" :class="isSidebarExpanded ? 'h-[18px] w-[18px]' : 'h-5 w-5'" />
+            <span v-if="isSidebarExpanded" class="truncate" style="font-size:14px;">{{ item.label }}</span>
+            <span v-if="!isSidebarExpanded"
+              class="absolute left-full ml-2 px-2.5 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50"
+              style="background:var(--ink);color:#fff;font-size:12px;font-weight:500;box-shadow:var(--shadow-menu);">
+              {{ item.label }}
+            </span>
+          </router-link>
+        </template>
 
-            <button
-              v-else
-              @click="toggleGroup(group)"
-              class="flex items-center justify-center w-10 h-10 mx-auto rounded-full transition-all duration-150 relative group"
-              :class="isGroupActive(group) ? 'bg-brand-soft text-brand font-medium' : 'text-muted hover:bg-hover hover:text-ink'"
-              :title="group.label"
-            >
-              <FeatherIcon :name="group.icon" class="h-4 w-4" />
-              <span class="absolute left-full ml-2 px-2.5 py-1.5 text-xs font-medium bg-ink text-paper rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg">
-                {{ group.label }}
-              </span>
-            </button>
-          </template>
-
-          <!-- Expanded: full sidebar -->
-          <template v-else>
-            <!-- Direct link -->
-            <router-link
-              v-if="!group.children"
-              :to="group.path"
-              class="flex items-center gap-3 rounded-full px-4 py-2.5 text-sm text-muted hover:text-ink hover:bg-hover transition duration-150 mb-0.5"
-              active-class="bg-brand-soft text-brand font-semibold"
-            >
-              <FeatherIcon :name="group.icon" class="h-4.5 w-4.5 flex-shrink-0" />
-              <span class="truncate">{{ group.label }}</span>
-            </router-link>
-
-            <!-- Collapsible group -->
-            <div v-else class="mb-0.5">
-              <div
-                @click="toggleGroup(group)"
-                class="flex items-center justify-between rounded-full px-4 py-2.5 text-sm font-semibold transition cursor-pointer"
-                :class="isGroupActive(group) ? 'text-brand bg-brand-soft/40' : 'text-muted hover:text-ink hover:bg-hover'"
-              >
-                <div class="flex items-center space-x-3">
-                  <FeatherIcon :name="group.icon" class="h-4.5 w-4.5 flex-shrink-0" />
-                  <span class="truncate">{{ group.label }}</span>
-                </div>
-                <FeatherIcon
-                  :name="group.isOpen ? 'chevron-down' : 'chevron-right'"
-                  class="h-3.5 w-3.5 text-faint flex-shrink-0 transition-transform duration-200"
-                />
-              </div>
-
-              <!-- Children -->
-              <div v-if="group.isOpen" class="pl-4 border-l border-divider/60 ml-6 mt-1 space-y-0.5 animate-fade-in">
-                <router-link
-                  v-for="child in group.children"
-                  :key="child.label"
-                  :to="child.path"
-                  class="flex items-center gap-2 rounded-full px-4 py-2 text-[13px] text-muted hover:text-ink hover:bg-hover transition duration-150"
-                  active-class="bg-brand-soft text-brand font-semibold"
-                >
-                  <div class="w-1.5 h-1.5 rounded-full bg-faint flex-shrink-0"
-                    :class="{'bg-brand': route.path === child.path}"></div>
-                  <span class="truncate">{{ child.label }}</span>
-                </router-link>
-              </div>
-            </div>
-          </template>
-
-          <!-- Divider -->
-          <div v-if="group.dividerAfter && isSidebarExpanded" class="my-2 border-t border-border"></div>
-        </div>
+        <!-- AI Assistant -->
+        <button
+          @click="openAi"
+          class="flex items-center transition-colors mt-2 rounded-md"
+          :class="isSidebarExpanded ? 'gap-2.5 h-9 px-2.5 w-full' : 'justify-center h-10 w-10 mx-auto'"
+          style="background:transparent;color:var(--ink-2);font-size:14px;font-weight:500;"
+          onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='transparent'"
+        >
+          <FeatherIcon name="zap" class="flex-none h-[18px] w-[18px]" />
+          <span v-if="isSidebarExpanded">AI Assistant</span>
+        </button>
       </nav>
 
-      <!-- Footer User -->
-      <div class="border-t border-border bg-paper overflow-hidden transition-all duration-300 p-4">
-        <div class="flex items-center" :class="!isSidebarExpanded ? 'justify-center' : 'gap-3'">
-          <div class="h-9 w-9 rounded-full bg-brand-soft text-brand flex items-center justify-center font-semibold text-[13px] ring-2 ring-brand/10 flex-shrink-0">
-            AD
-          </div>
-          <transition name="fade-slide">
-            <div v-if="isSidebarExpanded" class="min-w-0 flex-1 leading-tight">
-              <div class="text-[13px] font-semibold text-ink truncate">Administrator</div>
-              <div class="text-[11px] font-medium text-muted truncate">admin · erp</div>
-            </div>
-          </transition>
+      <!-- User -->
+      <div class="flex items-center gap-2.5" style="border-top:1px solid var(--border);"
+        :class="isSidebarExpanded ? 'px-3 py-2.5' : 'px-2 py-2.5 justify-center'">
+        <div class="flex-none flex items-center justify-center font-semibold text-white"
+          style="width:32px;height:32px;border-radius:50%;background:var(--brand);font-size:12px;">
+          {{ userInitials }}
+        </div>
+        <div v-if="isSidebarExpanded" class="flex-1 min-w-0 leading-tight">
+          <div style="font-size:13px;font-weight:600;color:var(--ink);" class="truncate">{{ userName }}</div>
+          <div style="font-size:11px;color:var(--muted);" class="truncate">{{ userId }}</div>
         </div>
       </div>
     </aside>
 
-    <!-- Main Content Area -->
-    <main class="flex flex-1 flex-col overflow-hidden bg-canvas min-w-0">
-      <header class="flex h-14 items-center border-b border-rose-200/60 px-6 flex-shrink-0 relative overflow-hidden" style="background: linear-gradient(135deg, #fdf2f4 0%, #fce7ec 40%, #fde8e8 70%, #fff0f0 100%)">
-        <!-- Left: page title -->
-        <div class="flex-1 min-w-0">
-          <h1 class="ff-display text-[17px] font-bold text-ink truncate">{{ currentRouteName }}</h1>
+    <!-- ===================== MAIN ===================== -->
+    <main class="flex flex-1 flex-col overflow-hidden min-w-0 bg-paper">
+      <header class="flex items-center gap-3 flex-shrink-0 px-6"
+        style="height:56px;border-bottom:1px solid var(--border);background:var(--paper);">
+        <div class="min-w-0">
+          <h1 class="truncate" style="font-size:16px;font-weight:600;color:var(--ink);">{{ currentRouteName }}</h1>
         </div>
+        <span class="hidden md:inline" style="font-size:13px;color:var(--muted);">· {{ todayLabel }}</span>
 
-        <!-- Center: search trigger -->
-        <div class="flex-1 flex justify-center">
+        <div class="ml-auto flex items-center gap-2">
           <button
             @click="paletteRef?.open()"
-            class="flex items-center gap-3 px-4 py-2 rounded-full bg-paper border border-border text-[13px] text-muted hover:text-ink hover:border-brand/40 hover:shadow-sm transition-all duration-200 w-64 group"
+            class="md:hidden flex items-center justify-center"
+            style="width:34px;height:34px;border:1px solid var(--border);background:#fff;border-radius:6px;color:var(--ink-2);"
+            aria-label="Tìm kiếm"
           >
-            <svg class="h-4 w-4 text-muted flex-shrink-0 group-hover:text-brand transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span class="flex-1 text-left text-xs text-muted group-hover:text-ink transition-colors">Tìm kiếm tính năng...</span>
-            <kbd class="ml-auto text-[10px] scale-90 px-1.5 py-0.5 border border-border bg-hover rounded font-mono text-muted flex-shrink-0 group-hover:border-brand/30 group-hover:bg-brand-soft group-hover:text-brand transition-all">
-              Ctrl K
-            </kbd>
+            <FeatherIcon name="search" class="h-4 w-4" />
           </button>
-        </div>
-
-        <!-- Right: actions -->
-        <div class="flex-1 flex justify-end items-center gap-3">
-          <button
-            @click="goToDesk"
-            class="btn btn-ghost !px-3.5 !py-1.5 !text-xs !gap-2"
-          >
-            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
+          <button @click="goToDesk" class="btn btn-ghost press" style="height:34px;">
+            <FeatherIcon name="external-link" class="h-3.5 w-3.5" />
             Vào Desk
           </button>
         </div>
@@ -185,152 +146,147 @@
     </main>
 
     <!-- AI Chat Bubble (global floating) -->
-    <AIChatBubble />
+    <AIChatBubble ref="aiBubbleRef" />
 
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { FeatherIcon } from 'frappe-ui'
 import CommandPalette from './components/CommandPalette.vue'
 import AIChatBubble from './components/AIChatBubble.vue'
 
 const route = useRoute()
 const paletteRef = ref(null)
+const aiBubbleRef = ref(null)
 const collapsed = ref(false)
 const isSidebarExpanded = computed(() => !collapsed.value)
 
-const menuGroups = ref([
-  // --- TỔNG QUAN ---
-  { label: 'Dashboard', icon: 'home', path: '/' },
+// Người dùng lấy từ boot session, không hardcode (§12.2).
+const boot = typeof window !== 'undefined' ? window.frappe?.boot : null
+const userId = boot?.user?.name || boot?.sitename || window.frappe?.session?.user || ''
+const userName = computed(() => {
+  const info = boot?.user_info?.[userId]
+  return info?.fullname || boot?.user?.full_name || userId || 'Người dùng'
+})
+const userInitials = computed(() => {
+  const n = (userName.value || 'U').trim()
+  const parts = n.split(/\s+/)
+  return ((parts[0]?.[0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || 'U'
+})
 
-  // --- SALE & LEAD ---
+// Sidebar phẳng theo nhóm — neutral palette, icon Feather (tương thích Lucide).
+const menu = ref([
   {
-    label: 'Sale & Lead', icon: 'trending-up', isOpen: false,
-    children: [
-      { label: 'Lead tiềm năng', path: '/leads' },
-      { label: 'CRM Pipeline', path: '/crm' },
-      { label: 'Lịch hẹn', path: '/appointments' },
-    ]
+    label: '',
+    items: [
+      { label: 'Dashboard', icon: 'grid', path: '/' },
+    ],
   },
-
-  // --- HỌC VIÊN & THẺ ---
   {
-    label: 'Học viên & Thẻ', icon: 'users', isOpen: false,
-    children: [
-      { label: 'Học viên', path: '/students' },
-      { label: 'Thẻ', path: '/student-card' },
-      { label: 'Onboarding', path: '/onboarding' },
-    ]
+    label: 'Tuyển sinh & học viên',
+    items: [
+      { label: 'Tuyển sinh', icon: 'user-plus', path: '/leads' },
+      { label: 'CRM Pipeline', icon: 'trending-up', path: '/crm' },
+      { label: 'Lịch hẹn', icon: 'phone', path: '/appointments' },
+      { label: 'Học viên', icon: 'users', path: '/students' },
+      { label: 'Thẻ học viên', icon: 'credit-card', path: '/student-card' },
+      { label: 'Onboarding', icon: 'check-square', path: '/onboarding' },
+    ],
   },
-
-  // --- LỚP & ĐÀO TẠO ---
   {
-    label: 'Lớp & Đào tạo', icon: 'book-open', isOpen: false,
-    children: [
-      { label: 'Hiệu suất', path: '/assessments' },
-      { label: 'Chương trình & Giáo án', path: '/curriculum' },
-      { label: 'Lịch lớp', path: '/classes' },
-      { label: 'Đăng ký lớp', path: '/enrollments' },
-      { label: 'Chấm công & Điểm danh', path: '/attendance' },
-      { label: 'Bài tập & Tài liệu', path: '/homework' },
-      { label: 'Giáo viên', path: '/teachers' },
-      { label: 'Khóa học', path: '/courses' },
-    ]
+    label: 'Đào tạo',
+    items: [
+      { label: 'Lớp học', icon: 'book-open', path: '/classes' },
+      { label: 'Khóa học', icon: 'book', path: '/courses' },
+      { label: 'Giáo viên', icon: 'award', path: '/teachers' },
+      { label: 'Chương trình & Giáo án', icon: 'layers', path: '/curriculum' },
+      { label: 'Bài tập & Tài liệu', icon: 'file-text', path: '/homework' },
+      { label: 'Đăng ký lớp', icon: 'clipboard', path: '/enrollments' },
+      { label: 'Điểm danh', icon: 'check-circle', path: '/attendance' },
+      { label: 'Hiệu suất', icon: 'bar-chart-2', path: '/assessments' },
+    ],
   },
-
-  // --- TÀI CHÍNH ---
   {
-    label: 'Tài chính', icon: 'dollar-sign', isOpen: false,
-    children: [
-      { label: 'Hóa đơn', path: '/invoices' },
-      { label: 'Phiếu thu', path: '/payments' },
-    ]
+    label: 'Tài chính',
+    items: [
+      { label: 'Hóa đơn', icon: 'file-text', path: '/invoices' },
+      { label: 'Phiếu thu', icon: 'dollar-sign', path: '/payments' },
+    ],
   },
-
-  // --- NHÂN SỰ & LƯƠNG ---
   {
-    label: 'Nhân sự & Lương', icon: 'briefcase', isOpen: false,
-    children: [
-      { label: 'Nhân sự', path: '/' },
-      { label: 'Bảng lương', path: '/' },
-    ]
+    label: 'Vận hành',
+    items: [
+      { label: 'Thuê phòng', icon: 'map-pin', path: '/room-booking' },
+      { label: 'Task Board', icon: 'list', path: '/task-board' },
+    ],
   },
-
-  // --- PORTAL VAI TRÒ ---
   {
-    label: 'Portal', icon: 'log-in', isOpen: false,
-    children: [
-      { label: 'Cổng Giáo viên', path: '/teacher-portal' },
-      { label: 'Cổng Học viên', path: '/student-portal' },
-    ]
-  },
-
-  // --- VẬN HÀNH ---
-  {
-    label: 'Vận hành', icon: 'settings', isOpen: false,
-    children: [
-      { label: 'Thuê phòng', path: '/room-booking' },
-    ]
-  },
-
-  // --- BUILD & LEAN ---
-  {
-    label: 'Build & Lean', icon: 'zap', isOpen: false,
-    children: [
-      { label: 'Viral Lab', path: '/' },
-      { label: 'Task Board', path: '/task-board' },
-    ]
+    label: 'Cổng truy cập',
+    items: [
+      { label: 'Cổng giáo viên', icon: 'briefcase', path: '/teacher-portal' },
+      { label: 'Cổng học viên', icon: 'smartphone', path: '/student-portal' },
+    ],
   },
 ])
 
-const toggleGroup = (group) => { group.isOpen = !group.isOpen }
+const isActive = (path) => (path === '/' ? route.path === '/' : route.path.startsWith(path))
 
-const isGroupActive = (group) => {
-  if (!group.children) return route.path === group.path
-  return group.children.some(child => route.path === child.path)
+// Active = nền chữ nhật bo nhẹ (neutral-200), không pill, không thanh đỏ bên trái (§3.2).
+const navStyle = (path) => {
+  const active = isActive(path)
+  return {
+    cursor: 'pointer',
+    color: active ? 'var(--ink)' : 'var(--ink-2)',
+    background: active ? 'var(--active)' : 'transparent',
+  }
 }
 
-// Tự động đóng/mở các phân hệ dựa vào route path
-const syncGroupExpansion = () => {
-  menuGroups.value.forEach(group => {
-    if (group.children) {
-      const hasActiveChild = group.children.some(child => route.path === child.path)
-      group.isOpen = hasActiveChild
-    }
-  })
+const openAi = () => {
+  if (aiBubbleRef.value?.open) aiBubbleRef.value.open()
 }
-
-watch(() => route.path, () => {
-  syncGroupExpansion()
-}, { immediate: true })
 
 const currentRouteName = computed(() => {
   const names = {
-    '/': 'Bảng Điều Khiển',
-    '/students': 'Quản Lý Học Viên',
-    '/student-card': 'Thẻ Học Viên',
-    '/leads': 'Danh Sách Lead',
-    '/crm': 'Quản Lý Khách Hàng (CRM)',
-    '/appointments': 'Lịch Hẹn Tư Vấn',
-    '/onboarding': 'Quy Trình Nhập Học',
-    '/teachers': 'Quản Lý Giáo Viên',
-    '/courses': 'Quản Lý Khóa Học',
-    '/classes': 'Quản Lý Lớp Học',
-    '/enrollments': 'Đăng Ký Lớp Học',
-    '/curriculum': 'Chương Trình & Giáo Án',
-    '/homework': 'Bài Tập & Tài Liệu',
-    '/teacher-portal': 'Cổng Giáo Viên',
-    '/student-portal': 'Cổng Học Viên',
-    '/room-booking': 'Thuê Phòng Học',
-    '/attendance': 'Điểm Danh Học Viên',
-    '/assessments': 'Bảng Điểm Thi Cử',
-    '/task-board': 'Giao Việc Nội Bộ',
-    '/invoices': 'Quản Lý Hóa Đơn',
-    '/payments': 'Lịch Sử Phiếu Thu',
+    '/': 'Bảng điều khiển',
+    '/students': 'Học viên',
+    '/student-card': 'Thẻ học viên',
+    '/leads': 'Tuyển sinh',
+    '/crm': 'CRM Pipeline',
+    '/appointments': 'Lịch hẹn tư vấn',
+    '/onboarding': 'Quy trình nhập học',
+    '/teachers': 'Giáo viên',
+    '/courses': 'Khóa học',
+    '/classes': 'Lớp học',
+    '/enrollments': 'Đăng ký lớp học',
+    '/curriculum': 'Chương trình & Giáo án',
+    '/homework': 'Bài tập & Tài liệu',
+    '/teacher-portal': 'Cổng giáo viên',
+    '/student-portal': 'Cổng học viên',
+    '/room-booking': 'Thuê phòng học',
+    '/attendance': 'Điểm danh',
+    '/assessments': 'Điểm số & Hiệu suất',
+    '/task-board': 'Giao việc nội bộ',
+    '/invoices': 'Hóa đơn',
+    '/payments': 'Phiếu thu',
   }
-  return names[route.path] || ''
+  // Khớp prefix để route con (detail) vẫn có tiêu đề.
+  const exact = names[route.path]
+  if (exact) return exact
+  const hit = Object.keys(names)
+    .filter((p) => p !== '/' && route.path.startsWith(p))
+    .sort((a, b) => b.length - a.length)[0]
+  return hit ? names[hit] : ''
+})
+
+const todayLabel = computed(() => {
+  const d = new Date()
+  const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy']
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  return `${days[d.getDay()]}, ${dd}/${mm}/${d.getFullYear()}`
 })
 
 const goToDesk = () => { window.location.href = '/app' }

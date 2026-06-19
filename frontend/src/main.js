@@ -6,12 +6,13 @@ import router from './router'
 import App from './App.vue'
 import { FrappeUI, Button, Badge, FeatherIcon, LoadingIndicator, setConfig, frappeRequest } from 'frappe-ui'
 
-// Read CSRF token from cookie
+// Read CSRF token from the value provided by Frappe/Jinja boot or csrf cookie.
+// Never use `sid` as a CSRF token.
 function getCookie(name) {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
   return match ? match[2] : ''
 }
-window.csrf_token = window.csrf_token || getCookie('csrf_token') || getCookie('sid')
+window.csrf_token = window.csrf_token || getCookie('csrf_token')
 
 const pinia = createPinia()
 const app = createApp(App)
@@ -32,15 +33,16 @@ app.component('Badge', Badge)
 app.component('FeatherIcon', FeatherIcon)
 app.component('LoadingIndicator', LoadingIndicator)
 
-// Fetch accurate CSRF token to fix CSRFTokenError in dev and prod
-fetch('/api/method/education_erp.education_erp.api.get_csrf_token', { credentials: 'include' })
-  .then(res => res.json())
-  .then(data => {
-    if (data && data.message) {
-      window.csrf_token = data.message;
-    }
-  })
-  .catch(err => console.error("Could not fetch CSRF token", err))
-  .finally(() => {
-    app.mount('#app');
-  })
+const mountApp = () => app.mount('#app')
+
+if (window.csrf_token) {
+  mountApp()
+} else {
+  fetch('/api/method/edu.education_erp.api.get_csrf_token', { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      if (data?.message) window.csrf_token = data.message
+    })
+    .catch(err => console.error('Could not fetch CSRF token', err))
+    .finally(mountApp)
+}

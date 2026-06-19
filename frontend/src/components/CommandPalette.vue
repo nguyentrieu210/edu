@@ -67,7 +67,7 @@
 
                   <!-- Text -->
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold truncate" v-html="highlight(item.label)"></p>
+                    <p class="text-sm font-semibold truncate">{{ item.label }}</p>
                     <p v-if="item.subtitle" class="text-xs text-muted truncate mt-0.5"
                        :class="activeIndex === item._globalIndex ? 'text-brand-deep/70' : ''">{{ item.subtitle }}</p>
                   </div>
@@ -230,10 +230,18 @@ const selectItem = (item) => {
 }
 
 // --- Highlight match ---
+const escapeHtml = (value) => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;')
+
 const highlight = (text) => {
-  if (!query.value.trim()) return text
+  const safeText = escapeHtml(text)
+  if (!query.value.trim()) return safeText
   const escaped = query.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return text.replace(new RegExp(`(${escaped})`, 'gi'),
+  return safeText.replace(new RegExp(`(${escaped})`, 'gi'),
     '<mark class="bg-brand-soft/80 text-brand rounded px-0.5 not-italic font-semibold">$1</mark>')
 }
 

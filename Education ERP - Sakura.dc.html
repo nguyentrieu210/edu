@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="./image-slot.js"></script>
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;}
+body{font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
+.sk-scroll::-webkit-scrollbar{width:10px;height:10px;}
+.sk-scroll::-webkit-scrollbar-thumb{background:#f0cdd9;border-radius:8px;border:2px solid transparent;background-clip:content-box;}
+.sk-scroll::-webkit-scrollbar-thumb:hover{background:#e3aec1;background-clip:content-box;}
+.sk-scroll::-webkit-scrollbar-track{background:transparent;}
+.av image-slot{display:block;border-radius:50%;box-shadow:0 0 0 2px rgba(255,255,255,0.9),0 0 0 3px #f3cede;}
+@keyframes skpop{from{opacity:0;transform:translateY(8px) scale(0.98);}to{opacity:1;transform:none;}}
+@keyframes skspin{to{transform:rotate(360deg);}}
+@keyframes skshimmer{0%{background-position:-200px 0;}100%{background-position:200px 0;}}
+.sk-skel{background:linear-gradient(90deg,#f6e2ea 25%,#fbeef3 50%,#f6e2ea 75%);background-size:400px 100%;animation:skshimmer 1.3s linear infinite;border-radius:6px;}
+@keyframes sktoast{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
+</style>
+</helmet>
+
+<div style="height:100vh;width:100vw;display:flex;overflow:hidden;background:linear-gradient(140deg,#fff7fa 0%,#fdedf3 48%,#fbe4ee 100%);color:#3d2530;font-size:14px;line-height:1.5;position:relative;">
+
+  <!-- ===================== PRIMARY SIDEBAR ===================== -->
+  <aside style="flex:none;width:250px;display:flex;flex-direction:column;background:linear-gradient(185deg,#fdeef4 0%,#fce0ea 100%);border-right:1px solid #f2d4df;">
+    <div style="display:flex;align-items:center;gap:11px;padding:16px 16px 14px;">
+      <div style="flex:none;width:40px;height:40px;border-radius:11px;background:linear-gradient(140deg,#f7a8c4,#d6557e);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(214,85,126,0.32);">
+        <svg width="24" height="24" viewBox="0 0 24 24"><g fill="#fff" stroke="none"><circle cx="12" cy="6" r="3.1"/><circle cx="17.6" cy="10.1" r="3.1"/><circle cx="15.4" cy="16.8" r="3.1"/><circle cx="8.6" cy="16.8" r="3.1"/><circle cx="6.4" cy="10.1" r="3.1"/></g><circle cx="12" cy="11.9" r="2.3" fill="#f7a8c4"/></svg>
+      </div>
+      <div style="min-width:0;">
+        <div style="font-family:'Zen Kaku Gothic New',sans-serif;font-weight:900;font-size:19px;letter-spacing:.5px;color:#4a2230;line-height:1;">IKE</div>
+        <div style="font-size:10.5px;color:#b07e90;margin-top:3px;font-weight:500;">日本語 · Education ERP</div>
+      </div>
+    </div>
+
+    <div style="padding:2px 12px 10px;display:flex;flex-direction:column;gap:9px;">
+      <button style="display:flex;align-items:center;justify-content:center;gap:8px;height:38px;border:none;border-radius:9px;background:linear-gradient(135deg,#e87aa3,#d4567f);color:#fff;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;box-shadow:0 3px 10px rgba(212,86,127,0.3);" style-hover="filter:brightness(1.05);">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Tạo mới
+      </button>
+      <button onClick="{{ openCmd }}" style="display:flex;align-items:center;gap:8px;height:36px;padding:0 11px;border-radius:8px;background:rgba(255,255,255,0.7);border:1px solid #f1d2de;cursor:pointer;font-family:inherit;width:100%;" style-hover="background:#fff;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#bd8d9c" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span style="font-size:13px;color:#bd8d9c;">Tìm kiếm</span>
+        <span style="margin-left:auto;font-size:10.5px;color:#caa6b4;border:1px solid #ecd0da;border-radius:5px;padding:1px 5px;">⌘K</span>
+      </button>
+    </div>
+
+    <nav class="sk-scroll" style="flex:1;overflow-y:auto;padding:6px 12px 12px;">
+      <button onClick="{{ nav.dashboard.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.dashboard.color }};background:{{ nav.dashboard.bg }};border-left:3px solid {{ nav.dashboard.bar }};font-size:13.5px;font-weight:{{ nav.dashboard.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </button>
+
+      <div style="font-size:10.5px;font-weight:700;color:#c79aaa;letter-spacing:.6px;text-transform:uppercase;padding:14px 10px 6px;">Tuyển sinh & học viên</div>
+      <button onClick="{{ nav.crm.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.crm.color }};background:{{ nav.crm.bg }};border-left:3px solid {{ nav.crm.bar }};font-size:13.5px;font-weight:{{ nav.crm.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Tuyển sinh
+      </button>
+      <button onClick="{{ nav.students.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.students.color }};background:{{ nav.students.bg }};border-left:3px solid {{ nav.students.bar }};font-size:13.5px;font-weight:{{ nav.students.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Học viên
+        <span style="margin-left:auto;font-size:11px;font-weight:600;color:#b8456a;background:rgba(255,255,255,0.7);border-radius:6px;padding:1px 7px;">248</span>
+      </button>
+
+      <div style="font-size:10.5px;font-weight:700;color:#c79aaa;letter-spacing:.6px;text-transform:uppercase;padding:14px 10px 6px;">Đào tạo</div>
+      <button onClick="{{ nav.classes.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.classes.color }};background:{{ nav.classes.bg }};border-left:3px solid {{ nav.classes.bar }};font-size:13.5px;font-weight:{{ nav.classes.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Lớp học
+      </button>
+      <button onClick="{{ nav.attendance.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.attendance.color }};background:{{ nav.attendance.bg }};border-left:3px solid {{ nav.attendance.bar }};font-size:13.5px;font-weight:{{ nav.attendance.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Điểm danh
+      </button>
+      <button onClick="{{ nav.calendar.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.calendar.color }};background:{{ nav.calendar.bg }};border-left:3px solid {{ nav.calendar.bar }};font-size:13.5px;font-weight:{{ nav.calendar.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Lịch học
+      </button>
+
+      <div style="font-size:10.5px;font-weight:700;color:#c79aaa;letter-spacing:.6px;text-transform:uppercase;padding:14px 10px 6px;">Tài chính & báo cáo</div>
+      <button onClick="{{ nav.finance.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.finance.color }};background:{{ nav.finance.bg }};border-left:3px solid {{ nav.finance.bar }};font-size:13.5px;font-weight:{{ nav.finance.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+        Tài chính
+      </button>
+      <button onClick="{{ nav.reports.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.reports.color }};background:{{ nav.reports.bg }};border-left:3px solid {{ nav.reports.bar }};font-size:13.5px;font-weight:{{ nav.reports.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+        Báo cáo
+      </button>
+
+      <div style="font-size:10.5px;font-weight:700;color:#c79aaa;letter-spacing:.6px;text-transform:uppercase;padding:14px 10px 6px;">Cổng truy cập</div>
+      <button onClick="{{ nav.teacher.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.teacher.color }};background:{{ nav.teacher.bg }};border-left:3px solid {{ nav.teacher.bar }};font-size:13.5px;font-weight:{{ nav.teacher.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        Cổng giáo viên
+      </button>
+      <button onClick="{{ nav.student.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.student.color }};background:{{ nav.student.bg }};border-left:3px solid {{ nav.student.bar }};font-size:13.5px;font-weight:{{ nav.student.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+        Cổng học viên
+      </button>
+      <div style="font-size:10.5px;font-weight:700;color:#c79aaa;letter-spacing:.6px;text-transform:uppercase;padding:14px 10px 6px;">Hệ thống</div>
+      <button onClick="{{ nav.uikit.go }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:{{ nav.uikit.color }};background:{{ nav.uikit.bg }};border-left:3px solid {{ nav.uikit.bar }};font-size:13.5px;font-weight:{{ nav.uikit.weight }};margin-bottom:2px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        Component Library
+      </button>
+      <button onClick="{{ openAi }}" style="display:flex;align-items:center;gap:11px;height:36px;width:100%;padding:0 10px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;color:#7a5c68;background:transparent;font-size:13.5px;font-weight:500;margin-top:8px;" style-hover="background:rgba(255,255,255,0.55);">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
+        AI Assistant
+      </button>
+    </nav>
+
+    <div style="border-top:1px solid #f2d4df;padding:10px 12px;display:flex;align-items:center;gap:10px;">
+      <span class="av"><image-slot id="av-user-tranmy" shape="circle" placeholder="" fit="cover" style="width:34px;height:34px;"></image-slot></span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:#4a2230;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Trần Mỹ</div>
+        <div style="font-size:11px;color:#b07e90;">Giáo vụ</div>
+      </div>
+      <button aria-label="Settings" style="flex:none;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:none;background:none;border-radius:7px;cursor:pointer;color:#b07e90;" style-hover="background:rgba(255,255,255,0.6);">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================== CONTEXT PANE ===================== -->
+  <sc-if value="{{ showContext }}" hint-placeholder-val="{{ false }}">
+  <section style="flex:none;width:326px;display:flex;flex-direction:column;background:rgba(255,252,253,0.82);border-right:1px solid #f2d4df;">
+
+    <!-- students context -->
+    <sc-if value="{{ isStudents }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <div style="height:56px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 18px;border-bottom:1px solid #f4dde5;">
+        <span style="font-size:16px;font-weight:600;color:#4a2230;">Học viên</span>
+        <button aria-label="Tùy chọn" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;background:none;border-radius:7px;cursor:pointer;color:#b07e90;" style-hover="background:#fbe6ee;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+      </div>
+      <div style="padding:12px 14px 10px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;height:36px;padding:0 11px;border-radius:8px;background:#fff;border:1px solid #f1d2de;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#bd8d9c" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span style="font-size:13px;color:#bd8d9c;">Tìm theo tên hoặc mã…</span>
+        </div>
+        <div style="display:flex;background:#fbe6ee;border-radius:8px;padding:3px;gap:2px;">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="3">
+            <button onClick="{{ f.onSelect }}" style="flex:1;height:28px;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:{{ f.weight }};background:{{ f.bg }};color:{{ f.color }};box-shadow:{{ f.shadow }};">{{ f.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;padding-bottom:12px;">
+        <sc-for list="{{ students }}" as="s" hint-placeholder-count="8">
+          <button onClick="{{ s.onSelect }}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:none;border-bottom:1px solid #f7e6ec;background:{{ s.bg }};padding:10px 14px 10px 11px;cursor:pointer;border-left:3px solid {{ s.barColor }};font-family:inherit;" style-hover="background:#fdf2f6;">
+            <span class="av" style="flex:none;"><image-slot id="{{ s.slotId }}" shape="circle" placeholder="" fit="cover" style="width:38px;height:38px;"></image-slot></span>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+                <span style="font-size:13.5px;font-weight:600;color:#3d2530;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.name }}</span>
+                <span style="flex:none;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:{{ s.badgeBg }};color:{{ s.badgeColor }};">{{ s.badge }}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:8px;margin-top:4px;">
+                <span style="font-size:11.5px;color:#a98c98;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ s.sub }}</span>
+                <span style="flex:none;font-size:11px;color:#bd97a5;">{{ s.note }}</span>
+              </div>
+            </div>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- classes context -->
+    <sc-if value="{{ isClasses }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <div style="height:56px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 18px;border-bottom:1px solid #f4dde5;">
+        <span style="font-size:16px;font-weight:600;color:#4a2230;">Lớp học</span>
+        <span style="font-size:11.5px;color:#a98c98;">18 lớp</span>
+      </div>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;padding:8px 0;">
+        <sc-for list="{{ classes }}" as="c" hint-placeholder-count="5">
+          <button onClick="{{ c.onSelect }}" style="display:block;width:100%;text-align:left;border:none;border-bottom:1px solid #f7e6ec;background:{{ c.bg }};padding:12px 16px 12px 13px;cursor:pointer;border-left:3px solid {{ c.barColor }};font-family:inherit;" style-hover="background:#fdf2f6;">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+              <span style="font-size:13.5px;font-weight:600;color:#3d2530;">{{ c.id }}</span>
+              <span style="flex:none;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:{{ c.stBg }};color:{{ c.stColor }};">{{ c.stLabel }}</span>
+            </div>
+            <div style="font-size:11.5px;color:#a98c98;margin-top:4px;">{{ c.course }} · {{ c.teacher }}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+              <div style="flex:1;height:5px;border-radius:3px;background:#f6dde6;overflow:hidden;"><div style="height:100%;width:{{ c.progress }};background:linear-gradient(90deg,#f7a8c4,#d6557e);border-radius:3px;"></div></div>
+              <span style="font-size:11px;color:#b8456a;font-weight:600;font-variant-numeric:tabular-nums;">{{ c.progress }}</span>
+            </div>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- finance context -->
+    <sc-if value="{{ isFinance }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <div style="height:56px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 18px;border-bottom:1px solid #f4dde5;">
+        <span style="font-size:16px;font-weight:600;color:#4a2230;">Hóa đơn</span>
+        <span style="font-size:11.5px;color:#c44a3f;font-weight:600;">12 quá hạn</span>
+      </div>
+      <div style="padding:12px 14px 10px;">
+        <div style="display:flex;background:#fbe6ee;border-radius:8px;padding:3px;gap:2px;">
+          <sc-for list="{{ finFilters }}" as="f" hint-placeholder-count="4">
+            <button onClick="{{ f.onSelect }}" style="flex:1;height:28px;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:{{ f.weight }};background:{{ f.bg }};color:{{ f.color }};box-shadow:{{ f.shadow }};">{{ f.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;padding-bottom:12px;">
+        <sc-for list="{{ finList }}" as="i" hint-placeholder-count="6">
+          <button onClick="{{ i.onSelect }}" style="display:block;width:100%;text-align:left;border:none;border-bottom:1px solid #f7e6ec;background:{{ i.bg }};padding:11px 16px 11px 13px;cursor:pointer;border-left:3px solid {{ i.barColor }};font-family:inherit;" style-hover="background:#fdf2f6;">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+              <span style="font-size:13px;font-weight:600;color:#3d2530;font-variant-numeric:tabular-nums;">{{ i.id }}</span>
+              <span style="flex:none;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:{{ i.stBg }};color:{{ i.stColor }};">{{ i.sl }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-top:5px;">
+              <span style="font-size:11.5px;color:#a98c98;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ i.student }}</span>
+              <span style="flex:none;font-size:12px;font-weight:600;color:#3d2530;font-variant-numeric:tabular-nums;">{{ i.total }}</span>
+            </div>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+  </section>
+  </sc-if>
+
+  <!-- ===================== MAIN WORKSPACE ===================== -->
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column;background:#fffdfe;">
+
+    <!-- ============ DASHBOARD ============ -->
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid #f1dbe3;">
+        <div><div style="font-size:16px;font-weight:600;color:#3d2530;">Xin chào, Trần Mỹ</div></div>
+        <span style="font-size:12.5px;color:#a98c98;">· Thứ Sáu, 20/06/2026</span>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button style="height:34px;padding:0 13px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;">Đăng ký học viên</button>
+          <button style="height:34px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);box-shadow:0 3px 9px rgba(212,86,127,0.28);" style-hover="filter:brightness(1.05);">Tạo lớp</button>
+        </div>
+      </header>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;padding:24px 30px 44px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+          <sc-for list="{{ dashTiles }}" as="t" hint-placeholder-count="4">
+            <div style="border:1px solid #f3d9e1;border-radius:12px;padding:15px 16px;background:{{ t.bg }};">
+              <div style="font-size:12px;color:#a98c98;font-weight:500;">{{ t.label }}</div>
+              <div style="font-size:25px;font-weight:700;margin-top:6px;color:{{ t.valueColor }};font-variant-numeric:tabular-nums;">{{ t.value }}</div>
+              <div style="font-size:11.5px;margin-top:3px;color:{{ t.noteColor }};">{{ t.note }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-bottom:18px;">
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid #f6e3ea;font-size:14px;font-weight:600;color:#4a2230;">Lịch hôm nay</div>
+            <sc-for list="{{ todaySessions }}" as="e" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:13px;padding:12px 18px;border-bottom:1px solid #f8eaef;">
+                <span style="font-size:13px;font-weight:600;color:#b8456a;width:46px;font-variant-numeric:tabular-nums;">{{ e.time }}</span>
+                <span style="width:9px;height:9px;border-radius:50%;background:{{ e.dot }};flex:none;"></span>
+                <div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:500;color:#3d2530;">{{ e.klass }} · {{ e.label }}</div><div style="font-size:11.5px;color:#a98c98;">{{ e.teacher }} · {{ e.room }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;overflow:hidden;">
+            <div style="padding:14px 18px;border-bottom:1px solid #f6e3ea;font-size:14px;font-weight:600;color:#4a2230;">Cảnh báo cần xử lý</div>
+            <sc-for list="{{ dashAlerts }}" as="a" hint-placeholder-count="4">
+              <div style="display:flex;align-items:flex-start;gap:11px;padding:11px 18px;border-bottom:1px solid #f8eaef;">
+                <span style="width:8px;height:8px;border-radius:50%;background:{{ a.dot }};flex:none;margin-top:5px;"></span>
+                <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:#3d2530;">{{ a.title }}</div><div style="font-size:11.5px;color:#a98c98;margin-top:1px;">{{ a.detail }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:18px;">
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:16px 18px;">
+            <div style="font-size:14px;font-weight:600;color:#4a2230;margin-bottom:14px;">Tiến độ các lớp</div>
+            <sc-for list="{{ classProgress }}" as="p" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">
+                <span style="font-size:12.5px;color:#7a5c68;width:80px;">{{ p.name }}</span>
+                <div style="flex:1;height:7px;border-radius:4px;background:#f6dde6;overflow:hidden;"><div style="height:100%;width:{{ p.pct }};background:linear-gradient(90deg,#f7a8c4,#d6557e);border-radius:4px;"></div></div>
+                <span style="font-size:12px;color:#b8456a;font-weight:600;width:36px;text-align:right;font-variant-numeric:tabular-nums;">{{ p.pct }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:16px 18px;">
+            <div style="font-size:14px;font-weight:600;color:#4a2230;margin-bottom:14px;">Hoạt động gần đây</div>
+            <sc-for list="{{ dashActivity }}" as="h" hint-placeholder-count="4">
+              <div style="display:flex;gap:12px;margin-bottom:13px;">
+                <span style="width:9px;height:9px;border-radius:50%;background:{{ h.dot }};flex:none;margin-top:4px;"></span>
+                <div style="flex:1;"><div style="font-size:13px;color:#3d2530;">{{ h.text }}</div><div style="font-size:11px;color:#bd97a5;margin-top:1px;">{{ h.time }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ TUYỂN SINH / CRM KANBAN ============ -->
+    <sc-if value="{{ isCrm }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid #f1dbe3;">
+        <span style="font-size:16px;font-weight:600;color:#3d2530;">Tuyển sinh · CRM Pipeline</span>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+          <div style="display:flex;background:#fbe6ee;border-radius:8px;padding:3px;gap:2px;">
+            <button style="height:28px;padding:0 12px;border:none;border-radius:6px;background:#fff;color:#b8456a;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(180,80,120,0.18);">Kanban</button>
+            <button style="height:28px;padding:0 12px;border:none;border-radius:6px;background:transparent;color:#a07c8a;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Danh sách</button>
+          </div>
+          <button style="height:34px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);box-shadow:0 3px 9px rgba(212,86,127,0.28);" style-hover="filter:brightness(1.05);">Thêm lead</button>
+        </div>
+      </header>
+      <div class="sk-scroll" style="flex:1;overflow:auto;padding:20px 24px;">
+        <div style="display:flex;gap:16px;align-items:flex-start;min-width:max-content;">
+          <sc-for list="{{ crmCols }}" as="col" hint-placeholder-count="5">
+            <div style="flex:none;width:248px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 10px;">
+                <div style="display:flex;align-items:center;gap:8px;"><span style="width:9px;height:9px;border-radius:50%;background:{{ col.dot }};"></span><span style="font-size:13px;font-weight:600;color:#4a2230;">{{ col.title }}</span><span style="font-size:11px;color:#bd97a5;">{{ col.count }}</span></div>
+                <span style="font-size:11px;color:#a98c98;font-variant-numeric:tabular-nums;">{{ col.total }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ col.cards }}" as="c" hint-placeholder-count="2">
+                  <div style="background:#fff;border:1px solid #f3d9e1;border-radius:10px;padding:12px 13px;cursor:grab;box-shadow:0 1px 2px rgba(180,80,120,0.06);" style-hover="border-color:#ecbcce;">
+                    <div style="display:flex;align-items:center;gap:9px;">
+                      <span class="av" style="flex:none;"><image-slot id="{{ c.slotId }}" shape="circle" placeholder="" fit="cover" style="width:30px;height:30px;"></image-slot></span>
+                      <span style="font-size:13px;font-weight:600;color:#3d2530;">{{ c.name }}</span>
+                    </div>
+                    <div style="font-size:11.5px;color:#a98c98;margin-top:8px;">{{ c.interest }}</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:9px;">
+                      <span style="font-size:10.5px;color:#9b7a86;background:#fbeef3;border-radius:5px;padding:2px 7px;">{{ c.source }}</span>
+                      <span style="font-size:12px;font-weight:600;color:#b8456a;font-variant-numeric:tabular-nums;">{{ c.value }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ HỌC VIÊN (DETAIL) ============ -->
+    <sc-if value="{{ isStudents }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid #f1dbe3;">
+        <span class="av" style="flex:none;"><image-slot id="{{ cur.slotId }}" shape="circle" placeholder="" fit="cover" style="width:36px;height:36px;"></image-slot></span>
+        <div style="min-width:0;display:flex;align-items:baseline;gap:9px;">
+          <span style="font-size:16px;font-weight:600;color:#3d2530;white-space:nowrap;">{{ cur.name }}</span>
+          <span style="font-size:13px;color:#bd97a5;">/</span>
+          <span style="font-size:13px;color:#a98c98;font-variant-numeric:tabular-nums;">{{ cur.code }}</span>
+          <span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:6px;background:{{ cur.statusBg }};color:{{ cur.statusColor }};white-space:nowrap;">{{ cur.statusLabel }}</span>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+          <button style="display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Chia sẻ</button>
+          <button style="height:34px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);box-shadow:0 3px 9px rgba(212,86,127,0.28);" style-hover="filter:brightness(1.05);">Lưu</button>
+        </div>
+      </header>
+      <div style="flex:none;display:flex;align-items:center;padding:0 24px;border-bottom:1px solid #f1dbe3;">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="6">
+          <button onClick="{{ t.onSelect }}" style="border:none;background:none;padding:13px 2px 12px;margin-right:28px;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:{{ t.weight }};color:{{ t.color }};border-bottom:{{ t.border }};white-space:nowrap;">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;">
+        <div style="padding:26px 30px 44px;max-width:1080px;">
+
+          <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:30px;">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+              <div style="border:1px solid #f3d9e1;border-radius:12px;padding:15px 16px;background:#fff;"><div style="font-size:12px;color:#a98c98;font-weight:500;">Chuyên cần</div><div style="font-size:25px;font-weight:700;color:#3d2530;margin-top:6px;font-variant-numeric:tabular-nums;">{{ cur.att }}</div><div style="font-size:11.5px;color:#c0708a;margin-top:3px;">{{ cur.attNote }}</div></div>
+              <div style="border:1px solid #f3d9e1;border-radius:12px;padding:15px 16px;background:#fff;"><div style="font-size:12px;color:#a98c98;font-weight:500;">Điểm trung bình</div><div style="font-size:25px;font-weight:700;color:#3d2530;margin-top:6px;font-variant-numeric:tabular-nums;">{{ cur.grade }}</div><div style="font-size:11.5px;color:#3f9b6e;margin-top:3px;">Trên thang 10</div></div>
+              <div style="border:1px solid #f3d9e1;border-radius:12px;padding:15px 16px;background:#fff;"><div style="font-size:12px;color:#a98c98;font-weight:500;">Buổi đã học</div><div style="font-size:25px;font-weight:700;color:#3d2530;margin-top:6px;font-variant-numeric:tabular-nums;">{{ cur.done }}</div><div style="font-size:11.5px;color:#a98c98;margin-top:3px;">Tổng 30 buổi</div></div>
+              <div style="border:1px solid #f3d9e1;border-radius:12px;padding:15px 16px;background:linear-gradient(135deg,#fdeef4,#fbe0ea);"><div style="font-size:12px;color:#a8607b;font-weight:500;">Tiến độ khóa</div><div style="font-size:25px;font-weight:700;color:#b8456a;margin-top:6px;font-variant-numeric:tabular-nums;">{{ cur.progress }}</div><div style="height:6px;border-radius:4px;background:rgba(255,255,255,0.6);margin-top:9px;overflow:hidden;"><div style="height:100%;width:{{ cur.progress }};background:linear-gradient(90deg,#f7a8c4,#d6557e);border-radius:4px;"></div></div></div>
+            </div>
+
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:14px;">Thông tin cá nhân</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px 32px;">
+                <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Họ và tên</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ cur.name }}</div></div>
+                <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Mã học viên</div><div style="font-size:14px;color:#3d2530;font-weight:500;font-variant-numeric:tabular-nums;">{{ cur.code }}</div></div>
+                <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Ngày sinh</div><div style="font-size:14px;color:#3d2530;font-weight:500;">14/03/2004</div></div>
+                <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Điện thoại</div><div style="font-size:14px;color:#3d2530;font-weight:500;">090 234 56 78</div></div>
+                <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Email</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ cur.email }}</div></div>
+                <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Trình độ đầu vào</div><div style="font-size:14px;color:#3d2530;font-weight:500;">Sơ cấp (N5)</div></div>
+              </div>
+            </div>
+            <div style="height:1px;background:#f4dde5;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+              <div>
+                <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:14px;">Người giám hộ</div>
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <span class="av" style="flex:none;"><image-slot id="av-guardian-an" shape="circle" placeholder="" fit="cover" style="width:42px;height:42px;"></image-slot></span>
+                  <div><div style="font-size:14px;font-weight:600;color:#3d2530;">Nguyễn Văn Hùng</div><div style="font-size:12px;color:#a98c98;">Bố · 091 555 12 34</div></div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:14px;">Lớp đang học</div>
+                <div style="border:1px solid #f3d9e1;border-radius:11px;padding:14px 16px;background:#fff;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:14px;font-weight:600;color:#3d2530;">{{ cur.klass }} · N5 cấp tốc</span><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;background:#e4f3ea;color:#2f8a5d;">Active</span></div>
+                  <div style="font-size:12.5px;color:#a98c98;margin-top:7px;">GV chính: Yamada Kenji · Lịch 2-4-6 · 18:00–20:00</div>
+                </div>
+              </div>
+            </div>
+            <div style="height:1px;background:#f4dde5;"></div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:14px;">Cảnh báo gần nhất</div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;gap:11px;align-items:flex-start;border:1px solid #f5dcc5;background:#fdf3e5;border-radius:10px;padding:12px 14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c98a2e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div><div style="font-size:13.5px;font-weight:600;color:#8a5a14;">Vắng 2 buổi gần đây</div><div style="font-size:12.5px;color:#a07c4a;margin-top:2px;">Buổi 8 (12/06) vắng không phép. Cần liên hệ phụ huynh.</div></div></div>
+                <div style="display:flex;gap:11px;align-items:flex-start;border:1px solid #f3cdc9;background:#fdeeec;border-radius:10px;padding:12px 14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c44a3f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><div style="font-size:13.5px;font-weight:600;color:#b03b31;">Học phí quá hạn</div><div style="font-size:12.5px;color:#b06860;margin-top:2px;">Hóa đơn INV-2026-0103 (2.000.000 ₫) đã quá hạn 15/06.</div></div></div>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isEnrollment }}">
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:2px;">Lịch sử đăng ký lớp</div>
+            <div style="border:1px solid #f3d9e1;border-radius:11px;padding:15px 17px;background:#fff;display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;font-weight:600;color:#3d2530;">N5-TP-001 · N5 cấp tốc</div><div style="font-size:12.5px;color:#a98c98;margin-top:4px;">Khai giảng 27/05/2026 · GV Yamada Kenji · Net fee 6.000.000 ₫</div></div><span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:#e4f3ea;color:#2f8a5d;">Active</span></div>
+            <div style="border:1px solid #f3d9e1;border-radius:11px;padding:15px 17px;background:#fff;display:flex;align-items:center;justify-content:space-between;"><div><div style="font-size:14px;font-weight:600;color:#3d2530;">N5-Foundation</div><div style="font-size:12.5px;color:#a98c98;margin-top:4px;">01/2026 – 04/2026 · GV Sato Aiko · Hoàn thành 100%</div></div><span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:#eef0f4;color:#7a7986;">Completed</span></div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isAttendanceTab }}">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div style="font-size:15px;font-weight:600;color:#4a2230;">Chuyên cần · 8 buổi gần nhất</div><div style="font-size:13px;color:#a98c98;">Tỷ lệ có mặt <span style="color:#b8456a;font-weight:600;">{{ cur.att }}</span></div></div>
+            <div style="border:1px solid #f3d9e1;border-radius:11px;overflow:hidden;background:#fff;">
+              <table style="width:100%;border-collapse:collapse;">
+                <thead><tr style="background:#fdf2f6;"><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Buổi</th><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Ngày</th><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Trạng thái</th><th style="text-align:right;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Đi muộn</th><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Ghi chú</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ attendance }}" as="a" hint-placeholder-count="8">
+                    <tr style="border-top:1px solid #f6e3ea;" style-hover="background:#fefafb;"><td style="padding:{{ rowPad }};font-size:13.5px;font-weight:500;color:#3d2530;">{{ a.session }}</td><td style="padding:{{ rowPad }};font-size:13px;color:#7a5c68;font-variant-numeric:tabular-nums;">{{ a.date }}</td><td style="padding:{{ rowPad }};"><span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:5px;background:{{ a.stBg }};color:{{ a.stColor }};">{{ a.status }}</span></td><td style="padding:{{ rowPad }};font-size:13px;color:#7a5c68;text-align:right;font-variant-numeric:tabular-nums;">{{ a.late }}</td><td style="padding:{{ rowPad }};font-size:13px;color:#a98c98;">{{ a.note }}</td></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isGrades }}">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div style="font-size:15px;font-weight:600;color:#4a2230;">Điểm số theo kỹ năng</div><div style="font-size:13px;color:#a98c98;">Điểm TB có trọng số <span style="color:#b8456a;font-weight:600;">{{ cur.grade }}</span></div></div>
+            <div style="border:1px solid #f3d9e1;border-radius:11px;overflow:hidden;background:#fff;">
+              <table style="width:100%;border-collapse:collapse;">
+                <thead><tr style="background:#fdf2f6;"><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Kỹ năng</th><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Buổi</th><th style="text-align:right;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Điểm</th><th style="text-align:right;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Chuẩn hóa</th><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Nhận xét</th></tr></thead>
+                <tbody>
+                  <sc-for list="{{ grades }}" as="g" hint-placeholder-count="7">
+                    <tr style="border-top:1px solid #f6e3ea;" style-hover="background:#fefafb;"><td style="padding:{{ rowPad }};font-size:13.5px;font-weight:500;color:#3d2530;">{{ g.skill }}</td><td style="padding:{{ rowPad }};font-size:13px;color:#7a5c68;">{{ g.session }}</td><td style="padding:{{ rowPad }};font-size:13.5px;font-weight:600;color:#3d2530;text-align:right;font-variant-numeric:tabular-nums;">{{ g.score }}</td><td style="padding:{{ rowPad }};font-size:13px;text-align:right;color:{{ g.normColor }};font-variant-numeric:tabular-nums;">{{ g.norm }}</td><td style="padding:{{ rowPad }};font-size:13px;color:#a98c98;">{{ g.comment }}</td></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isFees }}">
+          <div style="display:flex;flex-direction:column;gap:22px;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+              <div style="border:1px solid #f3d9e1;border-radius:12px;padding:16px;background:#fff;"><div style="font-size:12px;color:#a98c98;">Tổng học phí</div><div style="font-size:23px;font-weight:700;color:#3d2530;margin-top:6px;font-variant-numeric:tabular-nums;">6.000.000 ₫</div></div>
+              <div style="border:1px solid #f3d9e1;border-radius:12px;padding:16px;background:#fff;"><div style="font-size:12px;color:#a98c98;">Đã thu</div><div style="font-size:23px;font-weight:700;color:#2f8a5d;margin-top:6px;font-variant-numeric:tabular-nums;">4.000.000 ₫</div></div>
+              <div style="border:1px solid #f3cdc9;border-radius:12px;padding:16px;background:#fdeeec;"><div style="font-size:12px;color:#b06860;">Còn nợ</div><div style="font-size:23px;font-weight:700;color:#c43232;margin-top:6px;font-variant-numeric:tabular-nums;">2.000.000 ₫</div></div>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:13px;">Hóa đơn</div>
+              <div style="border:1px solid #f3d9e1;border-radius:11px;overflow:hidden;background:#fff;">
+                <table style="width:100%;border-collapse:collapse;">
+                  <thead><tr style="background:#fdf2f6;"><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Mã hóa đơn</th><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Kỳ</th><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Hạn</th><th style="text-align:right;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Số tiền</th><th style="text-align:right;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Trạng thái</th></tr></thead>
+                  <tbody>
+                    <sc-for list="{{ stuInvoices }}" as="i" hint-placeholder-count="3">
+                      <tr style="border-top:1px solid #f6e3ea;" style-hover="background:#fefafb;"><td style="padding:{{ rowPad }};font-size:13.5px;font-weight:500;color:#3d2530;font-variant-numeric:tabular-nums;">{{ i.id }}</td><td style="padding:{{ rowPad }};font-size:13px;color:#7a5c68;">{{ i.term }}</td><td style="padding:{{ rowPad }};font-size:13px;color:#7a5c68;font-variant-numeric:tabular-nums;">{{ i.due }}</td><td style="padding:{{ rowPad }};font-size:13.5px;font-weight:600;color:#3d2530;text-align:right;font-variant-numeric:tabular-nums;">{{ i.amount }}</td><td style="padding:{{ rowPad }};text-align:right;"><span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:5px;background:{{ i.stBg }};color:{{ i.stColor }};">{{ i.status }}</span></td></tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isHistory }}">
+          <div>
+            <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:16px;">Lịch sử hoạt động</div>
+            <div style="display:flex;flex-direction:column;">
+              <sc-for list="{{ history }}" as="h" hint-placeholder-count="6">
+                <div style="display:flex;gap:14px;"><div style="flex:none;display:flex;flex-direction:column;align-items:center;"><div style="width:11px;height:11px;border-radius:50%;background:{{ h.dot }};margin-top:4px;"></div><div style="flex:1;width:2px;background:#f4dde5;"></div></div><div style="padding-bottom:20px;"><div style="font-size:11.5px;color:#bd97a5;font-variant-numeric:tabular-nums;">{{ h.date }}</div><div style="font-size:13.5px;font-weight:500;color:#3d2530;margin-top:2px;">{{ h.title }}</div><div style="font-size:12.5px;color:#a98c98;margin-top:2px;">{{ h.detail }}</div></div></div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ LỚP HỌC (DETAIL) ============ -->
+    <sc-if value="{{ isClasses }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:11px;padding:0 18px;border-bottom:1px solid #f1dbe3;">
+        <div style="min-width:0;display:flex;align-items:baseline;gap:9px;"><span style="font-size:16px;font-weight:600;color:#3d2530;">{{ classCur.id }}</span><span style="font-size:13px;color:#a98c98;">· {{ classCur.course }}</span><span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:6px;background:{{ classCur.stBg }};color:{{ classCur.stColor }};">{{ classCur.stLabel }}</span></div>
+        <div style="margin-left:auto;display:flex;gap:8px;"><button style="height:34px;padding:0 13px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;">Sinh lịch</button><button style="height:34px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);box-shadow:0 3px 9px rgba(212,86,127,0.28);" style-hover="filter:brightness(1.05);">Mở buổi hôm nay</button></div>
+      </header>
+      <div style="flex:none;display:flex;align-items:center;padding:0 24px;border-bottom:1px solid #f1dbe3;">
+        <sc-for list="{{ classTabs }}" as="t" hint-placeholder-count="3">
+          <button onClick="{{ t.onSelect }}" style="border:none;background:none;padding:13px 2px 12px;margin-right:28px;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:{{ t.weight }};color:{{ t.color }};border-bottom:{{ t.border }};white-space:nowrap;">{{ t.label }}</button>
+        </sc-for>
+      </div>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;"><div style="padding:26px 30px 44px;max-width:1080px;">
+
+        <sc-if value="{{ isClassOverview }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:28px;">
+          <div>
+            <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:14px;">Thông tin lớp</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px 32px;">
+              <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Khóa học</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ classCur.course }}</div></div>
+              <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Giáo viên chính</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ classCur.teacher }}</div></div>
+              <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Giáo viên thay thế</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ classCur.teacher2 }}</div></div>
+              <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Lịch học</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ classCur.schedule }}</div></div>
+              <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Phòng học</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ classCur.room }}</div></div>
+              <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Sĩ số</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ classCur.size }}</div></div>
+              <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Khai giảng</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ classCur.start }}</div></div>
+              <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Tổng số buổi</div><div style="font-size:14px;color:#3d2530;font-weight:500;">{{ classCur.total }}</div></div>
+              <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Học phí chuẩn</div><div style="font-size:14px;color:#3d2530;font-weight:500;font-variant-numeric:tabular-nums;">{{ classCur.fee }}</div></div>
+            </div>
+          </div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;padding:16px 18px;background:linear-gradient(135deg,#fdeef4,#fbe0ea);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><span style="font-size:13px;color:#a8607b;font-weight:500;">Tiến độ khóa học</span><span style="font-size:14px;color:#b8456a;font-weight:700;font-variant-numeric:tabular-nums;">{{ classCur.progress }}</span></div>
+            <div style="height:8px;border-radius:5px;background:rgba(255,255,255,0.6);overflow:hidden;"><div style="height:100%;width:{{ classCur.progress }};background:linear-gradient(90deg,#f7a8c4,#d6557e);border-radius:5px;"></div></div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isClassRoster }}">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:14px;">Danh sách học viên · {{ classCur.size }}</div>
+          <div style="border:1px solid #f3d9e1;border-radius:11px;overflow:hidden;background:#fff;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr style="background:#fdf2f6;"><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Học viên</th><th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Mã</th><th style="text-align:right;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Chuyên cần</th><th style="text-align:right;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Điểm TB</th><th style="text-align:right;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Trạng thái</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ classRoster }}" as="r" hint-placeholder-count="6">
+                  <tr style="border-top:1px solid #f6e3ea;" style-hover="background:#fefafb;">
+                    <td style="padding:9px 16px;"><div style="display:flex;align-items:center;gap:10px;"><span class="av" style="flex:none;"><image-slot id="{{ r.slotId }}" shape="circle" placeholder="" fit="cover" style="width:32px;height:32px;"></image-slot></span><span style="font-size:13.5px;font-weight:500;color:#3d2530;">{{ r.name }}</span></div></td>
+                    <td style="padding:9px 16px;font-size:13px;color:#7a5c68;font-variant-numeric:tabular-nums;">{{ r.code }}</td>
+                    <td style="padding:9px 16px;font-size:13px;color:#7a5c68;text-align:right;font-variant-numeric:tabular-nums;">{{ r.att }}</td>
+                    <td style="padding:9px 16px;font-size:13.5px;font-weight:600;color:#3d2530;text-align:right;font-variant-numeric:tabular-nums;">{{ r.grade }}</td>
+                    <td style="padding:9px 16px;text-align:right;"><span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:5px;background:{{ r.stBg }};color:{{ r.stColor }};">{{ r.stLabel }}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isClassSessions }}">
+        <div>
+          <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:16px;">Buổi học</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <sc-for list="{{ classSessions }}" as="s" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:14px;border:1px solid {{ s.border }};border-radius:11px;padding:13px 16px;background:{{ s.bg }};">
+                <div style="flex:none;width:62px;"><div style="font-size:13.5px;font-weight:600;color:#3d2530;">{{ s.label }}</div></div>
+                <div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:500;color:#3d2530;">{{ s.topic }}</div><div style="font-size:12px;color:#a98c98;margin-top:2px;">{{ s.date }}</div></div>
+                <span style="flex:none;font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:{{ s.stBg }};color:{{ s.stColor }};">{{ s.stLabel }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+      </div></div>
+    </div>
+    </sc-if>
+
+    <!-- ============ ĐIỂM DANH ============ -->
+    <sc-if value="{{ isAttendance }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid #f1dbe3;">
+        <span style="font-size:16px;font-weight:600;color:#3d2530;">Điểm danh</span>
+        <span style="font-size:13px;color:#a98c98;">N5-TP-001 · Buổi 9 · Thứ Sáu 20/06 · 18:00</span>
+      </header>
+      <div style="height:48px;flex:none;display:flex;align-items:center;gap:10px;padding:0 24px;border-bottom:1px solid #f4dde5;background:#fffafb;">
+        <button onClick="{{ markAllPresent }}" style="height:32px;padding:0 13px;border:1px solid #f0d3dd;background:#fff;border-radius:7px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;">Có mặt tất cả</button>
+        <button onClick="{{ copyPrev }}" style="height:32px;padding:0 13px;border:1px solid #f0d3dd;background:#fff;border-radius:7px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;">Sao chép buổi trước</button>
+        <span style="margin-left:auto;font-size:12.5px;color:#a98c98;">Tự lưu nháp · cập nhật lúc 18:02</span>
+      </div>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;">
+        <div style="padding:18px 24px 28px;">
+          <sc-for list="{{ attRoster }}" as="r" hint-placeholder-count="8">
+            <div style="display:flex;align-items:center;gap:14px;padding:9px 4px;border-bottom:1px solid #f6e3ea;">
+              <span class="av" style="flex:none;"><image-slot id="{{ r.slotId }}" shape="circle" placeholder="" fit="cover" style="width:38px;height:38px;"></image-slot></span>
+              <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:500;color:#3d2530;">{{ r.name }}</div><div style="font-size:11.5px;color:#a98c98;font-variant-numeric:tabular-nums;">{{ r.code }}</div></div>
+              <div style="display:flex;background:#fbe6ee;border-radius:8px;padding:3px;gap:2px;flex:none;">
+                <sc-for list="{{ r.opts }}" as="o" hint-placeholder-count="3">
+                  <button onClick="{{ o.onClick }}" style="height:30px;padding:0 14px;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:{{ o.weight }};background:{{ o.bg }};color:{{ o.color }};box-shadow:{{ o.shadow }};">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:none;height:60px;border-top:1px solid #f1dbe3;background:#fffafb;display:flex;align-items:center;gap:18px;padding:0 24px;">
+        <span style="font-size:13px;color:#7a5c68;">Tổng <span style="font-weight:600;color:#3d2530;">{{ attTotal }}</span> học viên</span>
+        <span style="font-size:13px;color:#2f8a5d;font-weight:600;">Có mặt {{ attP }}</span>
+        <span style="font-size:13px;color:#b07a1f;font-weight:600;">Muộn {{ attL }}</span>
+        <span style="font-size:13px;color:#c44a3f;font-weight:600;">Vắng {{ attA }}</span>
+        <button style="margin-left:auto;height:38px;padding:0 20px;border:none;border-radius:9px;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);box-shadow:0 3px 10px rgba(212,86,127,0.3);" style-hover="filter:brightness(1.05);">Lưu & hoàn tất buổi</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ LỊCH HỌC (CALENDAR) ============ -->
+    <sc-if value="{{ isCalendar }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid #f1dbe3;">
+        <span style="font-size:16px;font-weight:600;color:#3d2530;">Lịch học</span>
+        <span style="font-size:13px;color:#a98c98;">Tuần 15–21/06/2026</span>
+        <div style="margin-left:auto;display:flex;background:#fbe6ee;border-radius:8px;padding:3px;gap:2px;">
+          <button style="height:28px;padding:0 12px;border:none;border-radius:6px;background:transparent;color:#a07c8a;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Tháng</button>
+          <button style="height:28px;padding:0 12px;border:none;border-radius:6px;background:#fff;color:#b8456a;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(180,80,120,0.18);">Tuần</button>
+          <button style="height:28px;padding:0 12px;border:none;border-radius:6px;background:transparent;color:#a07c8a;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Ngày</button>
+        </div>
+      </header>
+      <div class="sk-scroll" style="flex:1;overflow:auto;padding:18px 24px;">
+        <div style="display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:12px;min-width:max-content;">
+          <sc-for list="{{ calDays }}" as="d" hint-placeholder-count="7">
+            <div>
+              <div style="display:flex;align-items:baseline;gap:6px;padding:0 2px 10px;"><span style="font-size:12.5px;font-weight:600;color:{{ d.labelColor }};">{{ d.label }}</span><span style="font-size:12.5px;color:#bd97a5;font-variant-numeric:tabular-nums;">{{ d.date }}</span></div>
+              <div style="display:flex;flex-direction:column;gap:8px;min-height:120px;background:{{ d.bg }};border-radius:10px;padding:8px;">
+                <sc-for list="{{ d.events }}" as="e" hint-placeholder-count="1">
+                  <div style="border-radius:8px;padding:8px 10px;background:{{ e.bg }};border-left:3px solid {{ e.accent }};"><div style="font-size:11.5px;font-weight:600;color:{{ e.accent }};font-variant-numeric:tabular-nums;">{{ e.time }}</div><div style="font-size:12.5px;font-weight:500;color:#3d2530;margin-top:2px;">{{ e.klass }}</div><div style="font-size:11px;color:#a98c98;">{{ e.room }}</div></div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ TÀI CHÍNH (INVOICE DETAIL) ============ -->
+    <sc-if value="{{ isFinance }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:11px;padding:0 18px;border-bottom:1px solid #f1dbe3;">
+        <div style="min-width:0;display:flex;align-items:baseline;gap:9px;"><span style="font-size:16px;font-weight:600;color:#3d2530;font-variant-numeric:tabular-nums;">{{ finCur.id }}</span><span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:6px;background:{{ finCur.stBg }};color:{{ finCur.stColor }};">{{ finCur.sl }}</span></div>
+        <div style="margin-left:auto;display:flex;gap:8px;"><button style="height:34px;padding:0 13px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;">In hóa đơn</button><sc-if value="{{ finCur.outstanding }}" hint-placeholder-val="{{ true }}"><button style="height:34px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);box-shadow:0 3px 9px rgba(212,86,127,0.28);" style-hover="filter:brightness(1.05);">Thu tiền</button></sc-if></div>
+      </header>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;"><div style="padding:26px 30px 44px;max-width:900px;display:flex;flex-direction:column;gap:28px;">
+        <div style="display:flex;align-items:center;gap:13px;">
+          <span class="av" style="flex:none;"><image-slot id="{{ finCur.slotId }}" shape="circle" placeholder="" fit="cover" style="width:46px;height:46px;"></image-slot></span>
+          <div><div style="font-size:15px;font-weight:600;color:#3d2530;">{{ finCur.student }}</div><div style="font-size:12.5px;color:#a98c98;">{{ finCur.klass }} · {{ finCur.term }}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+          <div style="border:1px solid #f3d9e1;border-radius:12px;padding:16px;background:#fff;"><div style="font-size:12px;color:#a98c98;">Tổng hóa đơn</div><div style="font-size:22px;font-weight:700;color:#3d2530;margin-top:6px;font-variant-numeric:tabular-nums;">{{ finCur.total }}</div></div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;padding:16px;background:#fff;"><div style="font-size:12px;color:#a98c98;">Đã thu</div><div style="font-size:22px;font-weight:700;color:#2f8a5d;margin-top:6px;font-variant-numeric:tabular-nums;">{{ finCur.paid }}</div></div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;padding:16px;background:{{ finCur.remainBg }};"><div style="font-size:12px;color:#a98c98;">Còn nợ</div><div style="font-size:22px;font-weight:700;margin-top:6px;color:{{ finCur.remainColor }};font-variant-numeric:tabular-nums;">{{ finCur.remain }}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px 32px;">
+          <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Ngày lập</div><div style="font-size:14px;color:#3d2530;font-weight:500;font-variant-numeric:tabular-nums;">{{ finCur.issued }}</div></div>
+          <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Hạn thu</div><div style="font-size:14px;color:#3d2530;font-weight:500;font-variant-numeric:tabular-nums;">{{ finCur.due }}</div></div>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:14px;">Lịch sử thanh toán</div>
+          <sc-if value="{{ finCur.hasPays }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;">
+            <sc-for list="{{ finCur.pays }}" as="p" hint-placeholder-count="1">
+              <div style="display:flex;gap:14px;"><div style="flex:none;display:flex;flex-direction:column;align-items:center;"><div style="width:11px;height:11px;border-radius:50%;background:#3f9b6e;margin-top:4px;"></div><div style="flex:1;width:2px;background:#f4dde5;"></div></div><div style="padding-bottom:18px;"><div style="font-size:11.5px;color:#bd97a5;font-variant-numeric:tabular-nums;">{{ p.date }}</div><div style="font-size:13.5px;font-weight:500;color:#3d2530;margin-top:2px;">Thu {{ p.amount }}</div><div style="font-size:12.5px;color:#a98c98;">{{ p.method }}</div></div></div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <sc-if value="{{ finCur.noPays }}">
+          <div style="font-size:13px;color:#a98c98;border:1px dashed #ecd0da;border-radius:10px;padding:18px;text-align:center;">Chưa có phiếu thu nào cho hóa đơn này.</div>
+          </sc-if>
+        </div>
+      </div></div>
+    </div>
+    </sc-if>
+
+    <!-- ============ BÁO CÁO ============ -->
+    <sc-if value="{{ isReports }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid #f1dbe3;"><span style="font-size:16px;font-weight:600;color:#3d2530;">Báo cáo</span><span style="font-size:13px;color:#a98c98;">Tháng 06/2026</span></header>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;padding:24px 30px 44px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;">
+          <div style="border:1px solid #f3d9e1;border-radius:12px;padding:16px 18px;background:#fff;"><div style="font-size:12px;color:#a98c98;">Doanh thu đã thu</div><div style="font-size:24px;font-weight:700;color:#2f8a5d;margin-top:6px;font-variant-numeric:tabular-nums;">412,5M ₫</div><div style="font-size:11.5px;color:#a98c98;margin-top:3px;">+8% so với tháng trước</div></div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;padding:16px 18px;background:#fff;"><div style="font-size:12px;color:#a98c98;">Công nợ</div><div style="font-size:24px;font-weight:700;color:#c44a3f;margin-top:6px;font-variant-numeric:tabular-nums;">86,4M ₫</div><div style="font-size:11.5px;color:#a98c98;margin-top:3px;">12 hóa đơn quá hạn</div></div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;padding:16px 18px;background:#fff;"><div style="font-size:12px;color:#a98c98;">Chuyên cần trung bình</div><div style="font-size:24px;font-weight:700;color:#3d2530;margin-top:6px;font-variant-numeric:tabular-nums;">91%</div><div style="font-size:11.5px;color:#a98c98;margin-top:3px;">Toàn trung tâm</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:16px 18px;">
+            <div style="font-size:14px;font-weight:600;color:#4a2230;margin-bottom:16px;">Chuyên cần theo lớp</div>
+            <sc-for list="{{ repAtt }}" as="r" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;"><span style="font-size:12.5px;color:#7a5c68;width:80px;">{{ r.name }}</span><div style="flex:1;height:8px;border-radius:4px;background:#f6dde6;overflow:hidden;"><div style="height:100%;width:{{ r.pct }};background:linear-gradient(90deg,#86c9a4,#3f9b6e);border-radius:4px;"></div></div><span style="font-size:12px;color:#2f8a5d;font-weight:600;width:36px;text-align:right;font-variant-numeric:tabular-nums;">{{ r.pct }}</span></div>
+            </sc-for>
+          </div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:16px 18px;">
+            <div style="font-size:14px;font-weight:600;color:#4a2230;margin-bottom:18px;">Doanh thu 6 tháng</div>
+            <div style="display:flex;align-items:flex-end;gap:14px;height:150px;padding-top:8px;">
+              <sc-for list="{{ repRev }}" as="b" hint-placeholder-count="6">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end;"><div style="width:100%;max-width:34px;height:{{ b.h }};background:linear-gradient(180deg,#f7a8c4,#d6557e);border-radius:6px 6px 0 0;"></div><span style="font-size:11px;color:#a98c98;">{{ b.m }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ TEACHER PORTAL ============ -->
+    <sc-if value="{{ isTeacher }}">
+    <div style="display:flex;flex-direction:column;height:100%;background:linear-gradient(140deg,#fff7fa,#fdedf3);">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 28px;border-bottom:1px solid #f1dbe3;background:rgba(255,253,254,0.7);">
+        <span class="av" style="flex:none;"><image-slot id="av-tea-yamada" shape="circle" placeholder="" fit="cover" style="width:34px;height:34px;"></image-slot></span>
+        <div><div style="font-size:15px;font-weight:600;color:#3d2530;">Yamada Kenji</div><div style="font-size:11.5px;color:#a98c98;">Giáo viên · Hôm nay, Thứ Sáu 20/06</div></div>
+      </header>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;padding:24px 28px 44px;max-width:920px;">
+        <div style="font-size:15px;font-weight:600;color:#4a2230;margin-bottom:13px;">Lịch dạy hôm nay</div>
+        <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:28px;">
+          <sc-for list="{{ teacherToday }}" as="t" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:16px;border:1px solid #f3d9e1;border-radius:12px;padding:15px 18px;background:#fff;">
+              <div style="flex:none;width:74px;"><div style="font-size:14px;font-weight:700;color:#b8456a;font-variant-numeric:tabular-nums;">{{ t.time }}</div></div>
+              <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;color:#3d2530;">{{ t.klass }} · {{ t.label }}</div><div style="font-size:12.5px;color:#a98c98;margin-top:2px;">{{ t.topic }} · {{ t.room }}</div></div>
+              <button style="flex:none;height:36px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);box-shadow:0 3px 9px rgba(212,86,127,0.28);" style-hover="filter:brightness(1.05);">Mở buổi học</button>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;overflow:hidden;">
+            <div style="padding:13px 18px;border-bottom:1px solid #f6e3ea;font-size:13.5px;font-weight:600;color:#4a2230;">Cần hoàn tất</div>
+            <sc-for list="{{ teacherTodo }}" as="t" hint-placeholder-count="2"><div style="padding:11px 18px;border-bottom:1px solid #f8eaef;"><div style="font-size:13px;font-weight:500;color:#3d2530;">{{ t.klass }} · {{ t.label }}</div><div style="font-size:11.5px;color:#c0708a;margin-top:1px;">{{ t.detail }}</div></div></sc-for>
+          </div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;overflow:hidden;">
+            <div style="padding:13px 18px;border-bottom:1px solid #f6e3ea;font-size:13.5px;font-weight:600;color:#4a2230;">Học viên cần chú ý</div>
+            <sc-for list="{{ teacherAttention }}" as="a" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:11px;padding:10px 18px;border-bottom:1px solid #f8eaef;"><span class="av" style="flex:none;"><image-slot id="{{ a.slotId }}" shape="circle" placeholder="" fit="cover" style="width:32px;height:32px;"></image-slot></span><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;color:#3d2530;">{{ a.name }}</div><div style="font-size:11.5px;color:#a98c98;">{{ a.detail }}</div></div></div></sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ STUDENT PORTAL (mobile) ============ -->
+    <sc-if value="{{ isStudentP }}">
+    <div style="height:100%;overflow-y:auto;background:linear-gradient(140deg,#fce3ec,#f7d3e0);display:flex;justify-content:center;padding:28px 16px;" class="sk-scroll">
+      <div style="width:392px;flex:none;border-radius:34px;background:#fff;box-shadow:0 24px 60px rgba(160,60,100,0.28);overflow:hidden;border:7px solid #2a1620;height:fit-content;animation:skpop .3s ease;">
+        <div style="background:linear-gradient(150deg,#e87aa3,#d4567f);padding:22px 20px 26px;color:#fff;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span class="av" style="flex:none;"><image-slot id="av-STU-2026-0034" shape="circle" placeholder="" fit="cover" style="width:46px;height:46px;"></image-slot></span>
+            <div><div style="font-size:12px;opacity:.85;">Xin chào,</div><div style="font-size:18px;font-weight:700;font-family:'Zen Kaku Gothic New',sans-serif;">Nguyễn Văn An</div></div>
+          </div>
+          <div style="margin-top:18px;background:rgba(255,255,255,0.16);border-radius:14px;padding:14px 16px;backdrop-filter:blur(4px);">
+            <div style="font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.5px;">Buổi học tiếp theo</div>
+            <div style="font-size:15px;font-weight:600;margin-top:5px;">N5-TP-001 · Buổi 9</div>
+            <div style="font-size:12.5px;opacity:.9;margin-top:3px;">18:00 hôm nay · P.301 · Bài 9: thể て</div>
+          </div>
+        </div>
+        <div style="padding:18px 18px 8px;">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">
+            <div style="border:1px solid #f3d9e1;border-radius:12px;padding:12px 10px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#b8456a;font-variant-numeric:tabular-nums;">27%</div><div style="font-size:10.5px;color:#a98c98;margin-top:2px;">Tiến độ</div></div>
+            <div style="border:1px solid #f3d9e1;border-radius:12px;padding:12px 10px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#3d2530;font-variant-numeric:tabular-nums;">8.1</div><div style="font-size:10.5px;color:#a98c98;margin-top:2px;">Điểm TB</div></div>
+            <div style="border:1px solid #f3d9e1;border-radius:12px;padding:12px 10px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#c98a2e;font-variant-numeric:tabular-nums;">78%</div><div style="font-size:10.5px;color:#a98c98;margin-top:2px;">Chuyên cần</div></div>
+          </div>
+          <div style="font-size:13.5px;font-weight:600;color:#4a2230;margin-bottom:9px;">Bài tập</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+            <sc-for list="{{ studentHw }}" as="h" hint-placeholder-count="2"><div style="display:flex;align-items:center;justify-content:space-between;border:1px solid #f3d9e1;border-radius:10px;padding:11px 13px;"><div><div style="font-size:13px;font-weight:500;color:#3d2530;">{{ h.title }}</div><div style="font-size:11px;color:#a98c98;margin-top:1px;">{{ h.due }}</div></div><span style="font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:5px;background:{{ h.stBg }};color:{{ h.stColor }};">{{ h.status }}</span></div></sc-for>
+          </div>
+          <div style="border:1px solid #f3cdc9;background:#fdeeec;border-radius:12px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><div><div style="font-size:11.5px;color:#b06860;">Học phí còn lại</div><div style="font-size:17px;font-weight:700;color:#c43232;margin-top:2px;font-variant-numeric:tabular-nums;">2.000.000 ₫</div></div><button style="height:34px;padding:0 15px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);">Thanh toán</button></div>
+        </div>
+        <div style="display:flex;border-top:1px solid #f4dde5;padding:9px 6px 11px;">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#d4567f;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span style="font-size:10px;font-weight:600;">Trang chủ</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#bd97a5;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span style="font-size:10px;">Lịch</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#bd97a5;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span style="font-size:10px;">Bài tập</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#bd97a5;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg><span style="font-size:10px;">Kết quả</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#bd97a5;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg><span style="font-size:10px;">Tài khoản</span></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ COMPONENT LIBRARY ============ -->
+    <sc-if value="{{ isUiKit }}">
+    <div style="display:flex;flex-direction:column;height:100%;">
+      <header style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 24px;border-bottom:1px solid #f1dbe3;">
+        <span style="font-size:16px;font-weight:600;color:#3d2530;">Component Library</span>
+        <span style="font-size:13px;color:#a98c98;">Sakura UI Kit · token + component chuẩn</span>
+      </header>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;padding:26px 30px 60px;max-width:1100px;">
+
+        <!-- BUTTONS -->
+        <div style="margin-bottom:30px;">
+          <div style="font-size:12px;font-weight:700;color:#b8456a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:13px;">Buttons</div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:22px;display:flex;flex-direction:column;gap:18px;">
+            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+              <button style="height:36px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);box-shadow:0 3px 9px rgba(212,86,127,0.28);" style-hover="filter:brightness(1.05);">Primary</button>
+              <button style="height:36px;padding:0 16px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;">Secondary</button>
+              <button style="height:36px;padding:0 14px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#b8456a;" style-hover="background:#fbeef3;">Ghost</button>
+              <button style="height:36px;padding:0 16px;border:1px solid #f3cdc9;background:#fdeeec;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#c43232;" style-hover="background:#fbe0dd;">Danger</button>
+            </div>
+            <div style="height:1px;background:#f6e3ea;"></div>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+              <button style="height:30px;padding:0 12px;border:none;border-radius:7px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);">Small</button>
+              <button style="height:36px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);">Medium</button>
+              <button style="height:40px;padding:0 20px;border:none;border-radius:9px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);">Large</button>
+              <button style="height:36px;padding:0 16px;border:none;border-radius:8px;display:flex;align-items:center;gap:8px;cursor:default;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#eaa0bd,#dd8aa6);"><span style="width:14px;height:14px;border:2px solid rgba(255,255,255,0.5);border-top-color:#fff;border-radius:50%;display:inline-block;animation:skspin .7s linear infinite;"></span>Đang lưu…</button>
+              <button disabled style="height:36px;padding:0 16px;border:none;border-radius:8px;cursor:not-allowed;font-family:inherit;font-size:13px;font-weight:600;color:#c9aab5;background:#f5e7ed;">Disabled</button>
+            </div>
+            <div style="height:1px;background:#f6e3ea;"></div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+              <button aria-label="Sửa" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;color:#8a6573;" style-hover="background:#fdeef3;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg></button>
+              <button aria-label="Xóa" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #f3cdc9;background:#fff;border-radius:8px;cursor:pointer;color:#c44a3f;" style-hover="background:#fdeeec;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+              <button aria-label="Thêm" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;color:#8a6573;" style-hover="background:#fdeef3;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- INPUTS -->
+        <div style="margin-bottom:30px;">
+          <div style="font-size:12px;font-weight:700;color:#b8456a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:13px;">Inputs & controls</div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:22px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px 24px;">
+            <div><div style="font-size:12px;color:#7a5c68;font-weight:500;margin-bottom:6px;">Họ và tên</div><div style="height:36px;display:flex;align-items:center;padding:0 12px;border:1px solid #ecd0da;border-radius:8px;background:#fff;font-size:13px;color:#3d2530;">Nguyễn Văn An</div></div>
+            <div><div style="font-size:12px;color:#7a5c68;font-weight:500;margin-bottom:6px;">Focus</div><div style="height:36px;display:flex;align-items:center;padding:0 12px;border:1px solid #d6557e;border-radius:8px;background:#fff;font-size:13px;color:#3d2530;box-shadow:0 0 0 3px #fbdce7;">STU-2026-0034<span style="width:1px;height:16px;background:#d6557e;margin-left:1px;"></span></div></div>
+            <div><div style="font-size:12px;color:#7a5c68;font-weight:500;margin-bottom:6px;">Error</div><div style="height:36px;display:flex;align-items:center;padding:0 12px;border:1px solid #d4574e;border-radius:8px;background:#fff;font-size:13px;color:#3d2530;">email-sai</div><div style="font-size:11.5px;color:#c43232;margin-top:5px;">Email không hợp lệ.</div></div>
+            <div><div style="font-size:12px;color:#7a5c68;font-weight:500;margin-bottom:6px;">Select</div><div style="height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border:1px solid #ecd0da;border-radius:8px;background:#fff;font-size:13px;color:#3d2530;">N5 cấp tốc<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#bd8d9c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div></div>
+            <div><div style="font-size:12px;color:#7a5c68;font-weight:500;margin-bottom:6px;">Search</div><div style="height:36px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid #ecd0da;border-radius:8px;background:#fff;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#bd8d9c" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span style="font-size:13px;color:#bd8d9c;">Tìm kiếm…</span></div></div>
+            <div><div style="font-size:12px;color:#7a5c68;font-weight:500;margin-bottom:6px;">Segmented</div><div style="display:flex;background:#fbe6ee;border-radius:8px;padding:3px;gap:2px;height:36px;"><button style="flex:1;border:none;border-radius:6px;background:#fff;color:#b8456a;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(180,80,120,0.18);">Tháng</button><button style="flex:1;border:none;border-radius:6px;background:transparent;color:#a07c8a;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Tuần</button><button style="flex:1;border:none;border-radius:6px;background:transparent;color:#a07c8a;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;">Ngày</button></div></div>
+            <div><div style="font-size:12px;color:#7a5c68;font-weight:500;margin-bottom:6px;">Switch</div><div style="display:flex;align-items:center;gap:18px;height:36px;"><span style="width:42px;height:24px;border-radius:13px;background:linear-gradient(135deg,#e87aa3,#d4567f);position:relative;flex:none;"><span style="position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span></span><span style="width:42px;height:24px;border-radius:13px;background:#ecd0da;position:relative;flex:none;"><span style="position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span></span></div></div>
+            <div><div style="font-size:12px;color:#7a5c68;font-weight:500;margin-bottom:6px;">Checkbox</div><div style="display:flex;align-items:center;gap:18px;height:36px;"><span style="width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,#e87aa3,#d4567f);display:flex;align-items:center;justify-content:center;flex:none;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span style="width:20px;height:20px;border-radius:6px;border:1.5px solid #d9c2cb;background:#fff;flex:none;"></span></div></div>
+            <div><div style="font-size:12px;color:#7a5c68;font-weight:500;margin-bottom:6px;">Number / stepper</div><div style="display:flex;align-items:center;height:36px;border:1px solid #ecd0da;border-radius:8px;width:120px;overflow:hidden;"><button style="width:34px;height:100%;border:none;background:#fdf2f6;color:#b8456a;cursor:pointer;font-size:16px;">−</button><span style="flex:1;text-align:center;font-size:13px;color:#3d2530;font-variant-numeric:tabular-nums;">16</span><button style="width:34px;height:100%;border:none;background:#fdf2f6;color:#b8456a;cursor:pointer;font-size:16px;">+</button></div></div>
+          </div>
+        </div>
+
+        <!-- BADGES -->
+        <div style="margin-bottom:30px;">
+          <div style="font-size:12px;font-weight:700;color:#b8456a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:13px;">Badges</div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:22px;display:flex;flex-wrap:wrap;gap:10px;">
+            <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:#e4f3ea;color:#2f8a5d;">Active</span>
+            <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:#e7eefb;color:#4a6fb5;">Upcoming</span>
+            <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:#fbe6cf;color:#b07a1f;">Warning</span>
+            <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:#eef0f4;color:#7a7986;">Cancelled</span>
+            <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:#fbe0dd;color:#c44a3f;">Overdue</span>
+            <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;background:#fbdce7;color:#b8456a;">Sakura</span>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div style="margin-bottom:30px;">
+          <div style="font-size:12px;font-weight:700;color:#b8456a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:13px;">Tabs</div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:0 22px;">
+            <div style="display:flex;gap:28px;border-bottom:1px solid #f1dbe3;">
+              <span style="padding:14px 0 12px;font-size:13.5px;font-weight:600;color:#b8456a;border-bottom:2px solid #d6557e;">Tổng quan</span>
+              <span style="padding:14px 0 12px;font-size:13.5px;font-weight:500;color:#7a5c68;border-bottom:2px solid transparent;">Lớp học</span>
+              <span style="padding:14px 0 12px;font-size:13.5px;font-weight:500;color:#7a5c68;border-bottom:2px solid transparent;">Điểm số</span>
+              <span style="padding:14px 0 12px;font-size:13.5px;font-weight:500;color:#7a5c68;border-bottom:2px solid transparent;">Học phí</span>
+            </div>
+            <div style="padding:18px 0;font-size:13px;color:#a98c98;">Nội dung tab đang chọn hiển thị tại đây.</div>
+          </div>
+        </div>
+
+        <!-- DATA TABLE -->
+        <div style="margin-bottom:30px;">
+          <div style="font-size:12px;font-weight:700;color:#b8456a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:13px;">Bảng danh sách (DataTable)</div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #f4dde5;background:#fffafb;">
+              <span style="width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#e87aa3,#d4567f);display:flex;align-items:center;justify-content:center;flex:none;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+              <span style="font-size:12.5px;color:#b8456a;font-weight:600;">Đã chọn 2</span>
+              <button style="height:28px;padding:0 11px;border:1px solid #f0d3dd;background:#fff;border-radius:7px;cursor:pointer;font-family:inherit;font-size:12px;color:#7a5c68;">Xuất Excel</button>
+              <button style="height:28px;padding:0 11px;border:1px solid #f3cdc9;background:#fff;border-radius:7px;cursor:pointer;font-family:inherit;font-size:12px;color:#c44a3f;">Xóa</button>
+            </div>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr style="background:#fdf2f6;">
+                <th style="width:42px;padding:10px 0 10px 16px;"><span style="width:18px;height:18px;border-radius:5px;border:1.5px solid #d9c2cb;background:#fff;display:inline-block;"></span></th>
+                <th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Học viên</th>
+                <th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Mã</th>
+                <th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Lớp</th>
+                <th style="text-align:right;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Công nợ</th>
+                <th style="text-align:left;font-size:11.5px;font-weight:600;color:#a07c8a;padding:10px 16px;">Trạng thái</th>
+                <th style="width:48px;"></th>
+              </tr></thead>
+              <tbody>
+                <tr style="border-top:1px solid #f6e3ea;background:#fbdce7;"><td style="padding:11px 0 11px 16px;"><span style="width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#e87aa3,#d4567f);display:inline-flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></td><td style="padding:11px 16px;font-size:13.5px;font-weight:500;color:#3d2530;">Nguyễn Văn An</td><td style="padding:11px 16px;font-size:13px;color:#7a5c68;font-variant-numeric:tabular-nums;">STU-…0034</td><td style="padding:11px 16px;font-size:13px;color:#7a5c68;">N5-TP-001</td><td style="padding:11px 16px;font-size:13.5px;font-weight:600;color:#c43232;text-align:right;font-variant-numeric:tabular-nums;">2.000.000 ₫</td><td style="padding:11px 16px;"><span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:5px;background:#fbe0dd;color:#c44a3f;">Quá hạn</span></td><td style="padding:11px 16px;text-align:center;color:#bd97a5;"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></td></tr>
+                <tr style="border-top:1px solid #f6e3ea;background:#fbdce7;"><td style="padding:11px 0 11px 16px;"><span style="width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#e87aa3,#d4567f);display:inline-flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span></td><td style="padding:11px 16px;font-size:13.5px;font-weight:500;color:#3d2530;">Phạm Mai Dung</td><td style="padding:11px 16px;font-size:13px;color:#7a5c68;font-variant-numeric:tabular-nums;">STU-…0052</td><td style="padding:11px 16px;font-size:13px;color:#7a5c68;">N5-TP-001</td><td style="padding:11px 16px;font-size:13.5px;font-weight:600;color:#c43232;text-align:right;font-variant-numeric:tabular-nums;">2.000.000 ₫</td><td style="padding:11px 16px;"><span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:5px;background:#fbe0dd;color:#c44a3f;">Quá hạn</span></td><td style="padding:11px 16px;text-align:center;color:#bd97a5;"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></td></tr>
+                <tr style="border-top:1px solid #f6e3ea;" style-hover="background:#fefafb;"><td style="padding:11px 0 11px 16px;"><span style="width:18px;height:18px;border-radius:5px;border:1.5px solid #d9c2cb;background:#fff;display:inline-block;"></span></td><td style="padding:11px 16px;font-size:13.5px;font-weight:500;color:#3d2530;">Lê Hoàng Cường</td><td style="padding:11px 16px;font-size:13px;color:#7a5c68;font-variant-numeric:tabular-nums;">STU-…0048</td><td style="padding:11px 16px;font-size:13px;color:#7a5c68;">N4-TP-002</td><td style="padding:11px 16px;font-size:13.5px;font-weight:600;color:#b07a1f;text-align:right;font-variant-numeric:tabular-nums;">1.500.000 ₫</td><td style="padding:11px 16px;"><span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:5px;background:#fbe6cf;color:#b07a1f;">Một phần</span></td><td style="padding:11px 16px;text-align:center;color:#bd97a5;"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></td></tr>
+                <tr style="border-top:1px solid #f6e3ea;" style-hover="background:#fefafb;"><td style="padding:11px 0 11px 16px;"><span style="width:18px;height:18px;border-radius:5px;border:1.5px solid #d9c2cb;background:#fff;display:inline-block;"></span></td><td style="padding:11px 16px;font-size:13.5px;font-weight:500;color:#3d2530;">Đỗ Minh Đức</td><td style="padding:11px 16px;font-size:13px;color:#7a5c68;font-variant-numeric:tabular-nums;">STU-…0017</td><td style="padding:11px 16px;font-size:13px;color:#7a5c68;">N3-TP-001</td><td style="padding:11px 16px;font-size:13.5px;font-weight:600;color:#2f8a5d;text-align:right;font-variant-numeric:tabular-nums;">0 ₫</td><td style="padding:11px 16px;"><span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:5px;background:#e4f3ea;color:#2f8a5d;">Đã thu</span></td><td style="padding:11px 16px;text-align:center;color:#bd97a5;"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- STATES -->
+        <div style="margin-bottom:30px;">
+          <div style="font-size:12px;font-weight:700;color:#b8456a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:13px;">Trạng thái màn hình</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:26px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#cf9bab" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+              <div style="font-size:14px;font-weight:600;color:#3d2530;">Chưa có học viên</div>
+              <div style="font-size:12.5px;color:#a98c98;max-width:240px;">Thêm học viên đầu tiên để bắt đầu quản lý lớp.</div>
+              <button style="margin-top:6px;height:34px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:linear-gradient(135deg,#e87aa3,#d4567f);">Thêm học viên</button>
+            </div>
+            <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:26px;display:flex;flex-direction:column;gap:12px;justify-content:center;">
+              <div class="sk-skel" style="height:14px;width:60%;"></div>
+              <div class="sk-skel" style="height:14px;width:90%;"></div>
+              <div class="sk-skel" style="height:14px;width:75%;"></div>
+              <div class="sk-skel" style="height:14px;width:45%;"></div>
+            </div>
+            <div style="border:1px solid #f3cdc9;border-radius:12px;background:#fdeeec;padding:26px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#c44a3f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div style="font-size:14px;font-weight:600;color:#b03b31;">Không tải được dữ liệu</div>
+              <div style="font-size:12.5px;color:#b06860;max-width:240px;">Đã xảy ra lỗi khi tải danh sách lớp.</div>
+              <button style="margin-top:6px;height:34px;padding:0 16px;border:1px solid #f3cdc9;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#c43232;">Thử lại</button>
+            </div>
+            <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:26px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#a98c98" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <div style="font-size:14px;font-weight:600;color:#3d2530;">Không có quyền truy cập</div>
+              <div style="font-size:12.5px;color:#a98c98;max-width:240px;">Tài khoản của bạn không được phép xem nội dung này (403).</div>
+              <button style="margin-top:6px;height:34px;padding:0 16px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;">Quay lại</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- OVERLAYS -->
+        <div style="margin-bottom:30px;">
+          <div style="font-size:12px;font-weight:700;color:#b8456a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:13px;">Overlays</div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:22px;display:flex;flex-wrap:wrap;gap:12px;">
+            <button onClick="{{ openModal }}" style="height:36px;padding:0 16px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;">Mở Modal</button>
+            <button onClick="{{ openDrawer }}" style="height:36px;padding:0 16px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;">Mở Drawer</button>
+            <button onClick="{{ showToast }}" style="height:36px;padding:0 16px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;" style-hover="background:#fdeef3;">Hiện Toast</button>
+          </div>
+        </div>
+
+        <!-- TOKENS -->
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:#b8456a;letter-spacing:.5px;text-transform:uppercase;margin-bottom:13px;">Design tokens</div>
+          <div style="border:1px solid #f3d9e1;border-radius:12px;background:#fff;padding:22px;display:flex;flex-direction:column;gap:22px;">
+            <div>
+              <div style="font-size:12.5px;font-weight:600;color:#4a2230;margin-bottom:11px;">Màu</div>
+              <div style="display:flex;flex-wrap:wrap;gap:14px;">
+                <div style="text-align:center;"><div style="width:56px;height:44px;border-radius:9px;background:#f7a8c4;border:1px solid #f0c4d4;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">sakura-300</div></div>
+                <div style="text-align:center;"><div style="width:56px;height:44px;border-radius:9px;background:#e87aa3;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">sakura-400</div></div>
+                <div style="text-align:center;"><div style="width:56px;height:44px;border-radius:9px;background:#d6557e;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">sakura-500</div></div>
+                <div style="text-align:center;"><div style="width:56px;height:44px;border-radius:9px;background:#b8456a;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">sakura-600</div></div>
+                <div style="text-align:center;"><div style="width:56px;height:44px;border-radius:9px;background:#3f9b6e;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">success</div></div>
+                <div style="text-align:center;"><div style="width:56px;height:44px;border-radius:9px;background:#c98a2e;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">warning</div></div>
+                <div style="text-align:center;"><div style="width:56px;height:44px;border-radius:9px;background:#c43232;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">danger</div></div>
+                <div style="text-align:center;"><div style="width:56px;height:44px;border-radius:9px;background:#4a6fb5;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">info</div></div>
+                <div style="text-align:center;"><div style="width:56px;height:44px;border-radius:9px;background:#3d2530;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">text</div></div>
+              </div>
+            </div>
+            <div style="height:1px;background:#f6e3ea;"></div>
+            <div>
+              <div style="font-size:12.5px;font-weight:600;color:#4a2230;margin-bottom:11px;">Typography</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="font-family:'Zen Kaku Gothic New',sans-serif;font-size:28px;font-weight:900;color:#3d2530;line-height:1.1;">Display · Zen Kaku 28</div>
+                <div style="font-size:22px;font-weight:700;color:#3d2530;">Heading 1 · Inter 22</div>
+                <div style="font-size:18px;font-weight:600;color:#3d2530;">Heading 2 · Inter 18</div>
+                <div style="font-size:15px;font-weight:600;color:#3d2530;">Heading 3 · Inter 15</div>
+                <div style="font-size:14px;color:#3d2530;">Body · Inter 14 — quản lý học viên, lớp học và học phí.</div>
+                <div style="font-size:12px;color:#a98c98;">Small / caption · 12 — metadata phụ.</div>
+              </div>
+            </div>
+            <div style="height:1px;background:#f6e3ea;"></div>
+            <div>
+              <div style="font-size:12.5px;font-weight:600;color:#4a2230;margin-bottom:11px;">Radius & shadow</div>
+              <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                <div style="text-align:center;"><div style="width:60px;height:48px;border-radius:6px;background:#fdeef4;border:1px solid #f0c4d4;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">6px</div></div>
+                <div style="text-align:center;"><div style="width:60px;height:48px;border-radius:8px;background:#fdeef4;border:1px solid #f0c4d4;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">8px</div></div>
+                <div style="text-align:center;"><div style="width:60px;height:48px;border-radius:12px;background:#fdeef4;border:1px solid #f0c4d4;"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">12px</div></div>
+                <div style="text-align:center;"><div style="width:60px;height:48px;border-radius:9px;background:#fff;box-shadow:0 1px 3px rgba(180,80,120,0.12);"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">card</div></div>
+                <div style="text-align:center;"><div style="width:60px;height:48px;border-radius:9px;background:#fff;box-shadow:0 8px 24px rgba(160,60,100,0.16);"></div><div style="font-size:10.5px;color:#a98c98;margin-top:5px;">menu</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    </sc-if>
+
+  </main>
+
+  <!-- ===================== UI KIT MODAL ===================== -->
+  <sc-if value="{{ modalOpen }}">
+  <div onClick="{{ closeModal }}" style="position:absolute;inset:0;background:rgba(60,20,35,0.32);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:60;">
+    <div onClick="{{ stop }}" style="width:460px;max-width:90%;background:#fffdfe;border-radius:14px;box-shadow:0 24px 60px rgba(80,30,50,0.35);overflow:hidden;animation:skpop .2s ease;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid #f4dde5;">
+        <span style="font-size:15px;font-weight:600;color:#3d2530;">Xác nhận xóa học viên</span>
+        <button onClick="{{ closeModal }}" aria-label="Đóng" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:none;background:none;border-radius:7px;cursor:pointer;color:#b07e90;" style-hover="background:#fbe6ee;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div style="padding:20px;font-size:13.5px;color:#7a5c68;line-height:1.6;">Bạn sắp xóa hồ sơ <b style="color:#3d2530;">Nguyễn Văn An</b>. Hành động này không thể hoàn tác và sẽ ẩn toàn bộ dữ liệu liên quan.</div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid #f4dde5;background:#fffafb;">
+        <button onClick="{{ closeModal }}" style="height:36px;padding:0 16px;border:1px solid #f0d3dd;background:#fff;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;color:#7a5c68;">Hủy</button>
+        <button onClick="{{ closeModal }}" style="height:36px;padding:0 16px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:#c43232;">Xóa</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===================== UI KIT DRAWER ===================== -->
+  <sc-if value="{{ drawerOpen }}">
+  <div onClick="{{ closeDrawer }}" style="position:absolute;inset:0;background:rgba(60,20,35,0.28);backdrop-filter:blur(2px);display:flex;justify-content:flex-end;z-index:60;">
+    <div onClick="{{ stop }}" style="width:420px;max-width:92%;height:100%;background:#fffdfe;box-shadow:-12px 0 40px rgba(80,30,50,0.22);display:flex;flex-direction:column;animation:skpop .22s ease;">
+      <div style="height:56px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid #f1dbe3;">
+        <span style="font-size:15px;font-weight:600;color:#3d2530;">Inspector · Nguyễn Văn An</span>
+        <button onClick="{{ closeDrawer }}" aria-label="Đóng" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:none;background:none;border-radius:7px;cursor:pointer;color:#b07e90;" style-hover="background:#fbe6ee;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <div class="sk-scroll" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;">
+        <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Mã học viên</div><div style="font-size:14px;color:#3d2530;font-weight:500;">STU-2026-0034</div></div>
+        <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Lớp đang học</div><div style="font-size:14px;color:#3d2530;font-weight:500;">N5-TP-001 · N5 cấp tốc</div></div>
+        <div><div style="font-size:11.5px;color:#a98c98;margin-bottom:3px;">Chuyên cần</div><div style="font-size:14px;color:#3d2530;font-weight:500;">78% · 8/12 buổi</div></div>
+        <div style="font-size:12.5px;color:#a98c98;border:1px dashed #ecd0da;border-radius:10px;padding:14px;">Drawer dùng để xem nhanh / chỉnh sửa nhẹ — không thay thế trang chi tiết đầy đủ.</div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===================== UI KIT TOAST ===================== -->
+  <sc-if value="{{ toastOpen }}">
+  <div style="position:absolute;right:24px;bottom:24px;z-index:70;display:flex;align-items:center;gap:11px;background:#fffdfe;border:1px solid #f0c4d4;border-radius:11px;padding:13px 16px;box-shadow:0 12px 32px rgba(160,60,100,0.2);animation:sktoast .25s ease;min-width:280px;">
+    <span style="width:26px;height:26px;border-radius:50%;background:#e4f3ea;display:flex;align-items:center;justify-content:center;flex:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2f8a5d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+    <div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#3d2530;">Đã lưu thành công</div><div style="font-size:11.5px;color:#a98c98;">Hồ sơ học viên đã được cập nhật.</div></div>
+    <button onClick="{{ closeToast }}" aria-label="Đóng" style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:none;background:none;border-radius:6px;cursor:pointer;color:#b07e90;flex:none;" style-hover="background:#fbe6ee;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  </sc-if>
+
+  <!-- ===================== AI DRAWER ===================== -->
+  <sc-if value="{{ aiOpen }}">
+  <aside style="flex:none;width:380px;display:flex;flex-direction:column;background:#fffdfe;border-left:1px solid #f1dbe3;box-shadow:-8px 0 24px rgba(160,60,100,0.08);animation:skpop .25s ease;">
+    <div style="height:56px;flex:none;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid #f1dbe3;">
+      <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#f7a8c4,#d6557e);display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></div>
+      <span style="font-size:15px;font-weight:600;color:#3d2530;">AI Assistant</span>
+      <button onClick="{{ closeAi }}" aria-label="Đóng" style="margin-left:auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;background:none;border-radius:7px;cursor:pointer;color:#b07e90;" style-hover="background:#fbe6ee;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="sk-scroll" style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px;">
+      <div style="font-size:11.5px;color:#a98c98;background:#fdf2f6;border-radius:8px;padding:9px 12px;">Đang xem ngữ cảnh: <span style="color:#b8456a;font-weight:600;">Học viên · Nguyễn Văn An</span></div>
+      <div style="align-self:flex-end;max-width:85%;background:linear-gradient(135deg,#e87aa3,#d4567f);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 13px;font-size:13px;">Tóm tắt tình hình học tập của An giúp tôi.</div>
+      <div style="align-self:flex-start;max-width:90%;background:#fbeef3;color:#3d2530;border-radius:14px 14px 14px 4px;padding:11px 14px;font-size:13px;line-height:1.55;">An đang học N5-TP-001, tiến độ 27%. Điểm TB 8.1 (mạnh Từ vựng/Homework, yếu Đọc hiểu 70%). Lưu ý: vắng 2 buổi gần đây và 1 hóa đơn quá hạn 2.000.000 ₫. Đề xuất: liên hệ phụ huynh và nhắc học phí.</div>
+      <div style="font-size:11px;color:#bd97a5;text-align:center;">AI không tự thay đổi dữ liệu — mọi đề xuất cần bạn xác nhận.</div>
+    </div>
+    <div style="flex:none;padding:14px 16px;border-top:1px solid #f1dbe3;"><div style="display:flex;align-items:center;gap:8px;height:42px;padding:0 14px;border-radius:12px;background:#fdf2f6;border:1px solid #f1d2de;"><span style="flex:1;font-size:13px;color:#bd8d9c;">Hỏi về học viên, lớp, công nợ…</span><button style="width:30px;height:30px;border:none;border-radius:8px;background:linear-gradient(135deg,#e87aa3,#d4567f);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div>
+  </aside>
+  </sc-if>
+
+  <!-- ===================== COMMAND PALETTE ===================== -->
+  <sc-if value="{{ cmdOpen }}">
+  <div onClick="{{ closeCmd }}" style="position:absolute;inset:0;background:rgba(60,20,35,0.32);backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding-top:12vh;z-index:50;">
+    <div onClick="{{ stop }}" style="width:560px;max-width:90%;background:#fffdfe;border-radius:16px;box-shadow:0 24px 60px rgba(80,30,50,0.35);overflow:hidden;animation:skpop .2s ease;">
+      <div style="display:flex;align-items:center;gap:11px;padding:16px 18px;border-bottom:1px solid #f4dde5;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c08aa0" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span style="font-size:15px;color:#bd8d9c;flex:1;">Tìm trang, học viên, lớp, lệnh…</span>
+        <span style="font-size:11px;color:#caa6b4;border:1px solid #ecd0da;border-radius:5px;padding:2px 6px;">ESC</span>
+      </div>
+      <div class="sk-scroll" style="max-height:50vh;overflow-y:auto;padding:8px;">
+        <div style="font-size:10.5px;font-weight:700;color:#c79aaa;letter-spacing:.6px;text-transform:uppercase;padding:8px 12px 4px;">Điều hướng</div>
+        <sc-for list="{{ cmdNav }}" as="c" hint-placeholder-count="6">
+          <button onClick="{{ c.go }}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:none;background:none;border-radius:9px;padding:9px 12px;cursor:pointer;font-family:inherit;color:#3d2530;" style-hover="background:#fbeef3;">
+            <span style="width:26px;height:26px;border-radius:7px;background:#fbeef3;display:flex;align-items:center;justify-content:center;color:#b8456a;flex:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+            <span style="font-size:13.5px;font-weight:500;">{{ c.label }}</span>
+          </button>
+        </sc-for>
+        <div style="font-size:10.5px;font-weight:700;color:#c79aaa;letter-spacing:.6px;text-transform:uppercase;padding:12px 12px 4px;">Tạo mới</div>
+        <sc-for list="{{ cmdCreate }}" as="c" hint-placeholder-count="4">
+          <button onClick="{{ closeCmd }}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:none;background:none;border-radius:9px;padding:9px 12px;cursor:pointer;font-family:inherit;color:#3d2530;" style-hover="background:#fbeef3;">
+            <span style="width:26px;height:26px;border-radius:7px;background:#fbeef3;display:flex;align-items:center;justify-content:center;color:#b8456a;flex:none;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+            <span style="font-size:13.5px;font-weight:500;">{{ c.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;crm&quot;,&quot;students&quot;,&quot;classes&quot;,&quot;attendance&quot;,&quot;calendar&quot;,&quot;finance&quot;,&quot;reports&quot;,&quot;teacher&quot;,&quot;student&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;activeTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;overview&quot;,&quot;enrollment&quot;,&quot;attendance&quot;,&quot;grades&quot;,&quot;fees&quot;,&quot;history&quot;],&quot;default&quot;:&quot;overview&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;compactRows&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { screen:null, sel:0, tab:null, filter:0, classSel:0, classTab:'overview', finSel:0, finFilter:0, attMarks:{}, cmdOpen:false, aiOpen:false, modalOpen:false, drawerOpen:false, toastOpen:false };
+
+  componentDidMount(){
+    this._key = (e) => {
+      if((e.metaKey||e.ctrlKey) && (e.key==='k'||e.key==='K')){ e.preventDefault(); this.setState(s=>({cmdOpen:!s.cmdOpen})); }
+      else if(e.key==='Escape'){ this.setState({cmdOpen:false, aiOpen:false, modalOpen:false, drawerOpen:false}); }
+    };
+    window.addEventListener('keydown', this._key);
+  }
+  componentWillUnmount(){ if(this._key) window.removeEventListener('keydown', this._key); }
+
+  renderVals(){
+    const accent='#d6557e', deep='#b8456a', sub='#7a5c68';
+    const screen = this.state.screen ?? this.props.startScreen ?? 'dashboard';
+    const compact = this.props.compactRows ?? false;
+    const rowPad = compact ? '8px 16px' : '12px 16px';
+    const go = (s) => () => this.setState({screen:s, cmdOpen:false});
+
+    const navStyle = (s) => ({
+      go: go(s),
+      bg: screen===s ? '#fbd9e5' : 'transparent',
+      color: screen===s ? '#a8345f' : sub,
+      bar: screen===s ? accent : 'transparent',
+      weight: screen===s ? '600' : '500'
+    });
+    const nav = {
+      dashboard:navStyle('dashboard'), crm:navStyle('crm'), students:navStyle('students'),
+      classes:navStyle('classes'), attendance:navStyle('attendance'), calendar:navStyle('calendar'),
+      finance:navStyle('finance'), reports:navStyle('reports'), teacher:navStyle('teacher'), student:navStyle('student'),
+      uikit:navStyle('uikit')
+    };
+
+    const BADGE = { warn:{bg:'#fbe6cf',color:'#b07a1f',label:'Cảnh báo'}, ok:{bg:'#e4f3ea',color:'#2f8a5d',label:'Đang học'}, danger:{bg:'#fbe0dd',color:'#c44a3f',label:'Khẩn cấp'}, newst:{bg:'#e7eefb',color:'#4a6fb5',label:'Mới'} };
+    const avatars=['linear-gradient(135deg,#f7a8c4,#d6557e)','linear-gradient(135deg,#f6b8a0,#e07a8f)','linear-gradient(135deg,#c9a6e0,#9b6fc4)','linear-gradient(135deg,#f5a3b8,#cf5b86)','linear-gradient(135deg,#f0b27a,#d97b6a)'];
+    const initials=(n)=>{const p=n.trim().split(/\s+/);return (p[0][0]+p[p.length-1][0]).toUpperCase();};
+
+    const raw=[
+      {name:'Nguyễn Văn An',code:'STU-2026-0034',klass:'N5-TP-001',kind:'warn',note:'2 buổi vắng',att:'78%',attNote:'Cần theo dõi',grade:'8.1',done:'8 / 12',progress:'27%',email:'an.nv@ike.edu.vn'},
+      {name:'Trần Thị Bình',code:'STU-2026-0021',klass:'N5-TP-001',kind:'ok',note:'Chuyên cần 96%',att:'96%',attNote:'Rất tốt',grade:'8.7',done:'9 / 12',progress:'30%',email:'binh.tt@ike.edu.vn'},
+      {name:'Lê Hoàng Cường',code:'STU-2026-0048',klass:'N4-TP-002',kind:'ok',note:'Điểm TB 8.4',att:'92%',attNote:'Ổn định',grade:'8.4',done:'14 / 24',progress:'58%',email:'cuong.lh@ike.edu.vn'},
+      {name:'Phạm Mai Dung',code:'STU-2026-0052',klass:'N5-TP-001',kind:'warn',note:'Quá hạn học phí',att:'88%',attNote:'Khá',grade:'7.9',done:'8 / 12',progress:'27%',email:'dung.pm@ike.edu.vn'},
+      {name:'Đỗ Minh Đức',code:'STU-2026-0017',klass:'N3-TP-001',kind:'ok',note:'Tốt nghiệp T8',att:'94%',attNote:'Xuất sắc',grade:'9.1',done:'26 / 30',progress:'87%',email:'duc.dm@ike.edu.vn'},
+      {name:'Vũ Thanh Hà',code:'STU-2026-0060',klass:'N4-TP-002',kind:'danger',note:'3 buổi vắng',att:'71%',attNote:'Khẩn cấp',grade:'6.8',done:'12 / 24',progress:'50%',email:'ha.vt@ike.edu.vn'},
+      {name:'Hoàng Gia Khánh',code:'STU-2026-0039',klass:'N5-TP-003',kind:'ok',note:'Mới nhập học',att:'100%',attNote:'Mới bắt đầu',grade:'—',done:'2 / 12',progress:'7%',email:'khanh.hg@ike.edu.vn'},
+      {name:'Bùi Thảo Linh',code:'STU-2026-0044',klass:'N4-TP-002',kind:'ok',note:'Chuyên cần 92%',att:'92%',attNote:'Ổn định',grade:'8.2',done:'13 / 24',progress:'54%',email:'linh.bt@ike.edu.vn'}
+    ];
+    const students = raw.map((s,i)=>{const b=BADGE[s.kind];return {...s, slotId:'av-'+s.code, initials:initials(s.name), avatar:avatars[i%avatars.length], sub:s.code+' · '+s.klass, badge:b.label, badgeBg:b.bg, badgeColor:b.color, bg:i===this.state.sel?'#fbd9e5':'transparent', barColor:i===this.state.sel?accent:'transparent', onSelect:()=>this.setState({sel:i})};});
+    const cur0=raw[this.state.sel]; const cb=BADGE[cur0.kind];
+    const cur={...cur0, slotId:'av-'+cur0.code, statusLabel:cb.label, statusBg:cb.bg, statusColor:cb.color};
+
+    const tabDefs=[['overview','Tổng quan'],['enrollment','Đăng ký lớp'],['attendance','Chuyên cần'],['grades','Điểm số'],['fees','Học phí'],['history','Lịch sử']];
+    const tab=this.state.tab ?? this.props.activeTab ?? 'overview';
+    const tabs=tabDefs.map(([id,label])=>({id,label, color:id===tab?deep:sub, weight:id===tab?'600':'500', border:id===tab?'2px solid '+accent:'2px solid transparent', onSelect:()=>this.setState({tab:id})}));
+
+    const filterDefs=['Tất cả','Đang học','Cảnh báo'];
+    const filters=filterDefs.map((label,i)=>({label, onSelect:()=>this.setState({filter:i}), bg:i===this.state.filter?'#fff':'transparent', color:i===this.state.filter?deep:'#a07c8a', weight:i===this.state.filter?'600':'500', shadow:i===this.state.filter?'0 1px 3px rgba(180,80,120,0.18)':'none'}));
+
+    // student detail tables
+    const A={ok:{bg:'#e4f3ea',color:'#2f8a5d',label:'Có mặt'},late:{bg:'#fbe6cf',color:'#b07a1f',label:'Đi muộn'},exc:{bg:'#e7eefb',color:'#4a6fb5',label:'Vắng có phép'},unexc:{bg:'#fbe0dd',color:'#c44a3f',label:'Vắng KP'}};
+    const attendance=[['Buổi 8','12/06','unexc','—','Không báo trước'],['Buổi 7','10/06','ok','—',''],['Buổi 6','07/06','late','12 phút','Kẹt xe'],['Buổi 5','05/06','ok','—',''],['Buổi 4','03/06','exc','—','Ốm, có đơn'],['Buổi 3','31/05','ok','—',''],['Buổi 2','29/05','ok','—',''],['Buổi 1','27/05','ok','—','']].map(([session,date,k,late,note])=>({session,date,late,note,status:A[k].label,stBg:A[k].bg,stColor:A[k].color}));
+    const grades=[['Kanji','Buổi 7','8.5','85%','Cần luyện bộ thủ'],['Từ vựng','Buổi 7','9.0','90%','Tốt'],['Ngữ pháp','Buổi 6','7.5','75%','Nhầm trợ từ は/が'],['Nghe hiểu','Buổi 5','8.0','80%',''],['Đọc hiểu','Buổi 5','7.0','70%','Tốc độ còn chậm'],['Kaiwa','Buổi 4','8.8','88%','Phát âm tốt'],['Homework','Buổi 7','9.5','95%','Nộp đầy đủ']].map(([skill,session,score,norm,comment])=>({skill,session,score,norm,comment,normColor:parseInt(norm)>=80?'#2f8a5d':(parseInt(norm)>=70?'#b07a1f':'#c44a3f')}));
+    const ISTU={ok:{bg:'#e4f3ea',color:'#2f8a5d'},od:{bg:'#fbe0dd',color:'#c44a3f'}};
+    const stuInvoices=[['INV-2026-0101','Kỳ 1/3','15/04','2.000.000 ₫','ok','Đã thu'],['INV-2026-0102','Kỳ 2/3','15/05','2.000.000 ₫','ok','Đã thu'],['INV-2026-0103','Kỳ 3/3','15/06','2.000.000 ₫','od','Quá hạn']].map(([id,term,due,amount,k,status])=>({id,term,due,amount,status,stBg:ISTU[k].bg,stColor:ISTU[k].color}));
+    const history=[['12/06/2026','Vắng buổi 8','Vắng không phép — đã ghi nhận cảnh báo.','#d97b6a'],['10/06/2026','Nhập điểm Kanji 8.5','GV Yamada Kenji chấm bài kiểm tra Kanji.','#d6557e'],['15/05/2026','Thu học phí kỳ 2','Phiếu thu 2.000.000 ₫ — INV-2026-0102.','#3f9b6e'],['27/05/2026','Đăng ký lớp N5-TP-001','Enrollment được duyệt và sinh lịch thu.','#9b6fc4'],['20/04/2026','Hoàn thành onboarding','Checklist nhập học hoàn tất.','#c79aaa'],['15/04/2026','Tạo hồ sơ học viên','Hồ sơ STU-2026-0034 được khởi tạo.','#c79aaa']].map(([date,title,detail,dot])=>({date,title,detail,dot}));
+
+    // dashboard
+    const dashTiles=[{label:'Học viên đang học',value:'248',note:'+12 tháng này',noteColor:'#2f8a5d',valueColor:'#3d2530',bg:'#fff'},{label:'Lớp đang vận hành',value:'18',note:'3 sắp khai giảng',noteColor:'#a98c98',valueColor:'#3d2530',bg:'#fff'},{label:'Chuyên cần trung bình',value:'91%',note:'Tuần này',noteColor:'#a98c98',valueColor:'#3d2530',bg:'#fff'},{label:'Công nợ',value:'86,4M ₫',note:'12 hóa đơn quá hạn',noteColor:'#c44a3f',valueColor:'#b8456a',bg:'linear-gradient(135deg,#fdeef4,#fbe0ea)'}];
+    const todaySessions=[{time:'18:00',klass:'N5-TP-001',teacher:'Yamada Kenji',room:'P.301',label:'Buổi 9',dot:'#d6557e'},{time:'18:00',klass:'N4-TP-002',teacher:'Sato Aiko',room:'P.305',label:'Buổi 14',dot:'#9b6fc4'},{time:'19:30',klass:'N3-TP-001',teacher:'Tanaka Yui',room:'P.302',label:'Buổi 26',dot:'#3f9b6e'},{time:'20:00',klass:'N5-TP-003',teacher:'Suzuki Ren',room:'P.301',label:'Buổi 3',dot:'#e07a8f'}];
+    const dashAlerts=[{title:'Vũ Thanh Hà · vắng 3 buổi',detail:'N4-TP-002 · cần liên hệ ngay',dot:'#c44a3f'},{title:'Phạm Mai Dung · học phí quá hạn',detail:'INV-2026-0108 · 2.000.000 ₫',dot:'#c98a2e'},{title:'Lớp N5-TP-003 chưa đủ sĩ số',detail:'3/8 học viên · khai giảng 24/06',dot:'#4a6fb5'},{title:'12 hóa đơn quá hạn',detail:'Tổng 24.000.000 ₫ cần nhắc thu',dot:'#c98a2e'}];
+    const classProgress=[{name:'N5-TP-001',pct:'27%'},{name:'N4-TP-002',pct:'58%'},{name:'N3-TP-001',pct:'87%'},{name:'N5-TP-003',pct:'7%'},{name:'N5-TP-002',pct:'100%'}];
+    const dashActivity=[{time:'10:42',text:'Thu học phí INV-2026-0102 · 2.000.000 ₫',dot:'#3f9b6e'},{time:'09:15',text:'Duyệt đăng ký Hoàng Gia Khánh vào N5-TP-003',dot:'#9b6fc4'},{time:'Hôm qua',text:'Sinh lịch 30 buổi cho lớp N5-TP-003',dot:'#d6557e'},{time:'Hôm qua',text:'Cảnh báo chuyên cần: Vũ Thanh Hà',dot:'#e07a8f'}];
+
+    // CRM
+    const crmColsRaw=[
+      {title:'Mới',dot:'#9b6fc4',cards:[{name:'Trịnh Khả Vy',interest:'Quan tâm N5 cấp tốc',source:'Facebook',value:'6,0M',code:'L01'},{name:'Phan Đức Anh',interest:'Luyện thi N3',source:'Website',value:'4,5M',code:'L02'}]},
+      {title:'Đang tư vấn',dot:'#4a6fb5',cards:[{name:'Lương Bảo Trân',interest:'N4 buổi tối',source:'Giới thiệu',value:'6,0M',code:'L03'}]},
+      {title:'Đã test đầu vào',dot:'#c98a2e',cards:[{name:'Hồ Minh Quân',interest:'Xếp lớp N5',source:'Hotline',value:'6,0M',code:'L04'},{name:'Đoàn Thúy Vi',interest:'N5 cuối tuần',source:'Facebook',value:'5,5M',code:'L05'}]},
+      {title:'Chờ đăng ký',dot:'#e07a8f',cards:[{name:'Lê Gia Hân',interest:'N5-TP-003',source:'Zalo',value:'6,0M',code:'L06'}]},
+      {title:'Đã chuyển đổi',dot:'#3f9b6e',cards:[{name:'Hoàng Gia Khánh',interest:'Đã vào N5-TP-003',source:'Website',value:'6,0M',code:'STU-2026-0039'}]}
+    ];
+    const crmCols=crmColsRaw.map(col=>{
+      const cards=col.cards.map(c=>({...c, slotId:'av-lead-'+c.code, value:c.value+' ₫'}));
+      const totalNum=col.cards.reduce((a,c)=>a+parseFloat(c.value.replace(',','.')),0);
+      return {title:col.title, dot:col.dot, count:cards.length, total:totalNum.toFixed(1).replace('.',',')+'M ₫', cards};
+    });
+
+    // classes
+    const CST={active:{bg:'#e4f3ea',color:'#2f8a5d',label:'Active'},upcoming:{bg:'#e7eefb',color:'#4a6fb5',label:'Sắp khai giảng'},done:{bg:'#eef0f4',color:'#7a7986',label:'Hoàn thành'}};
+    const classRaw=[
+      {id:'N5-TP-001',course:'N5 cấp tốc',teacher:'Yamada Kenji',teacher2:'Sato Aiko',st:'active',progress:'27%',schedule:'2-4-6 · 18:00–20:00',room:'P.301',size:'12 / 16',start:'27/05/2026',total:'30 buổi',fee:'6.000.000 ₫'},
+      {id:'N4-TP-002',course:'N4 tiêu chuẩn',teacher:'Sato Aiko',teacher2:'Tanaka Yui',st:'active',progress:'58%',schedule:'3-5-7 · 18:00–20:00',room:'P.305',size:'15 / 18',start:'02/04/2026',total:'48 buổi',fee:'9.000.000 ₫'},
+      {id:'N3-TP-001',course:'N3 luyện thi',teacher:'Tanaka Yui',teacher2:'—',st:'active',progress:'87%',schedule:'2-4-6 · 19:30–21:30',room:'P.302',size:'10 / 12',start:'10/01/2026',total:'30 buổi',fee:'7.500.000 ₫'},
+      {id:'N5-TP-003',course:'N5 cấp tốc',teacher:'Suzuki Ren',teacher2:'—',st:'upcoming',progress:'7%',schedule:'Cuối tuần · 09:00–11:30',room:'P.301',size:'3 / 8',start:'24/06/2026',total:'30 buổi',fee:'6.000.000 ₫'},
+      {id:'N5-TP-002',course:'N5 tiêu chuẩn',teacher:'Sato Aiko',teacher2:'—',st:'done',progress:'100%',schedule:'2-4-6 · 18:00–20:00',room:'P.303',size:'14 / 16',start:'06/01/2026',total:'30 buổi',fee:'6.000.000 ₫'}
+    ];
+    const classes=classRaw.map((c,i)=>{const s=CST[c.st];return {...c, stBg:s.bg, stColor:s.color, stLabel:s.label, bg:i===this.state.classSel?'#fbd9e5':'transparent', barColor:i===this.state.classSel?accent:'transparent', onSelect:()=>this.setState({classSel:i})};});
+    const cc=classRaw[this.state.classSel]; const ccs=CST[cc.st];
+    const classCur={...cc, stBg:ccs.bg, stColor:ccs.color, stLabel:ccs.label};
+    const classTabDefs=[['overview','Tổng quan'],['roster','Học viên'],['sessions','Buổi học']];
+    const classTab=this.state.classTab;
+    const classTabs=classTabDefs.map(([id,label])=>({id,label, color:id===classTab?deep:sub, weight:id===classTab?'600':'500', border:id===classTab?'2px solid '+accent:'2px solid transparent', onSelect:()=>this.setState({classTab:id})}));
+    const RST={ok:{bg:'#e4f3ea',color:'#2f8a5d',label:'Đang học'},warn:{bg:'#fbe6cf',color:'#b07a1f',label:'Theo dõi'},newst:{bg:'#e7eefb',color:'#4a6fb5',label:'Mới'}};
+    const classRoster=[['Nguyễn Văn An','STU-2026-0034','78%','8.1','warn'],['Trần Thị Bình','STU-2026-0021','96%','8.7','ok'],['Phạm Mai Dung','STU-2026-0052','88%','7.9','warn'],['Hoàng Gia Khánh','STU-2026-0039','100%','—','newst'],['Lý Thu Hương','STU-2026-0071','94%','8.5','ok'],['Đặng Quốc Bảo','STU-2026-0066','90%','8.0','ok']].map(([name,code,att,grade,k])=>({name,code,att,grade,slotId:'av-'+code,stBg:RST[k].bg,stColor:RST[k].color,stLabel:RST[k].label}));
+    const SES={scheduled:{bg:'#e7eefb',color:'#4a6fb5',label:'Dự kiến'},upcoming:{bg:'#fdf2f6',color:'#a07c8a',label:'Sắp tới'},done:{bg:'#e4f3ea',color:'#2f8a5d',label:'Hoàn thành'}};
+    const classSessions=[{label:'Buổi 9',date:'Hôm nay · 20/06 · 18:00',topic:'Bài 9: thể て',st:'scheduled',hl:true},{label:'Buổi 10',date:'24/06 · 18:00',topic:'Bài 10: 〜なければ',st:'upcoming',hl:false},{label:'Buổi 8',date:'12/06 · đã dạy',topic:'Bài 8: thể た',st:'done',hl:false},{label:'Buổi 7',date:'10/06 · đã dạy',topic:'Bài 7: tính từ い/な',st:'done',hl:false}].map(s=>({label:s.label,date:s.date,topic:s.topic,stBg:SES[s.st].bg,stColor:SES[s.st].color,stLabel:SES[s.st].label,bg:s.hl?'linear-gradient(135deg,#fdeef4,#fbe0ea)':'#fff',border:s.hl?'#f0b9cd':'#f3d9e1'}));
+
+    // attendance workflow
+    const attNames=[['Nguyễn Văn An','STU-2026-0034'],['Trần Thị Bình','STU-2026-0021'],['Phạm Mai Dung','STU-2026-0052'],['Hoàng Gia Khánh','STU-2026-0039'],['Lý Thu Hương','STU-2026-0071'],['Đặng Quốc Bảo','STU-2026-0066'],['Ngô Phương Vy','STU-2026-0073'],['Mai Tuấn Kiệt','STU-2026-0080']];
+    const MK={present:{bg:'#e4f3ea',color:'#2f8a5d'},late:{bg:'#fbe6cf',color:'#b07a1f'},absent:{bg:'#fbe0dd',color:'#c44a3f'}};
+    const setMark=(i,k)=>this.setState(s=>({attMarks:{...s.attMarks,[i]:k}}));
+    let attP=0,attL=0,attA=0;
+    const attRoster=attNames.map(([name,code],i)=>{
+      const mark=this.state.attMarks[i]||'present';
+      if(mark==='present')attP++; else if(mark==='late')attL++; else attA++;
+      const opts=[['present','Có mặt'],['late','Muộn'],['absent','Vắng']].map(([k,label])=>({label, onClick:()=>setMark(i,k), bg:mark===k?'#fff':'transparent', color:mark===k?MK[k].color:'#a07c8a', weight:mark===k?'600':'500', shadow:mark===k?'0 1px 3px rgba(180,80,120,0.18)':'none'}));
+      return {name,code,slotId:'av-'+code,opts};
+    });
+    const markAllPresent=()=>this.setState({attMarks:{}});
+    const copyPrev=()=>this.setState({attMarks:{2:'absent',5:'late'}});
+
+    // calendar
+    const calDefs=[
+      {label:'T2',date:'15',events:[['18:00','N5-TP-001','P.301','#d6557e'],['18:00','N4-TP-002','P.305','#9b6fc4']]},
+      {label:'T3',date:'16',events:[['19:30','N3-TP-001','P.302','#3f9b6e']]},
+      {label:'T4',date:'17',events:[['18:00','N5-TP-001','P.301','#d6557e'],['20:00','N5-TP-003','P.301','#e07a8f']]},
+      {label:'T5',date:'18',events:[['18:00','N4-TP-002','P.305','#9b6fc4']]},
+      {label:'T6',date:'20',today:true,events:[['18:00','N5-TP-001','P.301','#d6557e'],['19:30','N3-TP-001','P.302','#3f9b6e']]},
+      {label:'T7',date:'21',events:[['09:00','N5-TP-003','P.301','#e07a8f']]},
+      {label:'CN',date:'22',events:[]}
+    ];
+    const evBg={'#d6557e':'#fdeef4','#9b6fc4':'#f3edfb','#3f9b6e':'#e9f6ef','#e07a8f':'#fdf0f4'};
+    const calDays=calDefs.map(d=>({label:d.label, date:d.date, labelColor:d.today?'#b8456a':'#7a5c68', bg:d.today?'#fdf2f6':'transparent', events:d.events.map(([time,klass,room,accent])=>({time,klass,room,accent,bg:evBg[accent]||'#fdeef4'}))}));
+
+    // finance
+    const FST={overdue:{bg:'#fbe0dd',color:'#c44a3f'},unpaid:{bg:'#eef0f4',color:'#7a7986'},partial:{bg:'#fbe6cf',color:'#b07a1f'},paid:{bg:'#e4f3ea',color:'#2f8a5d'}};
+    const finRaw=[
+      {id:'INV-2026-0103',student:'Nguyễn Văn An',code:'STU-2026-0034',klass:'N5-TP-001',term:'Kỳ 3/3',issued:'01/06/2026',due:'15/06/2026',total:'2.000.000 ₫',paid:'0 ₫',remain:'2.000.000 ₫',sk:'overdue',sl:'Quá hạn',outstanding:true,pays:[]},
+      {id:'INV-2026-0108',student:'Phạm Mai Dung',code:'STU-2026-0052',klass:'N5-TP-001',term:'Kỳ 3/3',issued:'01/06/2026',due:'15/06/2026',total:'2.000.000 ₫',paid:'0 ₫',remain:'2.000.000 ₫',sk:'overdue',sl:'Quá hạn',outstanding:true,pays:[]},
+      {id:'INV-2026-0111',student:'Vũ Thanh Hà',code:'STU-2026-0060',klass:'N4-TP-002',term:'Kỳ 1/2',issued:'10/06/2026',due:'30/06/2026',total:'3.000.000 ₫',paid:'0 ₫',remain:'3.000.000 ₫',sk:'unpaid',sl:'Chưa thu',outstanding:true,pays:[]},
+      {id:'INV-2026-0112',student:'Lê Hoàng Cường',code:'STU-2026-0048',klass:'N4-TP-002',term:'Kỳ 1/2',issued:'10/06/2026',due:'30/06/2026',total:'3.000.000 ₫',paid:'1.500.000 ₫',remain:'1.500.000 ₫',sk:'partial',sl:'Một phần',outstanding:true,pays:[{date:'12/06/2026',amount:'1.500.000 ₫',method:'Chuyển khoản'}]},
+      {id:'INV-2026-0102',student:'Nguyễn Văn An',code:'STU-2026-0034',klass:'N5-TP-001',term:'Kỳ 2/3',issued:'01/05/2026',due:'15/05/2026',total:'2.000.000 ₫',paid:'2.000.000 ₫',remain:'0 ₫',sk:'paid',sl:'Đã thu',outstanding:false,pays:[{date:'14/05/2026',amount:'2.000.000 ₫',method:'Tiền mặt'}]},
+      {id:'INV-2026-0099',student:'Đỗ Minh Đức',code:'STU-2026-0017',klass:'N3-TP-001',term:'Trọn khóa',issued:'01/05/2026',due:'15/05/2026',total:'4.500.000 ₫',paid:'4.500.000 ₫',remain:'0 ₫',sk:'paid',sl:'Đã thu',outstanding:false,pays:[{date:'10/05/2026',amount:'4.500.000 ₫',method:'Chuyển khoản'}]}
+    ];
+    const finFilterDefs=['Tất cả','Chưa thu','Quá hạn','Đã thu'];
+    const finFilters=finFilterDefs.map((label,i)=>({label, onSelect:()=>this.setState({finFilter:i}), bg:i===this.state.finFilter?'#fff':'transparent', color:i===this.state.finFilter?deep:'#a07c8a', weight:i===this.state.finFilter?'600':'500', shadow:i===this.state.finFilter?'0 1px 3px rgba(180,80,120,0.18)':'none'}));
+    const finList=finRaw.map((f,i)=>({...f, stBg:FST[f.sk].bg, stColor:FST[f.sk].color, bg:i===this.state.finSel?'#fbd9e5':'transparent', barColor:i===this.state.finSel?accent:'transparent', onSelect:()=>this.setState({finSel:i})}));
+    const fc=finRaw[this.state.finSel];
+    const finCur={...fc, slotId:'av-'+fc.code, stBg:FST[fc.sk].bg, stColor:FST[fc.sk].color, remainBg:fc.outstanding?'#fdeeec':'#fff', remainColor:fc.outstanding?'#c43232':'#3d2530', hasPays:fc.pays.length>0, noPays:fc.pays.length===0};
+
+    // reports
+    const repAtt=[{name:'N5-TP-001',pct:'88%'},{name:'N4-TP-002',pct:'93%'},{name:'N3-TP-001',pct:'95%'},{name:'N5-TP-003',pct:'100%'},{name:'N5-TP-002',pct:'90%'}];
+    const repRev=[['T1','55%'],['T2','62%'],['T3','70%'],['T4','78%'],['T5','85%'],['T6','100%']].map(([m,h])=>({m,h}));
+
+    // teacher portal
+    const teacherToday=[{time:'18:00',klass:'N5-TP-001',label:'Buổi 9',topic:'Bài 9: thể て',room:'P.301'},{time:'19:30',klass:'N3-TP-001',label:'Buổi 26',topic:'Đọc hiểu JLPT',room:'P.302'}];
+    const teacherTodo=[{klass:'N5-TP-001',label:'Buổi 8 · 12/06',detail:'Chưa lưu điểm danh'},{klass:'N3-TP-001',label:'Buổi 25 · 18/06',detail:'Chưa nhập điểm nghe'}];
+    const teacherAttention=[{name:'Nguyễn Văn An',code:'STU-2026-0034',detail:'Vắng 2 buổi · điểm giảm'},{name:'Phạm Mai Dung',code:'STU-2026-0052',detail:'Chuyên cần 88% · cần nhắc'}].map(a=>({...a,slotId:'av-'+a.code}));
+
+    // student portal
+    const HW={done:{bg:'#e4f3ea',color:'#2f8a5d'},todo:{bg:'#fbe6cf',color:'#b07a1f'}};
+    const studentHw=[['Ngữ pháp 〜ている','Hạn 22/06','todo','Chưa nộp'],['Kanji bài 8','Hạn 20/06','done','Đã nộp']].map(([title,due,k,status])=>({title,due,status,stBg:HW[k].bg,stColor:HW[k].color}));
+
+    // command palette
+    const cmdNavDefs=[['Dashboard','dashboard'],['Tuyển sinh','crm'],['Học viên','students'],['Lớp học','classes'],['Điểm danh','attendance'],['Lịch học','calendar'],['Tài chính','finance'],['Báo cáo','reports'],['Cổng giáo viên','teacher'],['Cổng học viên','student'],['Component Library','uikit']];
+    const cmdNav=cmdNavDefs.map(([label,s])=>({label, go:go(s)}));
+    const cmdCreate=[{label:'Tạo học viên mới'},{label:'Tạo lớp học'},{label:'Tạo hóa đơn'},{label:'Đăng ký học viên vào lớp'}];
+
+    return {
+      nav, openCmd:()=>this.setState({cmdOpen:true}), closeCmd:()=>this.setState({cmdOpen:false}), stop:(e)=>e.stopPropagation(),
+      openAi:()=>this.setState({aiOpen:true}), closeAi:()=>this.setState({aiOpen:false}),
+      cmdOpen:this.state.cmdOpen, aiOpen:this.state.aiOpen,
+      isUiKit:screen==='uikit',
+      modalOpen:this.state.modalOpen, drawerOpen:this.state.drawerOpen, toastOpen:this.state.toastOpen,
+      openModal:()=>this.setState({modalOpen:true}), closeModal:()=>this.setState({modalOpen:false}),
+      openDrawer:()=>this.setState({drawerOpen:true}), closeDrawer:()=>this.setState({drawerOpen:false}),
+      showToast:()=>{ this.setState({toastOpen:true}); clearTimeout(this._tt); this._tt=setTimeout(()=>this.setState({toastOpen:false}),3200); },
+      closeToast:()=>this.setState({toastOpen:false}),
+      showContext: screen==='students'||screen==='classes'||screen==='finance',
+      isDashboard:screen==='dashboard', isCrm:screen==='crm', isStudents:screen==='students', isClasses:screen==='classes', isAttendance:screen==='attendance', isCalendar:screen==='calendar', isFinance:screen==='finance', isReports:screen==='reports', isTeacher:screen==='teacher', isStudentP:screen==='student',
+      students, filters, cur, tabs, rowPad, attendance, grades, stuInvoices, history,
+      isOverview:tab==='overview', isEnrollment:tab==='enrollment', isAttendanceTab:tab==='attendance', isGrades:tab==='grades', isFees:tab==='fees', isHistory:tab==='history',
+      dashTiles, todaySessions, dashAlerts, classProgress, dashActivity,
+      crmCols,
+      classes, classCur, classTabs, classRoster, classSessions,
+      isClassOverview:classTab==='overview', isClassRoster:classTab==='roster', isClassSessions:classTab==='sessions',
+      attRoster, attTotal:attNames.length, attP, attL, attA, markAllPresent, copyPrev,
+      calDays,
+      finFilters, finList, finCur,
+      repAtt, repRev,
+      teacherToday, teacherTodo, teacherAttention,
+      studentHw,
+      cmdNav, cmdCreate
+    };
+  }
+}
+</script>
+</body>
+</html>

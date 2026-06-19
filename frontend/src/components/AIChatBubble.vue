@@ -76,7 +76,7 @@
               </svg>
             </div>
             <div :class="['message-bubble', msg.role === 'user' ? 'user-bubble' : 'ai-bubble']">
-              <div class="bubble-text" v-html="formatMessage(msg.parts[0].text)"></div>
+              <div class="bubble-text whitespace-pre-line">{{ msg.parts[0].text }}</div>
             </div>
           </div>
 
@@ -202,9 +202,16 @@ const autoResize = () => {
   ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'
 }
 
+const escapeHtml = (value) => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;')
+
 const formatMessage = (text) => {
   if (!text) return ''
-  return text
+  return escapeHtml(text)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/`(.*?)`/g, '<code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;font-family:monospace;font-size:0.85em">$1</code>')
@@ -277,6 +284,11 @@ watch(isOpen, (val) => {
   if (val) unreadCount.value = 0
 })
 
+// Cho phép mở chat từ bên ngoài (nút "AI Assistant" ở sidebar)
+defineExpose({
+  open: () => { isOpen.value = true },
+  close: () => { isOpen.value = false },
+})
 
 </script>
 

@@ -10,9 +10,9 @@ export default defineConfig({
       lucideIcons: true,
       jinjaBootData: true,
       buildConfig: {
-        indexHtmlPath: '../education_erp/www/education_app.html',
+        indexHtmlPath: '../edu/www/education_app.html',
         emptyOutDir: true,
-        sourcemap: true,
+        sourcemap: false,
       },
     }),
     vue(),

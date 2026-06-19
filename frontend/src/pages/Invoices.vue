@@ -384,7 +384,6 @@ const saveInvoice = async () => {
       tax_amount: newInvoice.value.tax_amount,
       discount_amount: newInvoice.value.discount_amount,
       discount_reason: newInvoice.value.discount_reason,
-      total_amount: computedTotal.value,
       items: newInvoice.value.items.map(i => ({
         item_name: i.item_name,
         amount: Number(i.amount)

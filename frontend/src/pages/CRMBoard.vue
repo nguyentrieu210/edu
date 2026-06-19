@@ -378,7 +378,7 @@
                   <span>Ngày: {{ log.contact_date }}</span>
                   <span v-if="log.next_follow_up" class="text-amber-600 font-medium">Hẹn lại: {{ log.next_follow_up }}</span>
                 </div>
-                <p class="text-ink-2 leading-relaxed" v-html="log.notes"></p>
+                <p class="text-ink-2 leading-relaxed whitespace-pre-line">{{ log.notes }}</p>
               </div>
             </div>
           </div>
@@ -502,7 +502,7 @@ const uploadAttachedFile = async (doctype, docname, file) => {
   formData.append('file', file)
   formData.append('doctype', doctype)
   formData.append('docname', docname)
-  formData.append('is_private', 0)
+  formData.append('is_private', 1)
   
   const response = await fetch('/api/method/upload_file', {
     method: 'POST',

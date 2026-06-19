@@ -468,10 +468,23 @@ const defaultForm = {
   student_status: 'Mới nhập học'
 }
 const formData = ref({ ...defaultForm })
+const editableStudentFields = [
+  'full_name',
+  'email',
+  'phone',
+  'date_of_birth',
+  'gender',
+  'source',
+  'occupation',
+  'rating',
+  'message_response',
+  'health_status',
+  'student_status',
+]
 
 const students = apiResource('get_students', { auto: true })
 
-const classesList = listResource('Course Class', {
+const classesList = listResource('Class', {
   fields: ['name', 'class_name'],
   limit_page_length: 500,
   auto: true
@@ -673,13 +686,13 @@ const saveStudent = async () => {
   saving.value = true
   try {
     if (isEditing.value) {
-      for (const key in formData.value) {
-        if (key !== 'name' && key !== 'creation') {
-          await db.setValue('Student', formData.value.name, key, formData.value[key])
-        }
-      }
+      const values = {}
+      for (const key of editableStudentFields) values[key] = formData.value[key]
+      await db.setValue('Student', formData.value.name, values)
     } else {
-      await db.insert({ doctype: 'Student', ...formData.value })
+      const doc = { doctype: 'Student' }
+      for (const key of editableStudentFields) doc[key] = formData.value[key]
+      await db.insert(doc)
     }
     showCreateModal.value = false
     await students.fetch()

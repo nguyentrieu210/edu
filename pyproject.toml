@@ -1,5 +1,5 @@
 [project]
-name = "education_erp"
+name = "edu"
 authors = [
     { name = "IKE Ohashi", email = "admin@ike.test"}
 ]
