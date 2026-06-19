@@ -259,3 +259,25 @@ app_license = "mit"
 website_route_rules = [
     {"from_route": "/education_app/<path:app_path>", "to_route": "education_app"},
 ]
+
+# Phân quyền theo phạm vi dữ liệu cho portal Giáo viên/Học viên (§9.1, SEC-01/02)
+_PERM = "education_erp.education_erp.permissions"
+permission_query_conditions = {
+    "Class": f"{_PERM}.class_query",
+    "Student": f"{_PERM}.student_query",
+    "Program Enrollment": f"{_PERM}.enrollment_query",
+    "Student Attendance": f"{_PERM}.attendance_query",
+    "Student Assessment": f"{_PERM}.assessment_query",
+    "Class Session": f"{_PERM}.session_query",
+    "Homework": f"{_PERM}.homework_query",
+    "Fee Invoice": f"{_PERM}.invoice_query",
+}
+has_permission = {
+    "Class": f"{_PERM}.class_has_permission",
+    "Student": f"{_PERM}.student_has_permission",
+    "Program Enrollment": f"{_PERM}.enrollment_has_permission",
+    "Student Attendance": f"{_PERM}.attendance_has_permission",
+    "Student Assessment": f"{_PERM}.assessment_has_permission",
+    "Class Session": f"{_PERM}.session_has_permission",
+    "Fee Invoice": f"{_PERM}.invoice_has_permission",
+}

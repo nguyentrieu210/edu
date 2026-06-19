@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "teacher_name",
+  "user",
   "phone",
   "email",
   "status"
@@ -17,6 +18,14 @@
    "in_list_view": 1,
    "label": "T\u00ean gi\u00e1o vi\u00ean",
    "reqd": 1
+  },
+  {
+   "description": "T\u00e0i kho\u1ea3n \u0111\u0103ng nh\u1eadp c\u1ee7a gi\u00e1o vi\u00ean (portal).",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "T\u00e0i kho\u1ea3n",
+   "options": "User",
+   "unique": 1
   },
   {
    "fieldname": "phone",

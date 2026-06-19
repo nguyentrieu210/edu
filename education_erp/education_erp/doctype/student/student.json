@@ -6,6 +6,7 @@
  "engine": "InnoDB",
  "field_order": [
   "full_name",
+  "user",
   "guardian",
   "progress",
   "attendance_status",
@@ -29,6 +30,14 @@
    "fieldtype": "Data",
    "label": "H\u1ecd v\u00e0 t\u00ean h\u1ecdc vi\u00ean",
    "reqd": 1
+  },
+  {
+   "description": "T\u00e0i kho\u1ea3n \u0111\u0103ng nh\u1eadp c\u1ee7a h\u1ecdc vi\u00ean (portal).",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "T\u00e0i kho\u1ea3n",
+   "options": "User",
+   "unique": 1
   },
   {
    "fieldname": "guardian",

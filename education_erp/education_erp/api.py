@@ -822,6 +822,79 @@ def transfer_enrollment(program_enrollment, to_class, transfer_date=None, reason
 
 
 @frappe.whitelist()
+def get_my_context():
+    """Xác định người dùng hiện tại là giáo viên/học viên (lấy từ session, không tin client)."""
+    from education_erp.education_erp import permissions as perm
+    user = frappe.session.user
+    t = perm.teacher_of(user)
+    s = perm.student_of(user)
+    return {
+        "user": user,
+        "is_teacher": bool(t),
+        "is_student": bool(s),
+        "teacher": t,
+        "student": s,
+        "is_admin": perm.is_admin(user),
+    }
+
+
+@frappe.whitelist()
+def get_my_teacher_overview():
+    """Dashboard giáo viên: chỉ lớp được phân công + buổi dạy hôm nay (§5, §9.1)."""
+    from education_erp.education_erp import permissions as perm
+    t = perm.teacher_of(frappe.session.user)
+    if not t:
+        frappe.throw("Tài khoản hiện tại không gắn với hồ sơ giáo viên.")
+    cids = perm.teacher_class_ids(t)
+    classes = frappe.get_all(
+        "Class", filters={"name": ["in", cids]},
+        fields=["name", "class_name", "status", "progress"],
+    ) if cids else []
+    sessions_today = frappe.get_all(
+        "Class Session",
+        filters={"class_id": ["in", cids], "session_date": nowdate()},
+        fields=["name", "class_id", "start_time", "end_time", "lesson_topic", "session_status"],
+        order_by="start_time asc",
+    ) if cids else []
+    return {"teacher": t, "classes": classes, "sessions_today": sessions_today}
+
+
+@frappe.whitelist()
+def get_my_student_overview():
+    """Dashboard học viên: chỉ dữ liệu của bản thân (§6, §9.1, SEC-02)."""
+    from education_erp.education_erp import permissions as perm
+    s = perm.student_of(frappe.session.user)
+    if not s:
+        frappe.throw("Tài khoản hiện tại không gắn với hồ sơ học viên.")
+    profile = frappe.db.get_value(
+        "Student", s,
+        ["full_name", "progress", "attendance_rate", "average_score", "health_status"],
+        as_dict=True,
+    )
+    cids = perm.student_class_ids(s)
+    homework = frappe.get_all(
+        "Homework",
+        filters={"class_id": ["in", cids], "status": "Published"},
+        fields=["name", "title", "due_date", "class_id"],
+        order_by="due_date asc",
+    ) if cids else []
+    invoices = frappe.get_all(
+        "Fee Invoice",
+        filters={"student": s, "docstatus": 1},
+        fields=["name", "total_amount", "outstanding_amount", "status", "due_date"],
+        order_by="due_date asc",
+    )
+    assessments = frappe.get_all(
+        "Student Assessment",
+        filters={"student": s},
+        fields=["assessment_name", "assessment_type", "score", "max_score"],
+        order_by="creation desc",
+        limit_page_length=10,
+    )
+    return {"student": s, "profile": profile, "homework": homework, "invoices": invoices, "recent_assessments": assessments}
+
+
+@frappe.whitelist()
 def ai_chat(messages, temperature=0.7, max_tokens=1024, response_format=None, model=None):
     """Proxy gọi Groq (OpenAI-compatible) phía server để không lộ API key ra trình duyệt.
 
