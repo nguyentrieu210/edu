@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "autoname": "HWS-.YYYY.-.####",
+ "creation": "2026-06-19 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "homework",
+  "program_enrollment",
+  "student",
+  "submission_date",
+  "status",
+  "content",
+  "grade",
+  "feedback"
+ ],
+ "fields": [
+  {
+   "fieldname": "homework",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Bài tập",
+   "options": "Homework",
+   "reqd": 1
+  },
+  {
+   "fieldname": "program_enrollment",
+   "fieldtype": "Link",
+   "label": "Đăng ký học",
+   "options": "Program Enrollment"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Học viên",
+   "options": "Student",
+   "reqd": 1
+  },
+  {
+   "fieldname": "submission_date",
+   "fieldtype": "Date",
+   "label": "Ngày nộp"
+  },
+  {
+   "default": "Submitted",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Trạng thái",
+   "options": "Submitted\nGraded\nLate"
+  },
+  {
+   "fieldname": "content",
+   "fieldtype": "Text",
+   "label": "Nội dung nộp / đường dẫn"
+  },
+  {
+   "fieldname": "grade",
+   "fieldtype": "Float",
+   "label": "Điểm"
+  },
+  {
+   "fieldname": "feedback",
+   "fieldtype": "Text",
+   "label": "Nhận xét"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Homework Submission",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

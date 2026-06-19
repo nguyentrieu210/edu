@@ -60,6 +60,16 @@ const routes = [
     component: () => import('./pages/Enrollments.vue'),
   },
   {
+    path: '/curriculum',
+    name: 'Curriculum',
+    component: () => import('./pages/Curriculum.vue'),
+  },
+  {
+    path: '/homework',
+    name: 'Homework',
+    component: () => import('./pages/Homework.vue'),
+  },
+  {
     path: '/attendance',
     name: 'Attendance',
     component: () => import('./pages/Attendance.vue'),

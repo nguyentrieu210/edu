@@ -183,6 +183,88 @@ def get_courses():
     )
 
 @frappe.whitelist()
+def get_curriculum(course):
+    """Trả về cấu trúc chương trình: các học phần + giáo án từng buổi (§3.1)."""
+    modules = frappe.get_all(
+        "Curriculum Module",
+        filters={"course": course},
+        fields=["name", "module_name", "sequence", "description"],
+        order_by="sequence asc, creation asc",
+    )
+    for m in modules:
+        m["lessons"] = frappe.get_all(
+            "Lesson Template",
+            filters={"curriculum_module": m["name"]},
+            fields=[
+                "name", "lesson_no", "title", "duration_minutes",
+                "kanji", "vocabulary", "grammar", "reading", "listening", "kaiwa",
+                "homework", "materials",
+            ],
+            order_by="lesson_no asc, creation asc",
+        )
+    return modules
+
+
+@frappe.whitelist()
+def get_homework(class_id=None):
+    filters = {}
+    if class_id:
+        filters["class_id"] = class_id
+    rows = frappe.get_all(
+        "Homework",
+        filters=filters,
+        fields=[
+            "name", "title", "class_id", "class_session", "target", "student",
+            "assigned_date", "due_date", "status", "description",
+        ],
+        order_by="creation desc",
+    )
+    for r in rows:
+        r["submission_count"] = frappe.db.count("Homework Submission", {"homework": r["name"]})
+    return rows
+
+
+@frappe.whitelist()
+def publish_homework(homework):
+    """Chỉ Homework đã publish mới hiển thị trên portal học viên (§5.3)."""
+    hw = frappe.get_doc("Homework", homework)
+    if hw.status != "Draft":
+        frappe.throw(f"Chỉ publish bài tập đang Draft (hiện tại: {hw.status}).")
+    hw.status = "Published"
+    if not hw.assigned_date:
+        hw.assigned_date = nowdate()
+    hw.save()
+    return {"status": "Published"}
+
+
+@frappe.whitelist()
+def close_homework(homework):
+    hw = frappe.get_doc("Homework", homework)
+    if hw.status not in ("Published", "Draft"):
+        frappe.throw(f"Không thể đóng bài tập ở trạng thái {hw.status}.")
+    hw.status = "Closed"
+    hw.save()
+    return {"status": "Closed"}
+
+
+@frappe.whitelist()
+def get_materials(course=None, class_id=None, public_only=0):
+    filters = {}
+    if course:
+        filters["course"] = course
+    if class_id:
+        filters["class_id"] = class_id
+    if int(public_only or 0):
+        filters["is_public"] = 1
+    return frappe.get_all(
+        "Learning Material",
+        filters=filters,
+        fields=["name", "title", "material_type", "course", "class_id", "url", "is_public", "description"],
+        order_by="creation desc",
+    )
+
+
+@frappe.whitelist()
 def get_classes():
     return frappe.get_all(
         "Class",

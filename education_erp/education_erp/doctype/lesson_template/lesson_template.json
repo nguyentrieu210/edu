@@ -1,0 +1,139 @@
+{
+ "actions": [],
+ "autoname": "LSN-.YYYY.-.####",
+ "creation": "2026-06-19 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "curriculum_module",
+  "course",
+  "lesson_no",
+  "title",
+  "duration_minutes",
+  "content_section",
+  "kanji",
+  "vocabulary",
+  "grammar",
+  "reading",
+  "listening",
+  "kaiwa",
+  "extra_section",
+  "homework",
+  "materials"
+ ],
+ "fields": [
+  {
+   "fieldname": "curriculum_module",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Học phần",
+   "options": "Curriculum Module",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "curriculum_module.course",
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Khóa học",
+   "options": "Course",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "lesson_no",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Buổi số"
+  },
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tiêu đề buổi học",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "duration_minutes",
+   "fieldtype": "Int",
+   "label": "Thời lượng (phút)"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Nội dung theo kỹ năng"
+  },
+  {
+   "fieldname": "kanji",
+   "fieldtype": "Small Text",
+   "label": "Kanji"
+  },
+  {
+   "fieldname": "vocabulary",
+   "fieldtype": "Small Text",
+   "label": "Từ vựng"
+  },
+  {
+   "fieldname": "grammar",
+   "fieldtype": "Small Text",
+   "label": "Ngữ pháp"
+  },
+  {
+   "fieldname": "reading",
+   "fieldtype": "Small Text",
+   "label": "Đọc hiểu"
+  },
+  {
+   "fieldname": "listening",
+   "fieldtype": "Small Text",
+   "label": "Nghe hiểu"
+  },
+  {
+   "fieldname": "kaiwa",
+   "fieldtype": "Small Text",
+   "label": "Kaiwa (hội thoại)"
+  },
+  {
+   "fieldname": "extra_section",
+   "fieldtype": "Section Break",
+   "label": "Bài tập & Tài liệu"
+  },
+  {
+   "fieldname": "homework",
+   "fieldtype": "Text",
+   "label": "Bài tập về nhà"
+  },
+  {
+   "fieldname": "materials",
+   "fieldtype": "Text",
+   "label": "Tài liệu / đường dẫn"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Lesson Template",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

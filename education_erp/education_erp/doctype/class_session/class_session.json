@@ -5,6 +5,7 @@
  "engine": "InnoDB",
  "field_order": [
   "class_id",
+  "lesson_template",
   "lesson_topic",
   "classroom",
   "session_date",
@@ -57,6 +58,12 @@
    "fieldtype": "Link",
    "label": "Gi\u00e1o vi\u00ean d\u1ea1y",
    "options": "Teacher"
+  },
+  {
+   "fieldname": "lesson_template",
+   "fieldtype": "Link",
+   "label": "Gi\u00e1o \u00e1n d\u1ef1 ki\u1ebfn",
+   "options": "Lesson Template"
   },
   {
    "fieldname": "lesson_topic",

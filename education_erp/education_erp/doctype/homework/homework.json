@@ -1,0 +1,113 @@
+{
+ "actions": [],
+ "autoname": "HW-.YYYY.-.####",
+ "creation": "2026-06-19 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "class_id",
+  "class_session",
+  "target",
+  "student",
+  "assigned_date",
+  "due_date",
+  "status",
+  "description",
+  "materials"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Tiêu đề",
+   "reqd": 1
+  },
+  {
+   "fieldname": "class_id",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Lớp học",
+   "options": "Class",
+   "reqd": 1
+  },
+  {
+   "fieldname": "class_session",
+   "fieldtype": "Link",
+   "label": "Buổi học",
+   "options": "Class Session"
+  },
+  {
+   "default": "Whole Class",
+   "fieldname": "target",
+   "fieldtype": "Select",
+   "label": "Đối tượng",
+   "options": "Whole Class\nIndividual"
+  },
+  {
+   "depends_on": "eval:doc.target=='Individual'",
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "Học viên",
+   "options": "Student"
+  },
+  {
+   "fieldname": "assigned_date",
+   "fieldtype": "Date",
+   "label": "Ngày giao"
+  },
+  {
+   "fieldname": "due_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Hạn nộp"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Trạng thái",
+   "options": "Draft\nPublished\nClosed\nCancelled",
+   "read_only": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Text",
+   "label": "Nội dung bài tập"
+  },
+  {
+   "fieldname": "materials",
+   "fieldtype": "Text",
+   "label": "Tài liệu / đường dẫn"
+  }
+ ],
+ "links": [],
+ "modified": "2026-06-19 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Education ERP",
+ "name": "Homework",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -230,9 +230,11 @@ const menuGroups = ref([
     label: 'Lớp & Đào tạo', icon: 'book-open', isOpen: false,
     children: [
       { label: 'Hiệu suất', path: '/assessments' },
+      { label: 'Chương trình & Giáo án', path: '/curriculum' },
       { label: 'Lịch lớp', path: '/classes' },
       { label: 'Đăng ký lớp', path: '/enrollments' },
       { label: 'Chấm công & Điểm danh', path: '/attendance' },
+      { label: 'Bài tập & Tài liệu', path: '/homework' },
       { label: 'Giáo viên', path: '/teachers' },
       { label: 'Khóa học', path: '/courses' },
     ]
@@ -308,6 +310,8 @@ const currentRouteName = computed(() => {
     '/courses': 'Quản Lý Khóa Học',
     '/classes': 'Quản Lý Lớp Học',
     '/enrollments': 'Đăng Ký Lớp Học',
+    '/curriculum': 'Chương Trình & Giáo Án',
+    '/homework': 'Bài Tập & Tài Liệu',
     '/room-booking': 'Thuê Phòng Học',
     '/attendance': 'Điểm Danh Học Viên',
     '/assessments': 'Bảng Điểm Thi Cử',
