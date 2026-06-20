@@ -13,6 +13,7 @@
       <SkState v-else-if="error" state="denied" title="Không truy cập được cổng giáo viên" :message="error" />
 
       <div v-else class="tp-wrap">
+        <div v-if="data.is_admin" class="admin-banner">👁️ Admin đang xem thử cổng giáo viên với tư cách: <strong>{{ teacherName }}</strong></div>
         <div class="tp-section">Lịch dạy hôm nay</div>
         <div class="tp-today">
           <div v-if="!data.sessions_today.length" class="card pad muted">Hôm nay bạn không có buổi dạy.</div>
@@ -64,9 +65,9 @@ import SkState from '../components/ui/SkState.vue'
 
 const loading = ref(true)
 const error = ref('')
-const data = reactive({ teacher: '', classes: [], sessions_today: [] })
+const data = reactive({ teacher: '', teacher_name: '', classes: [], sessions_today: [], is_admin: false })
 
-const teacherName = computed(() => data.teacher || 'Giáo viên')
+const teacherName = computed(() => data.teacher_name || data.teacher || 'Giáo viên')
 const todo = computed(() => data.sessions_today.filter((s) => s.session_status !== 'Completed'))
 
 const todayLabel = computed(() => {
@@ -95,6 +96,7 @@ onMounted(load)
 </script>
 
 <style scoped>
+.admin-banner { background: #fff3cd; border: 1px solid #ffe08a; color: #8a6d1a; border-radius: 8px; padding: 8px 12px; font-size: 12.5px; margin-bottom: 12px; }
 .ws { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; background: linear-gradient(140deg, #fff7fa, #fdedf3); }
 .tp-head { height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 28px; border-bottom: 1px solid #f1dbe3; background: rgba(255, 253, 254, 0.7); }
 .tp-head__name { font-size: 15px; font-weight: 600; color: #3d2530; }

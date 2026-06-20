@@ -12,3 +12,8 @@ class Student(Document):
     def validate(self) -> None:
         if not self.full_name:
             frappe.throw("Student Full Name is required.")
+
+    def after_insert(self) -> None:
+        # Tự tạo tài khoản đăng nhập + gửi mail (nếu bật trong Education Settings).
+        from edu.education_erp.api import _provision_user_for
+        _provision_user_for("Student", self.name, self.full_name, self.get("email"), "Student")

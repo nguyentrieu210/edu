@@ -4,6 +4,7 @@
     <SkState v-else-if="error" state="denied" title="Không truy cập được cổng học viên" :message="error" />
 
     <div v-else class="phone sk-anim-pop">
+      <div v-if="data.is_admin" class="admin-banner">👁️ Admin xem thử với tư cách: <strong>{{ name }}</strong></div>
       <div class="ph-head">
         <div class="ph-head__top">
           <SkAvatar :name="name" :src="p.student_image" :size="46" />
@@ -223,6 +224,7 @@ const error = ref('')
 const activeTab = ref('home')
 const data = reactive({
   student: '',
+  is_admin: false,
   profile: {},
   enrollments: [],
   homework: [],
@@ -326,6 +328,7 @@ onMounted(load)
 </script>
 
 <style scoped>
+.admin-banner { background: #fff3cd; border: 1px solid #ffe08a; color: #8a6d1a; border-radius: 10px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; max-width: 420px; }
 .ws { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; background: linear-gradient(140deg, #fce3ec, #f7d3e0); display: flex; justify-content: center; padding: 28px 16px; }
 .phone { width: 420px; flex: none; border-radius: 34px; background: #fff; box-shadow: 0 24px 60px rgba(160, 60, 100, 0.28); overflow: hidden; border: 7px solid #2a1620; min-height: 720px; display: flex; flex-direction: column; }
 .ph-head { background: linear-gradient(150deg, #e87aa3, #d4567f); padding: 22px 20px 24px; color: #fff; }

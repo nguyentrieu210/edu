@@ -4,7 +4,8 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "default_due_days"
+  "default_due_days",
+  "auto_create_login"
  ],
  "fields": [
   {
@@ -12,6 +13,12 @@
    "fieldname": "default_due_days",
    "fieldtype": "Int",
    "label": "S\u1ed1 ng\u00e0y h\u1ea1n n\u1ed9p m\u1eb7c \u0111\u1ecbnh"
+  },
+  {
+   "default": "1",
+   "fieldname": "auto_create_login",
+   "fieldtype": "Check",
+   "label": "T\u1ef1 t\u1ea1o t\u00e0i kho\u1ea3n + g\u1eedi mail khi t\u1ea1o h\u1ecdc vi\u00ean/gi\u00e1o vi\u00ean"
   }
  ],
  "issingle": 1,

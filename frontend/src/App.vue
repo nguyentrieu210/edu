@@ -52,8 +52,14 @@
           <div class="sk-user__name">{{ userName }}</div>
           <div class="sk-user__role">{{ userRole }}</div>
         </div>
-        <button class="sk-user__btn" aria-label="Cài đặt" @click="goToDesk">
+        <button class="sk-user__btn" title="Đổi mật khẩu" aria-label="Đổi mật khẩu" @click="openPwd">
+          <FeatherIcon name="key" style="width:17px;height:17px;" />
+        </button>
+        <button v-if="isPrivileged" class="sk-user__btn" title="Trang quản trị" aria-label="Trang quản trị" @click="goToDesk">
           <FeatherIcon name="settings" style="width:17px;height:17px;" />
+        </button>
+        <button class="sk-user__btn" title="Đăng xuất" aria-label="Đăng xuất" @click="logout">
+          <FeatherIcon name="log-out" style="width:17px;height:17px;" />
         </button>
       </div>
     </aside>
@@ -76,6 +82,18 @@
     <CommandPalette ref="palette" />
     <AIDrawer ref="aiDrawer" />
     <SkToaster />
+
+    <SkModal v-model="showPwd" title="Đổi mật khẩu">
+      <form class="pwd-form" @submit.prevent="changePassword">
+        <label class="pwd-fg"><span>Mật khẩu hiện tại</span><input v-model="pwd.old_password" class="pwd-field" type="password" autocomplete="current-password" /></label>
+        <label class="pwd-fg"><span>Mật khẩu mới</span><input v-model="pwd.new_password" class="pwd-field" type="password" autocomplete="new-password" /></label>
+        <label class="pwd-fg"><span>Xác nhận mật khẩu mới</span><input v-model="pwd.confirm" class="pwd-field" type="password" autocomplete="new-password" /></label>
+      </form>
+      <template #footer>
+        <SkButton variant="secondary" :disabled="savingPwd" @click="showPwd = false">Hủy</SkButton>
+        <SkButton variant="solid" :loading="savingPwd" @click="changePassword">Đổi mật khẩu</SkButton>
+      </template>
+    </SkModal>
   </div>
 </template>
 
@@ -83,9 +101,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { FeatherIcon } from 'frappe-ui'
-import { NAV_SECTIONS } from './router'
+import { NAV_SECTIONS, navSectionsFor } from './router'
+import { call } from './api'
+import { toast } from './utils/toast'
 import SkButton from './components/ui/SkButton.vue'
 import SkAvatar from './components/ui/SkAvatar.vue'
+import SkModal from './components/ui/SkModal.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import AIDrawer from './components/AIDrawer.vue'
 import SkToaster from './components/ui/SkToaster.vue'
@@ -93,16 +114,18 @@ import SkToaster from './components/ui/SkToaster.vue'
 const route = useRoute()
 const palette = ref(null)
 const aiDrawer = ref(null)
-const sections = NAV_SECTIONS
-
-const isActive = (path) => (path === '/' ? route.path === '/' : route.path.startsWith(path))
 
 // Người dùng từ boot session (không hardcode).
 const boot = typeof window !== 'undefined' ? window.frappe?.boot : null
+const roles = (boot && boot.user && boot.user.roles) || []
+const sections = computed(() => navSectionsFor(roles))
+const isPrivileged = roles.includes('System Manager') || roles.includes('Academic Manager') || roles.includes('Administrator')
+
+const isActive = (path) => (path === '/' ? route.path === '/' : route.path.startsWith(path))
+
 const userId = boot?.user?.name || window.frappe?.session?.user || ''
 const userName = computed(() => boot?.user_info?.[userId]?.fullname || boot?.user?.full_name || userId || 'Người dùng')
 const userRole = computed(() => {
-  const roles = boot?.user?.roles || []
   if (roles.includes('Academic Manager') || roles.includes('System Manager')) return 'Giáo vụ'
   if (roles.includes('Teacher')) return 'Giáo viên'
   if (roles.includes('Student')) return 'Học viên'
@@ -110,6 +133,27 @@ const userRole = computed(() => {
 })
 
 const goToDesk = () => { window.location.href = '/app' }
+const logout = () => { window.location.href = '/api/method/logout' }
+
+// Đổi mật khẩu
+const showPwd = ref(false)
+const savingPwd = ref(false)
+const pwd = ref({ old_password: '', new_password: '', confirm: '' })
+function openPwd() { pwd.value = { old_password: '', new_password: '', confirm: '' }; showPwd.value = true }
+async function changePassword() {
+  if (pwd.value.new_password.length < 6) { toast.error('Mật khẩu mới tối thiểu 6 ký tự'); return }
+  if (pwd.value.new_password !== pwd.value.confirm) { toast.error('Xác nhận mật khẩu không khớp'); return }
+  savingPwd.value = true
+  try {
+    await call('change_my_password', { old_password: pwd.value.old_password, new_password: pwd.value.new_password })
+    toast.success('Đã đổi mật khẩu')
+    showPwd.value = false
+  } catch (e) {
+    toast.error('Không đổi được mật khẩu', e?.messages?.[0] || e?.message || String(e))
+  } finally {
+    savingPwd.value = false
+  }
+}
 
 // Phím tắt: ⌘K mở palette, Esc đóng overlay.
 function onKey(e) {
@@ -164,4 +208,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .sk-user__role { font-size: 11px; color: #b07e90; }
 .sk-user__btn { flex: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: none; background: none; border-radius: 7px; cursor: pointer; color: #b07e90; }
 .sk-user__btn:hover { background: rgba(255, 255, 255, 0.6); }
+
+.pwd-form { display: flex; flex-direction: column; gap: 14px; }
+.pwd-fg { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #7a5c68; }
+.pwd-field { height: 36px; border: 1px solid #ecd0da; border-radius: 8px; padding: 0 12px; font-size: 13px; outline: none; font-family: inherit; }
+.pwd-field:focus { border-color: #d4567f; }
 </style>

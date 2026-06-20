@@ -39,7 +39,7 @@
             <SkBadge v-bind="clsMeta(cur.status)" />
           </div>
           <div class="dtl__actions">
-            <SkButton variant="secondary" :loading="generatingSessions" @click="generateSessions">Sinh lịch</SkButton>
+            <SkButton variant="secondary" :loading="generatingSessions" @click="generateSessions">Lên lịch học</SkButton>
             <SkButton variant="secondary" left-icon="user-plus" @click="openEnrollment">Gán học viên</SkButton>
             <SkButton variant="solid" @click="$router.push('/attendance')">Mở buổi hôm nay</SkButton>
           </div>
@@ -152,9 +152,9 @@
               <div class="block__head">
                 <div>
                   <div class="block__title">Buổi học · {{ sessions.length }}</div>
-                  <div class="block__hint">Sinh lịch theo mẫu 2-4-6, 3-5-7 hoặc T7-CN từ ngày khai giảng.</div>
+                  <div class="block__hint">Lên lịch học theo mẫu 2-4-6, 3-5-7 hoặc T7-CN từ ngày khai giảng.</div>
                 </div>
-                <SkButton variant="secondary" :loading="generatingSessions" @click="generateSessions">Sinh lịch</SkButton>
+                <SkButton variant="secondary" :loading="generatingSessions" @click="generateSessions">Lên lịch học</SkButton>
               </div>
               <div v-if="!sessions.length" class="muted">Chưa sinh lịch buổi học.</div>
               <div class="sess">
@@ -519,11 +519,11 @@ async function generateSessions() {
   generatingSessions.value = true
   try {
     const message = await call('generate_class_sessions', { class_id: selectedId.value })
-    toast.success('Đã sinh lịch', message)
+    toast.success('Đã lên lịch học', message)
     tab.value = 'sessions'
     await loadDetail(selectedId.value)
   } catch (e) {
-    toast.error('Không sinh được lịch', e?.messages?.[0] || e?.message || String(e))
+    toast.error('Không lên được lịch học', e?.messages?.[0] || e?.message || String(e))
   } finally {
     generatingSessions.value = false
   }

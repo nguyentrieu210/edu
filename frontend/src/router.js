@@ -39,7 +39,10 @@ export const NAV_SECTIONS = [
   },
   {
     label: 'Hệ thống',
-    items: [{ label: 'Component Library', icon: 'layout', path: '/ui-kit' }],
+    items: [
+      { label: 'Quản lý tài khoản', icon: 'shield', path: '/accounts' },
+      { label: 'Component Library', icon: 'layout', path: '/ui-kit' },
+    ],
   },
 ]
 
@@ -59,12 +62,43 @@ const routes = [
   { path: '/teacher', name: 'TeacherPortal', component: () => import('./pages/TeacherPortal.vue') },
   { path: '/student', name: 'StudentPortal', component: () => import('./pages/StudentPortal.vue') },
   { path: '/ui-kit', name: 'UiKit', component: () => import('./pages/UiKit.vue') },
+  { path: '/accounts', name: 'Accounts', component: () => import('./pages/Accounts.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
+
+// ---- Phân quyền hiển thị theo vai trò (đọc từ boot session) ----
+function currentRoles() {
+  const b = (typeof window !== 'undefined' && window.frappe?.boot) || null
+  return (b && b.user && b.user.roles) || []
+}
+function isPrivileged(roles) {
+  return roles.includes('System Manager') || roles.includes('Academic Manager') || roles.includes('Administrator')
+}
+// Sidebar lọc theo vai trò: HV chỉ thấy cổng học viên, GV chỉ thấy cổng giáo viên.
+export function navSectionsFor(roles) {
+  if (isPrivileged(roles)) return NAV_SECTIONS
+  const allow = []
+  if (roles.includes('Student')) allow.push('/student')
+  if (roles.includes('Teacher')) allow.push('/teacher')
+  return NAV_SECTIONS
+    .map((s) => ({ ...s, items: s.items.filter((it) => allow.includes(it.path)) }))
+    .filter((s) => s.items.length)
+}
 
 const router = createRouter({
   history: createWebHistory('/'),
   routes,
+})
+
+// Giới hạn điều hướng: HV thuần -> /student, GV thuần -> /teacher; admin/giáo vụ tự do.
+router.beforeEach((to) => {
+  const roles = currentRoles()
+  if (isPrivileged(roles)) return true
+  const isStudent = roles.includes('Student')
+  const isTeacher = roles.includes('Teacher')
+  if (isStudent && !isTeacher) return to.path === '/student' ? true : '/student'
+  if (isTeacher && !isStudent) return to.path === '/teacher' ? true : '/teacher'
+  return true
 })
 
 export default router

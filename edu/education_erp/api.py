@@ -563,6 +563,12 @@ def record_lead_outcome(lead_id, payload=None):
                 payload.get("next_follow_up"),
                 payload.get("result"),
             )
+        # Có ngày theo dõi tiếp -> tạo Lịch hẹn để hiện trong trang Lịch hẹn.
+        if payload.get("next_follow_up"):
+            created["appointment"] = _create_lead_appointment(
+                lead_id, payload.get("next_follow_up"),
+                "Theo dõi / tư vấn", payload.get("appointment_time"),
+            )
 
     # Đánh dấu lịch hẹn liên quan là Hoàn thành (nếu ghi từ lịch hẹn)
     if payload.get("appointment"):
@@ -1615,10 +1621,14 @@ def get_my_context():
 
 
 @frappe.whitelist()
-def get_my_teacher_overview():
-    """Dashboard giáo viên: chỉ lớp được phân công + buổi dạy hôm nay (§5, §9.1)."""
+def get_my_teacher_overview(as_teacher=None):
+    """Dashboard giáo viên: chỉ lớp được phân công + buổi dạy hôm nay (§5, §9.1).
+    Admin/System Manager có thể xem thử cổng (mặc định GV đầu tiên hoặc as_teacher)."""
     from edu.education_erp import permissions as perm
+    admin = perm.is_admin(frappe.session.user)
     t = perm.teacher_of(frappe.session.user)
+    if not t and admin:
+        t = as_teacher or frappe.db.get_value("Teacher", {}, "name")
     if not t:
         frappe.throw("Tài khoản hiện tại không gắn với hồ sơ giáo viên.")
     cids = perm.teacher_class_ids(t)
@@ -1633,14 +1643,20 @@ def get_my_teacher_overview():
         order_by="start_time asc",
     ) if cids else []
     _attach_class_names(sessions_today)
-    return {"teacher": t, "classes": classes, "sessions_today": sessions_today}
+    teacher_name = frappe.db.get_value("Teacher", t, "teacher_name") or t
+    return {"teacher": t, "teacher_name": teacher_name, "classes": classes,
+            "sessions_today": sessions_today, "is_admin": admin}
 
 
 @frappe.whitelist()
-def get_my_student_overview():
-    """Dashboard học viên: chỉ dữ liệu của bản thân (§6, §9.1, SEC-02)."""
+def get_my_student_overview(as_student=None):
+    """Dashboard học viên: chỉ dữ liệu của bản thân (§6, §9.1, SEC-02).
+    Admin/System Manager có thể xem thử cổng (mặc định HV đầu tiên hoặc as_student)."""
     from edu.education_erp import permissions as perm
+    admin = perm.is_admin(frappe.session.user)
     s = perm.student_of(frappe.session.user)
+    if not s and admin:
+        s = as_student or frappe.db.get_value("Student", {}, "name")
     if not s:
         frappe.throw("Tài khoản hiện tại không gắn với hồ sơ học viên.")
     profile = frappe.db.get_value(
@@ -1707,6 +1723,7 @@ def get_my_student_overview():
     ) if cids else []
     return {
         "student": s,
+        "is_admin": admin,
         "profile": profile,
         "enrollments": enrollments,
         "homework": homework,
@@ -1959,6 +1976,157 @@ def _attach_class_names(rows, field="class_id", out="class_name"):
         for r in rows:
             r[out] = m.get(r.get(field)) or r.get(field)
     return rows
+
+
+# ---------------------------------------------------------------------------
+# Quản lý tài khoản đăng nhập (User) cho HV/GV
+# ---------------------------------------------------------------------------
+MANAGED_ROLES = {"Student", "Teacher", "Academic Manager"}
+
+
+def _require_system_manager():
+    if frappe.session.user != "Administrator" and "System Manager" not in frappe.get_roles():
+        frappe.throw("Chỉ quản trị viên mới được thao tác tài khoản.", frappe.PermissionError)
+
+
+def _ensure_role(role):
+    if not frappe.db.exists("Role", role):
+        frappe.get_doc({"doctype": "Role", "role_name": role, "desk_access": 1}).insert(
+            ignore_permissions=True)
+
+
+def _split_name(full_name, email):
+    parts = (full_name or email or "").split()
+    if len(parts) > 1:
+        return " ".join(parts[:-1]), parts[-1]
+    return (full_name or email or ""), ""
+
+
+def _create_login_user(email, full_name, role, send_welcome=True):
+    """Tạo User mới (System User) + role, gửi welcome email (link đặt mật khẩu) nếu cần."""
+    _ensure_role(role)
+    first, last = _split_name(full_name, email)
+    doc = frappe.get_doc({
+        "doctype": "User", "email": email, "first_name": first, "last_name": last,
+        "enabled": 1, "user_type": "System User", "send_welcome_email": 1 if send_welcome else 0,
+        "roles": [{"role": role}],
+    })
+    doc.insert(ignore_permissions=True)
+    return doc.name
+
+
+def _provision_user_for(profile_doctype, profile_name, full_name, email, role):
+    """Hook tạo HV/GV -> tự tạo tài khoản + gửi mail. Không bao giờ throw (tránh rollback hồ sơ)."""
+    try:
+        if frappe.flags.in_install or frappe.flags.in_import or frappe.flags.in_patch:
+            return None
+        if not email:
+            return None
+        if not frappe.db.get_single_value("Education Settings", "auto_create_login"):
+            return None
+        if frappe.db.get_value(profile_doctype, profile_name, "user"):
+            return None  # đã link sẵn
+        user = frappe.db.get_value("User", {"email": email}, "name")
+        if not user:
+            user = _create_login_user(email, full_name, role, send_welcome=True)
+        else:
+            u = frappe.get_doc("User", user)
+            if role not in [r.role for r in u.roles]:
+                _ensure_role(role)
+                u.append("roles", {"role": role})
+                u.save(ignore_permissions=True)
+        frappe.db.set_value(profile_doctype, profile_name, "user", user)
+        return user
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Auto-provision login user failed")
+        return None
+
+
+@frappe.whitelist()
+def list_users(search=None):
+    _require_system_manager()
+    cond = {"name": ["not in", ["Guest", "Administrator"]]}
+    kw = dict(filters=cond, fields=["name", "email", "full_name", "enabled"],
+              order_by="creation desc", limit_page_length=300)
+    if search:
+        kw["or_filters"] = {"email": ["like", f"%{search}%"], "full_name": ["like", f"%{search}%"]}
+    users = frappe.get_all("User", **kw)
+    names = [u.name for u in users]
+    roles_map = {}
+    stu, tea = {}, {}
+    if names:
+        for r in frappe.get_all("Has Role", filters={"parent": ["in", names], "parenttype": "User"},
+                                fields=["parent", "role"]):
+            roles_map.setdefault(r.parent, []).append(r.role)
+        stu = {s.user: s.name for s in frappe.get_all(
+            "Student", filters={"user": ["in", names]}, fields=["name", "user"])}
+        tea = {t.user: t.name for t in frappe.get_all(
+            "Teacher", filters={"user": ["in", names]}, fields=["name", "user"])}
+    for u in users:
+        u["roles"] = roles_map.get(u.name, [])
+        u["student"] = stu.get(u.name)
+        u["teacher"] = tea.get(u.name)
+    return users
+
+
+@frappe.whitelist()
+def create_user(email, full_name, role="Student", link_student=None, link_teacher=None, send_welcome=1):
+    _require_system_manager()
+    if frappe.db.exists("User", email):
+        frappe.throw("Email này đã có tài khoản.")
+    user = _create_login_user(email, full_name, role, send_welcome=int(send_welcome or 0) == 1)
+    if link_student:
+        frappe.db.set_value("Student", link_student, "user", user)
+    if link_teacher:
+        frappe.db.set_value("Teacher", link_teacher, "user", user)
+    return user
+
+
+@frappe.whitelist()
+def set_user_enabled(user, enabled):
+    _require_system_manager()
+    if user in ("Administrator", "Guest"):
+        frappe.throw("Không thể đổi tài khoản hệ thống.")
+    frappe.db.set_value("User", user, "enabled", int(enabled))
+    return {"ok": True}
+
+
+@frappe.whitelist()
+def set_user_role(user, role):
+    _require_system_manager()
+    if user in ("Administrator", "Guest"):
+        frappe.throw("Không thể đổi tài khoản hệ thống.")
+    _ensure_role(role)
+    u = frappe.get_doc("User", user)
+    u.set("roles", [r for r in u.roles if r.role not in MANAGED_ROLES])
+    u.append("roles", {"role": role})
+    u.save(ignore_permissions=True)
+    return {"ok": True}
+
+
+@frappe.whitelist()
+def reset_user_password(user):
+    _require_system_manager()
+    if user in ("Administrator", "Guest"):
+        frappe.throw("Không thao tác trên tài khoản hệ thống.")
+    frappe.get_doc("User", user).reset_password(send_email=True)
+    return {"ok": True}
+
+
+@frappe.whitelist()
+def change_my_password(old_password, new_password):
+    from frappe.utils.password import check_password, update_password
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw("Chưa đăng nhập.")
+    if not new_password or len(new_password) < 6:
+        frappe.throw("Mật khẩu mới tối thiểu 6 ký tự.")
+    try:
+        check_password(user, old_password)
+    except Exception:
+        frappe.throw("Mật khẩu hiện tại không đúng.")
+    update_password(user, new_password)
+    return {"ok": True}
 
 
 @frappe.whitelist()

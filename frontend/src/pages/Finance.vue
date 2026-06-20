@@ -39,7 +39,7 @@
             <SkBadge v-bind="invMeta(cur)" />
           </div>
           <div class="dtl__actions">
-            <SkButton variant="secondary">In hóa đơn</SkButton>
+            <SkButton variant="secondary" left-icon="printer" @click="printInvoice">In hóa đơn</SkButton>
             <SkButton v-if="cur.outstanding_amount > 0" variant="solid" @click="openPay">Thu tiền</SkButton>
           </div>
         </header>
@@ -253,6 +253,13 @@ function openPay() {
   pay.method = 'Cash'
   pay.date = new Date().toISOString().slice(0, 10)
   payOpen.value = true
+}
+
+// Mở bản in hóa đơn (print format chuẩn của Frappe) trong tab mới.
+function printInvoice() {
+  if (!cur.name) return
+  const url = `/printview?doctype=Fee+Invoice&name=${encodeURIComponent(cur.name)}&format=Standard&trigger_print=1&no_letterhead=0`
+  window.open(url, '_blank', 'noopener')
 }
 
 async function submitPay() {
