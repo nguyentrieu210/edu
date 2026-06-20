@@ -936,7 +936,7 @@ def get_materials(course=None, class_id=None, public_only=0):
 
 @frappe.whitelist()
 def get_classes():
-    return frappe.get_list(
+    rows = frappe.get_list(
         "Class",
         fields=[
             "name", "class_name", "course", "teacher", "start_date", "status",
@@ -944,6 +944,13 @@ def get_classes():
         ],
         order_by="creation desc"
     )
+    # Gắn tên khóa học + giáo viên để hiển thị thay vì mã.
+    courses = {c.name: c.course_name for c in frappe.get_all("Course", fields=["name", "course_name"])}
+    teachers = {t.name: t.teacher_name for t in frappe.get_all("Teacher", fields=["name", "teacher_name"])}
+    for r in rows:
+        r["course_name"] = courses.get(r.course) or r.course
+        r["teacher_name"] = teachers.get(r.teacher) or r.teacher
+    return rows
 
 @frappe.whitelist()
 def get_attendances(class_id=None, student=None):
@@ -1167,7 +1174,9 @@ def recompute_all_metrics():
 def generate_class_sessions(class_id):
     cls = _get_doc_checked("Class", class_id, "write")
     if not cls.schedule_template or not cls.total_sessions or not cls.start_date:
-        frappe.throw("Vui lòng nhập Ngày khai giảng, Mẫu lịch học và Tổng số buổi để sinh lịch tự động.")
+        frappe.throw("Vui lòng nhập Ngày khai giảng, Mẫu lịch học và Tổng số buổi để lên lịch học tự động.")
+    if not cls.start_time or not cls.end_time:
+        frappe.throw("Vui lòng nhập Giờ bắt đầu và Giờ kết thúc của lớp trước khi lên lịch học.")
         
     template_map = {
         "2-4-6": [0, 2, 4], # Monday=0, Wed=2, Fri=4
@@ -2111,6 +2120,28 @@ def reset_user_password(user):
         frappe.throw("Không thao tác trên tài khoản hệ thống.")
     frappe.get_doc("User", user).reset_password(send_email=True)
     return {"ok": True}
+
+
+@frappe.whitelist()
+def do_logout():
+    """Đăng xuất phiên hiện tại cho SPA (native logout endpoint hay vướng quyền)."""
+    frappe.local.login_manager.logout()
+    frappe.db.commit()
+    return {"ok": True}
+
+
+@frappe.whitelist(allow_guest=True)
+def whoami():
+    """Trả về user + roles thật (boot của www-SPA không có sẵn) để lọc nav theo vai trò.
+    allow_guest=True để SPA xác định được trạng thái CHƯA đăng nhập (Guest) mà điều hướng tới /login."""
+    user = frappe.session.user
+    roles = frappe.get_roles(user)
+    return {
+        "user": user,
+        "full_name": frappe.db.get_value("User", user, "full_name") or user,
+        "roles": roles,
+        "is_admin": user == "Administrator" or "System Manager" in roles or "Academic Manager" in roles,
+    }
 
 
 @frappe.whitelist()

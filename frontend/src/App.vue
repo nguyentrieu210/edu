@@ -1,7 +1,10 @@
 <template>
   <div class="sk-app">
+    <!-- Loader trong lúc xác định phiên đăng nhập -->
+    <div v-if="!ready" class="boot-load">Đang tải…</div>
+
     <!-- ===================== PRIMARY SIDEBAR ===================== -->
-    <aside class="sk-side">
+    <aside v-if="showChrome" class="sk-side">
       <!-- brand -->
       <div class="sk-brand">
         <div class="sk-brand__logo">
@@ -24,7 +27,11 @@
 
       <!-- quick actions -->
       <div class="sk-quick">
-        <SkButton variant="solid" block left-icon="plus">Tạo mới</SkButton>
+        <button class="sk-search" @click="palette?.open()">
+          <FeatherIcon name="search" style="width:15px;height:15px;color:#bd8d9c;" />
+          <span>Tìm kiếm…</span>
+          <span class="sk-search__kbd">⌘K</span>
+        </button>
       </div>
 
       <!-- nav -->
@@ -65,22 +72,15 @@
     </aside>
 
     <!-- ===================== WORKSPACE ===================== -->
-    <router-view v-slot="{ Component }">
+    <router-view v-if="ready" v-slot="{ Component }">
       <transition name="fade" mode="out-in">
         <component :is="Component" />
       </transition>
     </router-view>
 
-    <!-- Ô tìm kiếm canh giữa, nổi trên dải tiêu đề của trang -->
-    <button class="sk-topsearch" @click="palette?.open()">
-      <FeatherIcon name="search" style="width:15px;height:15px;color:#bd8d9c;" />
-      <span>Tìm kiếm học viên, lớp, hóa đơn…</span>
-      <span class="sk-search__kbd">⌘K</span>
-    </button>
-
     <!-- ===================== GLOBAL OVERLAYS ===================== -->
-    <CommandPalette ref="palette" />
-    <AIDrawer ref="aiDrawer" />
+    <CommandPalette v-if="showChrome" ref="palette" />
+    <AIDrawer v-if="showChrome" ref="aiDrawer" />
     <SkToaster />
 
     <SkModal v-model="showPwd" title="Đổi mật khẩu">
@@ -99,9 +99,9 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { FeatherIcon } from 'frappe-ui'
-import { NAV_SECTIONS, navSectionsFor } from './router'
+import { navSectionsFor, setUserRoles } from './router'
 import { call } from './api'
 import { toast } from './utils/toast'
 import SkButton from './components/ui/SkButton.vue'
@@ -112,28 +112,36 @@ import AIDrawer from './components/AIDrawer.vue'
 import SkToaster from './components/ui/SkToaster.vue'
 
 const route = useRoute()
+const router = useRouter()
 const palette = ref(null)
 const aiDrawer = ref(null)
 
-// Người dùng từ boot session (không hardcode).
-const boot = typeof window !== 'undefined' ? window.frappe?.boot : null
-const roles = (boot && boot.user && boot.user.roles) || []
-const sections = computed(() => navSectionsFor(roles))
-const isPrivileged = roles.includes('System Manager') || roles.includes('Academic Manager') || roles.includes('Administrator')
+// Phiên đăng nhập lấy từ whoami (boot www-SPA không có roles).
+const ready = ref(false)
+const authed = ref(false)
+const rolesRef = ref([])
+const userName = ref('Người dùng')
 
+const sections = computed(() => navSectionsFor(rolesRef.value))
+const isPrivileged = computed(() => {
+  const r = rolesRef.value
+  return r.includes('System Manager') || r.includes('Academic Manager') || r.includes('Administrator')
+})
+const showChrome = computed(() => ready.value && authed.value && route.path !== '/login')
 const isActive = (path) => (path === '/' ? route.path === '/' : route.path.startsWith(path))
-
-const userId = boot?.user?.name || window.frappe?.session?.user || ''
-const userName = computed(() => boot?.user_info?.[userId]?.fullname || boot?.user?.full_name || userId || 'Người dùng')
 const userRole = computed(() => {
-  if (roles.includes('Academic Manager') || roles.includes('System Manager')) return 'Giáo vụ'
-  if (roles.includes('Teacher')) return 'Giáo viên'
-  if (roles.includes('Student')) return 'Học viên'
+  const r = rolesRef.value
+  if (r.includes('Academic Manager') || r.includes('System Manager')) return 'Giáo vụ'
+  if (r.includes('Teacher')) return 'Giáo viên'
+  if (r.includes('Student')) return 'Học viên'
   return 'Người dùng'
 })
 
 const goToDesk = () => { window.location.href = '/app' }
-const logout = () => { window.location.href = '/api/method/logout' }
+async function logout() {
+  try { await call('do_logout') } catch { /* vẫn điều hướng tới login */ }
+  window.location.href = '/login'
+}
 
 // Đổi mật khẩu
 const showPwd = ref(false)
@@ -165,7 +173,35 @@ function onKey(e) {
     aiDrawer.value?.close()
   }
 }
-onMounted(() => window.addEventListener('keydown', onKey))
+// Xác định phiên + vai trò qua whoami; điều hướng theo trạng thái đăng nhập.
+async function loadSession() {
+  try {
+    const me = await call('whoami')
+    authed.value = me.user && me.user !== 'Guest'
+    rolesRef.value = me.roles || []
+    userName.value = me.full_name || me.user || 'Người dùng'
+  } catch {
+    authed.value = false
+    rolesRef.value = []
+  }
+  setUserRoles(rolesRef.value)
+  ready.value = true
+  if (!authed.value) {
+    if (route.path !== '/login') router.replace('/login')
+  } else if (route.path === '/login') {
+    router.replace('/')
+  } else {
+    // HV/GV thuần -> về đúng cổng
+    const r = rolesRef.value
+    if (r.includes('Student') && !r.includes('Teacher') && !isPrivileged.value && route.path !== '/student') router.replace('/student')
+    else if (r.includes('Teacher') && !r.includes('Student') && !isPrivileged.value && route.path !== '/teacher') router.replace('/teacher')
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  loadSession()
+})
 onUnmounted(() => window.removeEventListener('keydown', onKey))
 </script>
 
@@ -209,6 +245,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .sk-user__btn { flex: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: none; background: none; border-radius: 7px; cursor: pointer; color: #b07e90; }
 .sk-user__btn:hover { background: rgba(255, 255, 255, 0.6); }
 
+.boot-load { flex: 1; display: flex; align-items: center; justify-content: center; color: #b07e90; font-size: 14px; }
 .pwd-form { display: flex; flex-direction: column; gap: 14px; }
 .pwd-fg { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: #7a5c68; }
 .pwd-field { height: 36px; border: 1px solid #ecd0da; border-radius: 8px; padding: 0 12px; font-size: 13px; outline: none; font-family: inherit; }

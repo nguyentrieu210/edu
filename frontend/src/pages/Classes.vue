@@ -17,7 +17,7 @@
             <span class="crow__id">{{ c.class_name || c.name }}</span>
             <SkBadge v-bind="clsMeta(c.status)" />
           </div>
-          <div class="crow__sub">{{ c.course || '—' }} · {{ c.teacher || '—' }}</div>
+          <div class="crow__sub">{{ c.course_name || c.course || '—' }} · {{ c.teacher_name || c.teacher || '—' }}</div>
           <div class="crow__bar">
             <div class="crow__track"><span :style="{ width: pct(c.progress) }" /></div>
             <span class="crow__pct tnum">{{ pct(c.progress) }}</span>
@@ -35,7 +35,7 @@
           <div class="dtl__id">
             <span class="dtl__name">{{ cur.class_name || selectedId }}</span>
             <span class="dtl__slash">·</span>
-            <span class="dtl__code">{{ cur.course || '—' }}</span>
+            <span class="dtl__code">{{ optLabel(courseOpts, cur.course) || '—' }}</span>
             <SkBadge v-bind="clsMeta(cur.status)" />
           </div>
           <div class="dtl__actions">
@@ -58,7 +58,7 @@
                 <div class="block__title">Thông tin lớp</div>
                 <div class="info">
                   <div class="info__c"><div class="info__l">Trạng thái</div><div class="info__v"><InlineCell doctype="Class" :name="selectedId" field="status" type="select" :options="CLASS_STATUS" :display="clsMeta(cur.status).label" v-model="cur.status" @saved="reloadClasses" /></div></div>
-                  <div class="info__c"><div class="info__l">Khóa học</div><div class="info__v">{{ cur.course || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Khóa học</div><div class="info__v">{{ optLabel(courseOpts, cur.course) || '—' }}</div></div>
                   <div class="info__c"><div class="info__l">Giáo viên chính</div><div class="info__v"><InlineCell doctype="Class" :name="selectedId" field="teacher" type="select" :options="teacherOpts" :display="optLabel(teacherOpts, cur.teacher)" v-model="cur.teacher" @saved="reloadClasses" /></div></div>
                   <div class="info__c"><div class="info__l">Giáo viên thay thế</div><div class="info__v"><InlineCell doctype="Class" :name="selectedId" field="substitute_teacher" type="select" :options="teacherOpts" :display="optLabel(teacherOpts, cur.substitute_teacher)" v-model="cur.substitute_teacher" /></div></div>
                   <div class="info__c"><div class="info__l">Lịch học</div><div class="info__v">{{ schedule }}</div></div>
@@ -87,8 +87,8 @@
                 </button>
                 <div class="flowcard">
                   <span class="flowcard__label">Giáo viên phụ trách</span>
-                  <strong>{{ cur.teacher || 'Chưa gán' }}</strong>
-                  <small>{{ cur.substitute_teacher ? `Dự phòng ${cur.substitute_teacher}` : 'Giáo viên chính' }}</small>
+                  <strong>{{ optLabel(teacherOpts, cur.teacher) || 'Chưa gán' }}</strong>
+                  <small>{{ cur.substitute_teacher ? `Dự phòng ${optLabel(teacherOpts, cur.substitute_teacher)}` : 'Giáo viên chính' }}</small>
                 </div>
                 <button class="flowcard" @click="tab = 'sessions'">
                   <span class="flowcard__label">Lịch theo chương trình</span>
@@ -352,6 +352,7 @@ const CLASS_AI = [
   { label: 'Gợi ý hành động', icon: 'compass', prompt: 'Đề xuất 2-3 hành động cho giáo vụ với lớp này (sĩ số, chuyên cần, học phí).' },
 ]
 const teacherOpts = computed(() => teacherOptions.value.map((t) => ({ value: t.name, label: t.teacher_name || t.name })))
+const courseOpts = computed(() => courseOptions.value.map((c) => ({ value: c.name, label: c.course_name || c.name })))
 const optLabel = (opts, val) => { const o = opts.find((x) => x.value === val); return o ? o.label : (val || '') }
 const aiContext = computed(() => [
   `Lớp: ${cur.class_name || selectedId.value} (${cur.course || ''})`,

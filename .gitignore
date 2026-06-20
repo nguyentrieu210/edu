@@ -60,3 +60,6 @@ chrome-version.txt
 
 # Frappe bench runtime (not part of the app)
 sites/
+
+# temp puppeteer check dir
+.chk/
