@@ -873,9 +873,60 @@ def import_students(file_url):
 def get_teachers():
     return frappe.get_list(
         "Teacher",
-        fields=["name", "teacher_name", "phone", "email", "status"],
+        fields=["name", "teacher_name", "phone", "email", "status", "user"],
         order_by="creation desc"
     )
+
+
+@frappe.whitelist()
+def get_teacher_timesheet(month=None, year=None):
+    """Chấm công GV: theo từng giáo viên, đếm buổi dạy + có mặt/vắng trong tháng (theo session_date)."""
+    today = getdate(nowdate())
+    month = int(month or today.month)
+    year = int(year or today.year)
+    from frappe.utils import get_last_day
+    start = getdate(f"{year}-{month:02d}-01")
+    end = get_last_day(start)
+    sessions = frappe.get_list(
+        "Class Session",
+        filters={"session_date": ["between", [start, end]], "teacher": ["is", "set"]},
+        fields=["teacher", "session_status", "teacher_attendance_status"],
+        limit_page_length=0,
+    )
+    tmap = {t.name: t.teacher_name for t in frappe.get_all("Teacher", fields=["name", "teacher_name"])}
+    agg = {}
+    for s in sessions:
+        a = agg.setdefault(s.teacher, {"teacher": s.teacher, "teacher_name": tmap.get(s.teacher) or s.teacher,
+                                       "total": 0, "taught": 0, "present": 0, "absent": 0})
+        a["total"] += 1
+        if s.session_status == "Completed":
+            a["taught"] += 1
+        if s.teacher_attendance_status == "Present":
+            a["present"] += 1
+        elif s.teacher_attendance_status and s.teacher_attendance_status != "Present":
+            a["absent"] += 1
+    return {"month": month, "year": year, "rows": sorted(agg.values(), key=lambda x: -x["total"])}
+
+
+@frappe.whitelist()
+def get_salary_slips(month=None, year=None):
+    """Danh sách bảng lương giáo viên (Teacher Salary Slip), kèm tên GV."""
+    filters = {}
+    if month:
+        filters["month"] = int(month)
+    if year:
+        filters["year"] = int(year)
+    rows = frappe.get_list(
+        "Teacher Salary Slip", filters=filters,
+        fields=["name", "teacher", "month", "year", "total_sessions_taught",
+                "rate_per_session", "total_salary", "status"],
+        order_by="year desc, month desc",
+        limit_page_length=0,
+    )
+    tmap = {t.name: t.teacher_name for t in frappe.get_all("Teacher", fields=["name", "teacher_name"])}
+    for r in rows:
+        r["teacher_name"] = tmap.get(r.teacher) or r.teacher
+    return rows
 
 @frappe.whitelist()
 def get_courses():
@@ -1092,6 +1143,11 @@ def save_session_attendance(class_session, rows, teacher_attendance_status=None)
         rows = json.loads(rows)
 
     session_doc = _get_doc_checked("Class Session", class_session, "write")
+    # Chặt chẽ: không điểm danh buổi đã hủy/khóa hoặc buổi trong tương lai.
+    if session_doc.session_status in ("Cancelled", "Locked"):
+        frappe.throw(f"Buổi học đang ở trạng thái '{session_doc.session_status}', không thể điểm danh.")
+    if getdate(session_doc.session_date) > getdate(nowdate()):
+        frappe.throw("Chưa thể điểm danh cho buổi học trong tương lai.")
     session = frappe._dict({
         "class_id": session_doc.class_id,
         "session_date": session_doc.session_date,
@@ -1110,7 +1166,8 @@ def save_session_attendance(class_session, rows, teacher_attendance_status=None)
         touched_students.add(student)
         status = r.get("status") or "Present"
         atype = r.get("attendance_type") or "Regular"
-        minutes_late = int(r.get("minutes_late") or 0)
+        # minutes_late chỉ có ý nghĩa khi đi muộn.
+        minutes_late = int(r.get("minutes_late") or 0) if status == "Late" else 0
 
         existing = frappe.db.get_value(
             "Student Attendance",
@@ -1138,8 +1195,15 @@ def save_session_attendance(class_session, rows, teacher_attendance_status=None)
             }).insert()
         saved += 1
 
+    # Lưu điểm danh -> đánh dấu buổi đã hoàn thành (nếu đang Scheduled) + ghi chấm công GV.
+    dirty = False
     if teacher_attendance_status:
         session_doc.teacher_attendance_status = teacher_attendance_status
+        dirty = True
+    if saved and session_doc.session_status == "Scheduled":
+        session_doc.session_status = "Completed"
+        dirty = True
+    if dirty:
         session_doc.save()
 
     # Tính lại chuyên cần cho các học viên vừa điểm danh.

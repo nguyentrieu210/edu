@@ -21,6 +21,7 @@ export const NAV_SECTIONS = [
       { label: 'Lớp học', icon: 'book-open', path: '/classes' },
       { label: 'Điểm danh', icon: 'check-square', path: '/attendance' },
       { label: 'Lịch học', icon: 'calendar', path: '/calendar' },
+      { label: 'Giáo viên', icon: 'briefcase', path: '/teachers' },
     ],
   },
   {
@@ -64,6 +65,7 @@ const routes = [
   { path: '/student', name: 'StudentPortal', component: () => import('./pages/StudentPortal.vue') },
   { path: '/ui-kit', name: 'UiKit', component: () => import('./pages/UiKit.vue') },
   { path: '/accounts', name: 'Accounts', component: () => import('./pages/Accounts.vue') },
+  { path: '/teachers', name: 'Teachers', component: () => import('./pages/Teachers.vue') },
   { path: '/login', name: 'Login', component: () => import('./pages/Login.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
