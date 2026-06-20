@@ -1,17 +1,7 @@
 <template>
   <div class="sk-app">
-    <!-- ===================== TOP HEADER ===================== -->
-    <header class="sk-top">
-      <button class="sk-search sk-search--top" @click="palette?.open()">
-        <FeatherIcon name="search" style="width:15px;height:15px;color:#bd8d9c;" />
-        <span>Tìm kiếm học viên, lớp, hóa đơn…</span>
-        <span class="sk-search__kbd">⌘K</span>
-      </button>
-    </header>
-
-    <div class="sk-main">
-      <!-- ===================== PRIMARY SIDEBAR ===================== -->
-      <aside class="sk-side">
+    <!-- ===================== PRIMARY SIDEBAR ===================== -->
+    <aside class="sk-side">
       <!-- brand -->
       <div class="sk-brand">
         <div class="sk-brand__logo">
@@ -66,15 +56,21 @@
           <FeatherIcon name="settings" style="width:17px;height:17px;" />
         </button>
       </div>
-      </aside>
+    </aside>
 
-      <!-- ===================== WORKSPACE ===================== -->
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
-    </div>
+    <!-- ===================== WORKSPACE ===================== -->
+    <router-view v-slot="{ Component }">
+      <transition name="fade" mode="out-in">
+        <component :is="Component" />
+      </transition>
+    </router-view>
+
+    <!-- Ô tìm kiếm canh giữa, nổi trên dải tiêu đề của trang -->
+    <button class="sk-topsearch" @click="palette?.open()">
+      <FeatherIcon name="search" style="width:15px;height:15px;color:#bd8d9c;" />
+      <span>Tìm kiếm học viên, lớp, hóa đơn…</span>
+      <span class="sk-search__kbd">⌘K</span>
+    </button>
 
     <!-- ===================== GLOBAL OVERLAYS ===================== -->
     <CommandPalette ref="palette" />
@@ -131,17 +127,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
 <style scoped>
 .sk-app {
-  height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden;
+  height: 100vh; width: 100vw; display: flex; overflow: hidden;
   background: linear-gradient(140deg, #fff7fa 0%, #fdedf3 48%, #fbe4ee 100%);
   color: #3d2530; font-size: 14px;
 }
 
-/* top header */
-.sk-top { flex: none; height: 52px; display: flex; align-items: center; justify-content: center; padding: 0 16px; background: rgba(255, 250, 252, 0.92); border-bottom: 1px solid #f2d4df; backdrop-filter: blur(6px); position: relative; z-index: 6; }
-.sk-search--top { width: min(560px, 56vw); height: 38px; }
-
-/* main row = sidebar + workspace */
-.sk-main { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+/* Ô tìm kiếm canh giữa, nổi trên dải tiêu đề của trang (bên phải sidebar 250px) */
+.sk-topsearch { position: fixed; top: 10px; left: calc(50vw + 125px); transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 8px; height: 36px; width: min(440px, 32vw); padding: 0 11px; border-radius: 9px; background: rgba(255, 255, 255, 0.9); border: 1px solid #f1d2de; cursor: pointer; font-family: inherit; box-shadow: 0 2px 10px rgba(180, 80, 120, 0.12); backdrop-filter: blur(4px); }
+.sk-topsearch:hover { background: #fff; }
+.sk-topsearch > span { font-size: 13px; color: #bd8d9c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* sidebar */
 .sk-side { flex: none; width: 250px; display: flex; flex-direction: column; background: linear-gradient(185deg, #fdeef4 0%, #fce0ea 100%); border-right: 1px solid #f2d4df; }

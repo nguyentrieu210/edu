@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* App shell: trang con (con trực tiếp của .sk-main) lấp đầy phần dưới top-header.
-   Ghi đè height:100vh cũ của từng trang để không tràn dưới thanh header. */
-.sk-main > * { height: 100% !important; min-height: 0; }
-
 /* ============================================================
    IKE Education ERP — "Sakura" design tokens
    Theme hồng hoa anh đào. Giữ NGUYÊN tên biến mà tailwind.config.js
