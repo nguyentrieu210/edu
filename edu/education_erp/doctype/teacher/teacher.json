@@ -9,6 +9,8 @@
   "user",
   "phone",
   "email",
+  "specialization",
+  "rate_per_session",
   "status"
  ],
  "fields": [
@@ -37,6 +39,16 @@
    "fieldname": "email",
    "fieldtype": "Data",
    "label": "Email"
+  },
+  {
+   "fieldname": "specialization",
+   "fieldtype": "Data",
+   "label": "Chuyên môn / cấp độ"
+  },
+  {
+   "fieldname": "rate_per_session",
+   "fieldtype": "Currency",
+   "label": "Đơn giá / buổi"
   },
   {
    "default": "Active",

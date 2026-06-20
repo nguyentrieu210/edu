@@ -77,7 +77,7 @@ CLIENT_WRITE_FIELDS = {
         "lead_name", "phone", "email", "source", "status", "date_of_birth", "gender",
         "occupation", "guardian_name", "guardian_phone", "lost_reason", "lead_image",
     },
-    "Teacher": {"teacher_name", "user", "phone", "email", "status"},
+    "Teacher": {"teacher_name", "user", "phone", "email", "status", "specialization", "rate_per_session"},
 }
 
 CLIENT_CHILD_FIELDS = {
@@ -873,7 +873,8 @@ def import_students(file_url):
 def get_teachers():
     return frappe.get_list(
         "Teacher",
-        fields=["name", "teacher_name", "phone", "email", "status", "user"],
+        fields=["name", "teacher_name", "phone", "email", "status", "user",
+                "specialization", "rate_per_session"],
         order_by="creation desc"
     )
 
