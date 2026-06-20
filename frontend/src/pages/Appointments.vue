@@ -280,9 +280,8 @@ const newApt = ref({ lead: '', appointment_date: todayStr(), appointment_time: '
 async function openAdd() {
   newApt.value = { lead: '', appointment_date: selectedDate.value || todayStr(), appointment_time: '', purpose: '' }
   showAdd.value = true
-  if (!leadsList.value.length) {
-    try { leadsList.value = (await call('get_leads')) || [] } catch { /* bỏ qua */ }
-  }
+  // Luôn lấy lại danh sách lead để lead vừa tạo cũng chọn được.
+  try { leadsList.value = (await call('get_leads')) || [] } catch { /* bỏ qua */ }
 }
 async function addAppointment() {
   if (!newApt.value.lead) { toast.error('Cần chọn lead'); return }

@@ -1632,6 +1632,7 @@ def get_my_teacher_overview():
         fields=["name", "class_id", "start_time", "end_time", "lesson_topic", "session_status"],
         order_by="start_time asc",
     ) if cids else []
+    _attach_class_names(sessions_today)
     return {"teacher": t, "classes": classes, "sessions_today": sessions_today}
 
 
@@ -1675,6 +1676,7 @@ def get_my_student_overview():
     for h in homework:
         h["program_enrollment"] = enrollment_by_class.get(h.class_id)
         h["submission"] = submission_by_homework.get(h.name)
+    _attach_class_names(homework)
     invoices = frappe.get_list(
         "Fee Invoice",
         filters={"student": s, "docstatus": 1},
@@ -1695,6 +1697,7 @@ def get_my_student_overview():
         order_by="session_date asc, start_time asc",
         limit_page_length=12,
     ) if cids else []
+    _attach_class_names(sessions)
     materials = frappe.get_list(
         "Learning Material",
         filters={"class_id": ["in", cids], "is_public": 1},
@@ -1943,6 +1946,21 @@ def _student_name(student):
     return frappe.db.get_value("Student", student, "full_name") or student
 
 
+def _class_name(class_id):
+    return frappe.db.get_value("Class", class_id, "class_name") or class_id
+
+
+def _attach_class_names(rows, field="class_id", out="class_name"):
+    """Gắn tên lớp (class_name) cho danh sách có field link Class -> hiển thị tên thay vì mã."""
+    ids = list({r.get(field) for r in rows if r.get(field)})
+    if ids:
+        m = {c.name: c.class_name for c in frappe.get_all(
+            "Class", filters={"name": ["in", ids]}, fields=["name", "class_name"])}
+        for r in rows:
+            r[out] = m.get(r.get(field)) or r.get(field)
+    return rows
+
+
 @frappe.whitelist()
 def get_dashboard_overview():
     """Tổng hợp dữ liệu Dashboard admin (§11). Gộp từ các list đã có quyền."""
@@ -1980,6 +1998,7 @@ def get_dashboard_overview():
                 "teacher", "classroom", "session_status"],
         order_by="start_time asc",
     )
+    _attach_class_names(sessions_today)
 
     classes = frappe.get_list(
         "Class", filters={"status": ["in", ["Ongoing", "Upcoming"]]},
@@ -2023,7 +2042,7 @@ def get_dashboard_overview():
                              fields=["student", "class_id", "creation"],
                              order_by="creation desc", limit_page_length=3):
         activity.append({
-            "text": f"Đăng ký {_student_name(e.student)} vào {e.class_id}",
+            "text": f"Đăng ký {_student_name(e.student)} vào {_class_name(e.class_id)}",
             "time": e.creation, "dot": "#9b6fc4",
         })
     activity.sort(key=lambda a: a["time"], reverse=True)
@@ -2069,6 +2088,7 @@ def get_student_profile(student):
                 "enrollment_date", "list_price", "net_fee", "creation"],
         order_by="creation desc",
     )
+    _attach_class_names(enrollments)
     attendance = frappe.get_list(
         "Student Attendance", filters={"student": student},
         fields=["class_session", "attendance_date", "status", "attendance_type", "minutes_late"],

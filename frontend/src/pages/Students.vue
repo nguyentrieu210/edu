@@ -168,7 +168,7 @@
                   </div>
                   <div v-if="activeEnr" class="clscard">
                     <div class="clscard__top">
-                      <span class="clscard__name">{{ activeEnr.class_id }}</span>
+                      <span class="clscard__name">{{ activeEnr.class_name || activeEnr.class_id }}</span>
                       <SkBadge variant="success" label="Active" />
                     </div>
                     <div class="clscard__sub">Net fee {{ formatVND(activeEnr.net_fee) }} · Đăng ký {{ formatDate(activeEnr.enrollment_date) }}</div>
@@ -192,7 +192,7 @@
               </div>
               <div v-for="e in prof.enrollments" :key="e.name" class="enr">
                 <div>
-                  <div class="enr__title">{{ e.class_id }}</div>
+                  <div class="enr__title">{{ e.class_name || e.class_id }}</div>
                   <div class="enr__sub">{{ e.name }} · {{ formatDate(e.enrollment_date) }} · {{ e.enrollment_type }} · Net fee {{ formatVND(e.net_fee) }}</div>
                 </div>
                 <div class="enr__actions">

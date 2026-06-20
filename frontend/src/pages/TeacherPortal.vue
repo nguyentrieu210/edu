@@ -19,7 +19,7 @@
           <div v-for="s in data.sessions_today" :key="s.name" class="tp-row">
             <div class="tp-row__time tnum">{{ formatTime(s.start_time) }}</div>
             <div class="tp-row__main">
-              <div class="tp-row__title">{{ s.class_id }} · {{ s.lesson_topic || '—' }}</div>
+              <div class="tp-row__title">{{ s.class_name || s.class_id }} · {{ s.lesson_topic || '—' }}</div>
               <div class="tp-row__sub">{{ labelStatus(s.session_status) }}</div>
             </div>
             <SkButton variant="solid" @click="$router.push('/attendance')">Mở buổi học</SkButton>
@@ -31,7 +31,7 @@
             <div class="card__head">Cần hoàn tất</div>
             <div v-if="!todo.length" class="card__empty">Không có buổi nào cần hoàn tất.</div>
             <div v-for="s in todo" :key="s.name" class="tp-todo">
-              <div class="tp-todo__title">{{ s.class_id }} · {{ s.lesson_topic || 'Buổi học' }}</div>
+              <div class="tp-todo__title">{{ s.class_name || s.class_id }} · {{ s.lesson_topic || 'Buổi học' }}</div>
               <div class="tp-todo__detail">{{ labelStatus(s.session_status) }}</div>
             </div>
           </div>

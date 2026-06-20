@@ -39,7 +39,7 @@
           <div class="ph-section">Sắp tới</div>
           <button v-if="nextSession" class="ph-row ph-row--button" @click="activeTab = 'schedule'">
             <div>
-              <div class="ph-row__title">{{ nextSession.class_id }} · {{ nextSession.lesson_topic || 'Buổi học' }}</div>
+              <div class="ph-row__title">{{ nextSession.class_name || nextSession.class_id }} · {{ nextSession.lesson_topic || 'Buổi học' }}</div>
               <div class="ph-row__sub">{{ formatDate(nextSession.session_date) }} · {{ formatTime(nextSession.start_time) }}</div>
             </div>
             <FeatherIcon name="chevron-right" class="ph-chevron" />
@@ -52,7 +52,7 @@
             <button v-for="h in homeworkPreview" :key="h.name" class="ph-row ph-row--button" @click="openHomework(h)">
               <div>
                 <div class="ph-row__title">{{ h.title }}</div>
-                <div class="ph-row__sub">Hạn {{ formatDate(h.due_date) }} · {{ h.class_id }}</div>
+                <div class="ph-row__sub">Hạn {{ formatDate(h.due_date) }} · {{ h.class_name || h.class_id }}</div>
               </div>
               <SkBadge v-bind="homeworkMeta(h)" />
             </button>
@@ -77,7 +77,7 @@
                 <small>{{ monthOf(s.session_date) }}</small>
               </div>
               <div class="ph-row__main">
-                <div class="ph-row__title">{{ s.class_id }} · {{ s.lesson_topic || 'Buổi học' }}</div>
+                <div class="ph-row__title">{{ s.class_name || s.class_id }} · {{ s.lesson_topic || 'Buổi học' }}</div>
                 <div class="ph-row__sub">{{ formatTime(s.start_time) }} - {{ formatTime(s.end_time) }}</div>
               </div>
               <SkBadge variant="info" :label="s.session_status || 'Scheduled'" />
@@ -92,7 +92,7 @@
             <button v-for="h in data.homework" :key="h.name" class="ph-row ph-row--button" @click="openHomework(h)">
               <div>
                 <div class="ph-row__title">{{ h.title }}</div>
-                <div class="ph-row__sub">Hạn {{ formatDate(h.due_date) }} · {{ h.class_id }}</div>
+                <div class="ph-row__sub">Hạn {{ formatDate(h.due_date) }} · {{ h.class_name || h.class_id }}</div>
               </div>
               <SkBadge v-bind="homeworkMeta(h)" />
             </button>
@@ -165,7 +165,7 @@
       <div v-if="selectedHomework" class="modal-stack">
         <div>
           <div class="modal-title">{{ selectedHomework.title }}</div>
-          <div class="modal-sub">Hạn {{ formatDate(selectedHomework.due_date) }} · {{ selectedHomework.class_id }}</div>
+          <div class="modal-sub">Hạn {{ formatDate(selectedHomework.due_date) }} · {{ selectedHomework.class_name || selectedHomework.class_id }}</div>
         </div>
         <div v-if="selectedHomework.description" class="modal-box">{{ selectedHomework.description }}</div>
         <a v-if="selectedHomework.materials" class="modal-link" :href="selectedHomework.materials" target="_blank" rel="noreferrer">
