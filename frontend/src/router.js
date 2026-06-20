@@ -5,7 +5,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 export const NAV_SECTIONS = [
   {
     label: '',
-    items: [{ label: 'Dashboard', icon: 'grid', path: '/' }],
+    items: [{ label: 'Dashboard', icon: 'grid', path: '/dashboard' }],
   },
   {
     label: 'Tuyển sinh & học viên',
@@ -50,7 +50,8 @@ export const NAV_SECTIONS = [
 export const NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items)
 
 const routes = [
-  { path: '/', name: 'Dashboard', component: () => import('./pages/Dashboard.vue') },
+  { path: '/', name: 'Landing', component: () => import('./pages/Landing.vue') },
+  { path: '/dashboard', name: 'Dashboard', component: () => import('./pages/Dashboard.vue') },
   { path: '/admissions', name: 'Admissions', component: () => import('./pages/Admissions.vue') },
   { path: '/appointments', name: 'Appointments', component: () => import('./pages/Appointments.vue') },
   { path: '/students', name: 'Students', component: () => import('./pages/Students.vue') },
@@ -70,7 +71,9 @@ const routes = [
 // ---- Phân quyền hiển thị theo vai trò ----
 // Roles thật lấy từ whoami (boot của www-SPA không có sẵn). App.vue gọi setUserRoles sau khi load.
 let _userRoles = []
+let _authed = false
 export function setUserRoles(roles) { _userRoles = roles || [] }
+export function setAuthed(a) { _authed = !!a }
 function isPrivileged(roles) {
   return roles.includes('System Manager') || roles.includes('Academic Manager') || roles.includes('Administrator')
 }
@@ -100,6 +103,8 @@ const router = createRouter({
 router.beforeEach((to) => {
   if (isPureStudent(_userRoles)) return to.path === '/student' ? true : '/student'
   if (isPureTeacher(_userRoles)) return to.path === '/teacher' ? true : '/teacher'
+  // Đã đăng nhập mà vào landing/login -> dashboard
+  if (_authed && (to.path === '/' || to.path === '/login')) return '/dashboard'
   return true
 })
 

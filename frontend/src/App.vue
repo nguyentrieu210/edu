@@ -59,6 +59,9 @@
           <div class="sk-user__name">{{ userName }}</div>
           <div class="sk-user__role">{{ userRole }}</div>
         </div>
+        <button class="sk-user__btn" title="Hướng dẫn sử dụng" aria-label="Hướng dẫn sử dụng" @click="tour?.start()">
+          <FeatherIcon name="help-circle" style="width:17px;height:17px;" />
+        </button>
         <button class="sk-user__btn" title="Đổi mật khẩu" aria-label="Đổi mật khẩu" @click="openPwd">
           <FeatherIcon name="key" style="width:17px;height:17px;" />
         </button>
@@ -81,6 +84,7 @@
     <!-- ===================== GLOBAL OVERLAYS ===================== -->
     <CommandPalette v-if="showChrome" ref="palette" />
     <AIDrawer v-if="showChrome" ref="aiDrawer" />
+    <OnboardingTour ref="tour" />
     <SkToaster />
 
     <SkModal v-model="showPwd" title="Đổi mật khẩu">
@@ -101,7 +105,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { FeatherIcon } from 'frappe-ui'
-import { navSectionsFor, setUserRoles } from './router'
+import { navSectionsFor, setUserRoles, setAuthed } from './router'
 import { call } from './api'
 import { toast } from './utils/toast'
 import SkButton from './components/ui/SkButton.vue'
@@ -110,11 +114,13 @@ import SkModal from './components/ui/SkModal.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import AIDrawer from './components/AIDrawer.vue'
 import SkToaster from './components/ui/SkToaster.vue'
+import OnboardingTour from './components/OnboardingTour.vue'
 
 const route = useRoute()
 const router = useRouter()
 const palette = ref(null)
 const aiDrawer = ref(null)
+const tour = ref(null)
 
 // Phiên đăng nhập lấy từ whoami (boot www-SPA không có roles).
 const ready = ref(false)
@@ -127,7 +133,8 @@ const isPrivileged = computed(() => {
   const r = rolesRef.value
   return r.includes('System Manager') || r.includes('Academic Manager') || r.includes('Administrator')
 })
-const showChrome = computed(() => ready.value && authed.value && route.path !== '/login')
+const PUBLIC_ROUTES = ['/', '/login']
+const showChrome = computed(() => ready.value && authed.value && !PUBLIC_ROUTES.includes(route.path))
 const isActive = (path) => (path === '/' ? route.path === '/' : route.path.startsWith(path))
 const userRole = computed(() => {
   const r = rolesRef.value
@@ -185,16 +192,23 @@ async function loadSession() {
     rolesRef.value = []
   }
   setUserRoles(rolesRef.value)
+  setAuthed(authed.value)
   ready.value = true
   if (!authed.value) {
-    if (route.path !== '/login') router.replace('/login')
-  } else if (route.path === '/login') {
-    router.replace('/')
+    // Khách: được xem landing '/' và trang /login; route khác -> /login
+    if (!PUBLIC_ROUTES.includes(route.path)) router.replace('/login')
   } else {
-    // HV/GV thuần -> về đúng cổng
     const r = rolesRef.value
-    if (r.includes('Student') && !r.includes('Teacher') && !isPrivileged.value && route.path !== '/student') router.replace('/student')
-    else if (r.includes('Teacher') && !r.includes('Student') && !isPrivileged.value && route.path !== '/teacher') router.replace('/teacher')
+    if (r.includes('Student') && !r.includes('Teacher') && !isPrivileged.value) {
+      if (route.path !== '/student') router.replace('/student')
+    } else if (r.includes('Teacher') && !r.includes('Student') && !isPrivileged.value) {
+      if (route.path !== '/teacher') router.replace('/teacher')
+    } else if (PUBLIC_ROUTES.includes(route.path)) {
+      // đã đăng nhập mà ở landing/login -> vào dashboard
+      await router.replace('/dashboard')
+    }
+    // Lần đầu vào hệ thống -> hiện hướng dẫn
+    tour.value?.maybeAutoStart()
   }
 }
 

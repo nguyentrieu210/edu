@@ -16,6 +16,7 @@ declare module 'vue' {
     LeadDetailDrawer: typeof import('./src/components/admissions/LeadDetailDrawer.vue')['default']
     LeadStageModal: typeof import('./src/components/admissions/LeadStageModal.vue')['default']
     LeadTimeline: typeof import('./src/components/admissions/LeadTimeline.vue')['default']
+    OnboardingTour: typeof import('./src/components/OnboardingTour.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SkAvatar: typeof import('./src/components/ui/SkAvatar.vue')['default']

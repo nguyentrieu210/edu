@@ -353,6 +353,39 @@ def create_lead(lead_name, phone, email=None, source="Website", status="New", da
     doc.insert()
     return doc.name
 
+@frappe.whitelist(allow_guest=True)
+def submit_consultation(full_name, phone, email=None, note=None):
+    """Form 'Đăng ký tư vấn' từ landing (khách) -> tạo Student Lead + mail cảm ơn."""
+    full_name = (full_name or "").strip()
+    phone = (phone or "").strip()
+    if not full_name or not phone:
+        frappe.throw("Vui lòng nhập họ tên và số điện thoại.")
+    doc = frappe.get_doc({
+        "doctype": "Student Lead",
+        "lead_name": full_name,
+        "phone": phone,
+        "email": (email or "").strip() or None,
+        "source": "Website",
+        "status": "New",
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    if doc.email:
+        try:
+            frappe.sendmail(
+                recipients=[doc.email],
+                subject="Cảm ơn bạn đã đăng ký tư vấn — IKE Ohashi",
+                message=(f"<p>Chào {full_name},</p>"
+                         "<p>Cảm ơn bạn đã quan tâm tới <b>IKE Ohashi Education</b>. "
+                         "Bộ phận tuyển sinh sẽ liên hệ với bạn trong thời gian sớm nhất.</p>"
+                         "<p>Trân trọng,<br>IKE Ohashi</p>"),
+                now=True,
+            )
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "Consultation thank-you email failed")
+    return {"ok": True}
+
+
 def _ensure_student_for_lead(lead):
     """Tạo (hoặc tái dùng) hồ sơ Student cho một lead — idempotent.
 
