@@ -72,3 +72,57 @@ export const db = {
     return call('delete_document', { doctype, name })
   },
 }
+
+// Tải file lên qua endpoint chuẩn của Frappe (/api/method/upload_file).
+// Dùng fetch + FormData: PHẢI tự set CSRF header và KHÔNG set Content-Type
+// (trình duyệt tự thêm boundary multipart). Trả về File doc { name, file_url, ... }.
+export async function uploadFile(file, { isPrivate = false, folder = 'Home', doctype, docname, fieldname } = {}) {
+  const form = new FormData()
+  form.append('file', file, file.name)
+  form.append('is_private', isPrivate ? '1' : '0')
+  form.append('folder', folder)
+  if (doctype) form.append('doctype', doctype)
+  if (docname) form.append('docname', docname)
+  if (fieldname) form.append('fieldname', fieldname)
+
+  const res = await fetch('/api/method/upload_file', {
+    method: 'POST',
+    headers: { 'X-Frappe-CSRF-Token': window.csrf_token || '' },
+    body: form,
+    credentials: 'include',
+  })
+  let json = {}
+  try {
+    json = await res.json()
+  } catch {
+    json = {}
+  }
+  if (!res.ok) {
+    let msg = json?.exception || `Tải lên thất bại (${res.status})`
+    try {
+      const sm = json?._server_messages && JSON.parse(json._server_messages)
+      if (sm?.length) msg = JSON.parse(sm[0]).message || msg
+    } catch { /* giữ msg mặc định */ }
+    throw new Error(msg)
+  }
+  return json.message
+}
+
+// Các tác vụ CRM tuyển sinh — gom về một chỗ cho gọn component.
+export const crm = {
+  advanceStage(leadId, toStatus, payload = {}) {
+    return call('advance_lead_stage', { lead_id: leadId, to_status: toStatus, payload })
+  },
+  timeline(leadId) {
+    return call('get_lead_timeline', { lead_id: leadId })
+  },
+  appointments(leadId) {
+    return call('get_appointments', { lead_id: leadId })
+  },
+  parseDocument(fileUrl) {
+    return call('ai_parse_lead_document', { file_url: fileUrl })
+  },
+  attachFile(fileUrl, leadId) {
+    return call('attach_file_to_lead', { file_url: fileUrl, lead_id: leadId })
+  },
+}

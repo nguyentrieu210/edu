@@ -74,7 +74,7 @@ CLIENT_WRITE_FIELDS = {
     },
     "Student Lead": {
         "lead_name", "phone", "email", "source", "status", "date_of_birth", "gender",
-        "occupation", "guardian_name", "guardian_phone", "lost_reason",
+        "occupation", "guardian_name", "guardian_phone", "lost_reason", "lead_image",
     },
     "Teacher": {"teacher_name", "user", "phone", "email", "status"},
 }
@@ -329,7 +329,7 @@ def create_payment(student, payment_date, payment_method, amount, invoice, refer
 def get_leads():
     return frappe.get_list(
         "Student Lead",
-        fields=["name", "lead_name", "phone", "email", "source", "status", "creation", "date_of_birth", "gender", "occupation", "guardian_name", "guardian_phone"],
+        fields=["name", "lead_name", "phone", "email", "source", "status", "creation", "date_of_birth", "gender", "occupation", "guardian_name", "guardian_phone", "lead_image", "student"],
         order_by="creation desc"
     )
 
@@ -352,16 +352,24 @@ def create_lead(lead_name, phone, email=None, source="Website", status="New", da
     doc.insert()
     return doc.name
 
-@frappe.whitelist()
-def convert_lead_to_student(lead_id):
-    lead = _get_doc_checked("Student Lead", lead_id, "write")
+def _ensure_student_for_lead(lead):
+    """Tạo (hoặc tái dùng) hồ sơ Student cho một lead — idempotent.
+
+    Nếu lead.student đã có thì trả về luôn (tránh tạo trùng khi lead đi qua
+    Học thử rồi mới Nhập học). Ngược lại: tìm/tạo Guardian, tạo Student, gán
+    lead.student và lưu lại. KHÔNG đổi lead.status (nhánh gọi tự quyết định).
+    Trả về document Student.
+    """
+    if lead.get("student"):
+        return frappe.get_doc("Student", lead.student)
+
     _require_create("Student")
-    
+
     guardian_link = None
     if lead.get("guardian_name"):
         g_name = lead.guardian_name
         g_phone = lead.get("guardian_phone")
-        
+
         # Check if guardian already exists
         existing_guardian = frappe.get_list("Guardian", filters={"guardian_name": g_name, "phone": g_phone}, limit=1)
         if existing_guardian:
@@ -374,7 +382,7 @@ def convert_lead_to_student(lead_id):
             })
             guardian.insert()
             guardian_link = guardian.name
-            
+
     # Create Student
     student = frappe.get_doc({
         "doctype": "Student",
@@ -390,14 +398,224 @@ def convert_lead_to_student(lead_id):
     })
     student.insert()
 
-    # Update Lead status to "Enrolled"
-    lead.status = "Enrolled"
+    # Ghi nhớ Student trên lead để các bước sau không tạo trùng.
+    lead.student = student.name
     lead.save()
-    
+
+    return student
+
+
+@frappe.whitelist()
+def convert_lead_to_student(lead_id):
+    lead = _get_doc_checked("Student Lead", lead_id, "write")
+    student = _ensure_student_for_lead(lead)
+
+    # Update Lead status to "Enrolled"
+    if lead.status != "Enrolled":
+        lead.status = "Enrolled"
+        lead.save()
+
     return {
         "student_id": student.name,
         "student_name": student.full_name
     }
+
+
+def _create_lead_appointment(lead_id, appointment_date, purpose, appointment_time=None):
+    """Tạo một Lịch hẹn (Student Appointment) gắn với lead. Trả về tên doc."""
+    _require_create("Student Appointment")
+    doc = frappe.get_doc({
+        "doctype": "Student Appointment",
+        "lead": lead_id,
+        "appointment_date": appointment_date or nowdate(),
+        "appointment_time": appointment_time or None,
+        "purpose": purpose,
+        "status": "Scheduled",
+    })
+    doc.insert()
+    return doc.name
+
+
+# Các stage hợp lệ để chuyển tới qua advance_lead_stage.
+LEAD_STAGE_TARGETS = {"Consulting", "Testing", "Trial", "Enrolled", "Lost"}
+
+
+@frappe.whitelist()
+def advance_lead_stage(lead_id, to_status, payload=None):
+    """Chuyển lead sang stage mới VÀ tạo tác vụ theo sau — trong MỘT transaction.
+
+    Mỗi request Frappe là một transaction: bất kỳ frappe.throw nào ở giữa sẽ
+    tự rollback toàn bộ (không tạo bản ghi mồ côi). KHÔNG nuốt exception, KHÔNG
+    gọi frappe.db.commit() giữa chừng.
+
+    payload (dict hoặc JSON string) theo từng stage:
+      Consulting: {appointment_date, appointment_time?, purpose?, contact_date?, notes?, next_follow_up?}
+      Testing:    {appointment_date?, appointment_time?, purpose?, test_date?, score?, recommended_course?}
+      Trial:      {class_id, enrollment_date?, list_price?, submit?, appointment_date?, appointment_time?, notes?}
+      Enrolled:   {}  -> _ensure_student_for_lead + status=Enrolled
+      Lost:       {lost_reason}
+    Trả về: {status, created:{...}, student?}
+    """
+    payload = _parse_payload(payload)
+    if to_status not in LEAD_STAGE_TARGETS:
+        frappe.throw(f"Trạng thái '{to_status}' không hợp lệ.")
+
+    lead = _get_doc_checked("Student Lead", lead_id, "write")
+    created = {}
+    result = {"status": to_status, "created": created}
+
+    if to_status == "Consulting":
+        if not payload.get("appointment_date"):
+            frappe.throw("Cần ngày hẹn để chuyển sang Tư vấn.")
+        created["appointment"] = _create_lead_appointment(
+            lead_id,
+            payload.get("appointment_date"),
+            payload.get("purpose") or "Tư vấn",
+            payload.get("appointment_time"),
+        )
+        if payload.get("notes"):
+            created["consultation_log"] = add_consultation_log(
+                lead_id,
+                payload.get("notes"),
+                payload.get("contact_date") or nowdate(),
+                payload.get("next_follow_up"),
+            )
+        lead.status = "Consulting"
+        lead.save()
+
+    elif to_status == "Testing":
+        if payload.get("appointment_date"):
+            created["appointment"] = _create_lead_appointment(
+                lead_id,
+                payload.get("appointment_date"),
+                payload.get("purpose") or "Test đầu vào",
+                payload.get("appointment_time"),
+            )
+        if payload.get("score") not in (None, ""):
+            created["placement_test"] = add_placement_test(
+                lead_id,
+                payload.get("test_date") or nowdate(),
+                payload.get("score"),
+                payload.get("recommended_course"),
+            )
+        lead.status = "Testing"
+        lead.save()
+
+    elif to_status == "Trial":
+        if not payload.get("class_id"):
+            frappe.throw("Cần chọn lớp để ghi danh học thử.")
+        student = _ensure_student_for_lead(lead)
+        created["student"] = student.name
+        result["student"] = {"student_id": student.name, "student_name": student.full_name}
+        created["enrollment"] = create_enrollment(
+            student=student.name,
+            class_id=payload.get("class_id"),
+            enrollment_date=payload.get("enrollment_date") or nowdate(),
+            enrollment_type="Trial",
+            list_price=payload.get("list_price"),
+            submit=int(payload.get("submit") or 0),
+        )
+        if payload.get("appointment_date"):
+            created["appointment"] = _create_lead_appointment(
+                lead_id,
+                payload.get("appointment_date"),
+                payload.get("purpose") or "Học thử",
+                payload.get("appointment_time"),
+            )
+        if payload.get("notes"):
+            created["consultation_log"] = add_consultation_log(
+                lead_id,
+                payload.get("notes"),
+                payload.get("contact_date") or nowdate(),
+                payload.get("next_follow_up"),
+            )
+        lead.status = "Trial"
+        lead.save()
+
+    elif to_status == "Enrolled":
+        conv = convert_lead_to_student(lead_id)
+        created["student"] = conv["student_id"]
+        result["student"] = conv
+
+    elif to_status == "Lost":
+        reason = payload.get("lost_reason") or lead.get("lost_reason")
+        if not reason:
+            frappe.throw("Lead thất bại cần có lý do.")
+        lead.lost_reason = reason
+        lead.status = "Lost"
+        lead.save()
+
+    return result
+
+
+@frappe.whitelist()
+def attach_file_to_lead(file_url, lead_id):
+    """Gắn một File đã tải lên vào hồ sơ lead (sau khi lead được tạo)."""
+    _get_doc_checked("Student Lead", lead_id, "write")
+    file_doc = frappe.get_doc("File", {"file_url": file_url})
+    file_doc.check_permission("write")
+    file_doc.attached_to_doctype = "Student Lead"
+    file_doc.attached_to_name = lead_id
+    file_doc.save()
+    return file_doc.name
+
+
+@frappe.whitelist()
+def get_appointments(lead_id):
+    _get_doc_checked("Student Lead", lead_id, "read")
+    return frappe.get_list(
+        "Student Appointment",
+        filters={"lead": lead_id},
+        fields=["name", "appointment_date", "appointment_time", "purpose", "status", "creation"],
+        order_by="appointment_date desc, creation desc",
+    )
+
+
+@frappe.whitelist()
+def get_lead_timeline(lead_id):
+    """Gộp Consultation Log + Placement Test + Student Appointment thành một dòng
+    thời gian chuẩn hóa, sắp xếp giảm dần theo ngày."""
+    _get_doc_checked("Student Lead", lead_id, "read")
+    items = []
+
+    for log in get_consultation_logs(lead_id):
+        items.append({
+            "kind": "consultation",
+            "date": log.get("contact_date") or log.get("creation"),
+            "title": "Ghi nhận tư vấn",
+            "detail": log.get("notes"),
+            "status": None,
+            "next_follow_up": log.get("next_follow_up"),
+            "name": log.get("name"),
+            "creation": log.get("creation"),
+        })
+
+    for test in get_placement_tests(lead_id):
+        items.append({
+            "kind": "placement",
+            "date": test.get("test_date") or test.get("creation"),
+            "title": "Test đầu vào",
+            "detail": f"Điểm: {test.get('score')}"
+                      + (f" · Khóa gợi ý: {test.get('recommended_course')}" if test.get("recommended_course") else ""),
+            "status": test.get("status"),
+            "name": test.get("name"),
+            "creation": test.get("creation"),
+        })
+
+    for appt in get_appointments(lead_id):
+        when = appt.get("appointment_date")
+        items.append({
+            "kind": "appointment",
+            "date": when or appt.get("creation"),
+            "title": appt.get("purpose") or "Lịch hẹn",
+            "detail": (str(appt.get("appointment_time")) if appt.get("appointment_time") else None),
+            "status": appt.get("status"),
+            "name": appt.get("name"),
+            "creation": appt.get("creation"),
+        })
+
+    items.sort(key=lambda x: (str(x.get("date") or ""), str(x.get("creation") or "")), reverse=True)
+    return items
 
 @frappe.whitelist()
 def get_teachers():
@@ -501,7 +719,10 @@ def get_materials(course=None, class_id=None, public_only=0):
 def get_classes():
     return frappe.get_list(
         "Class",
-        fields=["name", "class_name", "course", "teacher", "start_date", "status"],
+        fields=[
+            "name", "class_name", "course", "teacher", "start_date", "status",
+            "progress", "max_capacity", "total_sessions", "standard_fee",
+        ],
         order_by="creation desc"
     )
 
@@ -1139,12 +1360,33 @@ def get_my_student_overview():
         as_dict=True,
     )
     cids = perm.student_class_ids(s)
+    enrollments = frappe.get_list(
+        "Program Enrollment",
+        filters={"student": s, "docstatus": 1},
+        fields=["name", "class_id", "enrollment_status", "enrollment_date", "net_fee"],
+        order_by="creation desc",
+    )
+    enrollment_by_class = {e.class_id: e.name for e in enrollments if e.class_id}
     homework = frappe.get_list(
         "Homework",
         filters={"class_id": ["in", cids], "status": "Published"},
-        fields=["name", "title", "due_date", "class_id"],
+        fields=[
+            "name", "title", "due_date", "class_id", "class_session", "target",
+            "description", "materials", "assigned_date",
+        ],
         order_by="due_date asc",
     ) if cids else []
+    homework_names = [h.name for h in homework]
+    submissions = frappe.get_list(
+        "Homework Submission",
+        filters={"student": s, "homework": ["in", homework_names]},
+        fields=["name", "homework", "submission_date", "status", "content", "grade", "feedback"],
+        order_by="creation desc",
+    ) if homework_names else []
+    submission_by_homework = {x.homework: x for x in submissions}
+    for h in homework:
+        h["program_enrollment"] = enrollment_by_class.get(h.class_id)
+        h["submission"] = submission_by_homework.get(h.name)
     invoices = frappe.get_list(
         "Fee Invoice",
         filters={"student": s, "docstatus": 1},
@@ -1158,7 +1400,81 @@ def get_my_student_overview():
         order_by="creation desc",
         limit_page_length=10,
     )
-    return {"student": s, "profile": profile, "homework": homework, "invoices": invoices, "recent_assessments": assessments}
+    sessions = frappe.get_list(
+        "Class Session",
+        filters={"class_id": ["in", cids], "session_date": [">=", nowdate()]},
+        fields=["name", "class_id", "session_date", "start_time", "end_time", "lesson_topic", "session_status"],
+        order_by="session_date asc, start_time asc",
+        limit_page_length=12,
+    ) if cids else []
+    materials = frappe.get_list(
+        "Learning Material",
+        filters={"class_id": ["in", cids], "is_public": 1},
+        fields=["name", "title", "material_type", "class_id", "course", "url", "description"],
+        order_by="creation desc",
+        limit_page_length=12,
+    ) if cids else []
+    return {
+        "student": s,
+        "profile": profile,
+        "enrollments": enrollments,
+        "homework": homework,
+        "invoices": invoices,
+        "recent_assessments": assessments,
+        "sessions": sessions,
+        "materials": materials,
+    }
+
+
+@frappe.whitelist()
+def submit_my_homework(homework, content=None):
+    """Student portal submit/update homework for the current session user."""
+    from edu.education_erp import permissions as perm
+    s = perm.student_of(frappe.session.user)
+    if not s:
+        frappe.throw("Tai khoan hien tai khong gan voi ho so hoc vien.")
+
+    hw = _get_doc_checked("Homework", homework, "read")
+    if hw.status != "Published":
+        frappe.throw("Chi nop duoc bai tap da publish.")
+
+    class_ids = perm.student_class_ids(s)
+    allowed = (hw.target == "Whole Class" and hw.class_id in class_ids) or (
+        hw.target == "Individual" and hw.student == s
+    )
+    if not allowed:
+        frappe.throw("Bai tap khong thuoc hoc vien hien tai.", frappe.PermissionError)
+
+    program_enrollment = frappe.db.get_value(
+        "Program Enrollment",
+        {"student": s, "class_id": hw.class_id, "docstatus": 1},
+        "name",
+    )
+    if not program_enrollment:
+        frappe.throw("Khong tim thay dang ky hoc cho lop cua bai tap.")
+
+    existing = frappe.db.exists(
+        "Homework Submission",
+        {"homework": homework, "program_enrollment": program_enrollment},
+    )
+    if existing:
+        doc = frappe.get_doc("Homework Submission", existing)
+        doc.content = content
+        doc.submission_date = nowdate()
+        doc.status = "Submitted"
+        doc.save(ignore_permissions=True)
+    else:
+        doc = frappe.get_doc({
+            "doctype": "Homework Submission",
+            "homework": homework,
+            "program_enrollment": program_enrollment,
+            "student": s,
+            "submission_date": nowdate(),
+            "status": "Submitted",
+            "content": content,
+        })
+        doc.insert(ignore_permissions=True)
+    return {"name": doc.name, "status": doc.status, "submission_date": doc.submission_date}
 
 
 @frappe.whitelist()
@@ -1172,7 +1488,11 @@ def ai_chat(messages, temperature=0.7, max_tokens=1024, response_format=None, mo
     api_key = frappe.conf.get("groq_api_key")
     if not api_key:
         frappe.throw("Chưa cấu hình 'groq_api_key' trong site_config.json.")
-    if not (frappe.has_permission("Student", "read") or frappe.has_permission("Class", "read")):
+    if not (
+        frappe.has_permission("Student", "read")
+        or frappe.has_permission("Class", "read")
+        or frappe.has_permission("Student Lead", "read")
+    ):
         frappe.throw("Bạn không có quyền sử dụng trợ lý AI.", frappe.PermissionError)
 
     if isinstance(messages, str):
@@ -1184,7 +1504,7 @@ def ai_chat(messages, temperature=0.7, max_tokens=1024, response_format=None, mo
             response_format = None
 
     payload = {
-        "model": frappe.conf.get("groq_model") or DEFAULT_GROQ_MODEL,
+        "model": model or frappe.conf.get("groq_model") or DEFAULT_GROQ_MODEL,
         "messages": messages,
         "temperature": max(0.0, min(float(temperature), 1.0)),
     }
@@ -1215,3 +1535,447 @@ def ai_chat(messages, temperature=0.7, max_tokens=1024, response_format=None, mo
     if not content:
         frappe.throw("Phản hồi rỗng từ dịch vụ AI.")
     return content
+
+
+LEAD_PARSE_SYSTEM_PROMPT = (
+    "Bạn là trợ lý AI của IKE Ohashi. Hãy phân tích thông tin của học viên mới từ "
+    "tài liệu (ảnh chụp/giấy tờ/tin nhắn) và trích xuất thành một đối tượng JSON chính "
+    "xác có cấu trúc sau:\n"
+    "{\n"
+    '  "lead_name": "Họ và tên",\n'
+    '  "phone": "Số điện thoại",\n'
+    '  "email": "Địa chỉ email",\n'
+    '  "source": "Chọn một trong: Website, Facebook, Hotline, Word of Mouth, Other",\n'
+    '  "date_of_birth": "Ngày sinh định dạng YYYY-MM-DD",\n'
+    '  "gender": "Chọn một trong: Nam, Nữ, Khác",\n'
+    '  "occupation": "Nghề nghiệp",\n'
+    '  "guardian_name": "Tên người giám hộ",\n'
+    '  "guardian_phone": "Số điện thoại người giám hộ"\n'
+    "}\n"
+    'Nếu không tìm thấy trường nào, đặt giá trị là chuỗi rỗng "". Chỉ trả về JSON thô, '
+    "không thêm markdown hay giải thích."
+)
+
+LEAD_PARSE_FIELDS = {
+    "lead_name", "phone", "email", "source", "date_of_birth",
+    "gender", "occupation", "guardian_name", "guardian_phone",
+}
+
+_IMAGE_MIME = {
+    "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg",
+    "webp": "image/webp", "gif": "image/gif",
+}
+
+
+def _extract_json(text):
+    """Bóc JSON object đầu tiên từ phản hồi AI (kèm rào ```json nếu có)."""
+    cleaned = (text or "").strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.split("```", 2)[1] if cleaned.count("```") >= 2 else cleaned.strip("`")
+        if cleaned.lstrip().lower().startswith("json"):
+            cleaned = cleaned.lstrip()[4:]
+    start, end = cleaned.find("{"), cleaned.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        cleaned = cleaned[start:end + 1]
+    try:
+        return json.loads(cleaned)
+    except (ValueError, TypeError):
+        frappe.throw("AI trả về kết quả không đúng định dạng JSON.")
+
+
+@frappe.whitelist()
+def ai_parse_lead_document(file_url):
+    """Đọc một tài liệu đã tải lên (ảnh hoặc PDF) và trích xuất thông tin lead.
+
+    - Ảnh (png/jpg/webp...): gửi tới model vision của Groq (cấu hình
+      'groq_vision_model' trong site_config.json) dưới dạng base64 data URI.
+    - PDF: trích text phía server bằng pdfplumber rồi đưa qua model văn bản.
+    Trả về dict các field lead (lead_name, phone, email, ...).
+    """
+    import base64
+
+    file_doc = frappe.get_doc("File", {"file_url": file_url})
+    file_doc.check_permission("read")
+    content = file_doc.get_content()
+    if isinstance(content, str):
+        content = content.encode("utf-8", "ignore")
+
+    ext = (file_doc.file_name or file_url or "").rsplit(".", 1)[-1].lower()
+
+    if ext in _IMAGE_MIME:
+        vision_model = frappe.conf.get("groq_vision_model")
+        if not vision_model:
+            frappe.throw(
+                "Chưa cấu hình 'groq_vision_model' trong site_config.json để đọc ảnh."
+            )
+        data_uri = f"data:{_IMAGE_MIME[ext]};base64,{base64.b64encode(content).decode()}"
+        messages = [
+            {"role": "system", "content": LEAD_PARSE_SYSTEM_PROMPT},
+            {"role": "user", "content": [
+                {"type": "text", "text": "Trích xuất thông tin học viên từ tài liệu này thành JSON."},
+                {"type": "image_url", "image_url": {"url": data_uri}},
+            ]},
+        ]
+        raw = ai_chat(messages=messages, temperature=0.2, max_tokens=1024, model=vision_model)
+
+    elif ext == "pdf":
+        try:
+            import io
+            import pdfplumber
+        except ImportError:
+            frappe.throw("Chưa cài đặt 'pdfplumber' trên server để đọc PDF.")
+        text = ""
+        with pdfplumber.open(io.BytesIO(content)) as pdf:
+            for page in pdf.pages:
+                text += (page.extract_text() or "") + "\n"
+        if not text.strip():
+            frappe.throw(
+                "Không trích được văn bản từ PDF (có thể là PDF scan/ảnh). "
+                "Hãy tải lên ảnh chụp thay thế."
+            )
+        messages = [
+            {"role": "system", "content": LEAD_PARSE_SYSTEM_PROMPT},
+            {"role": "user", "content": text.strip()[:8000]},
+        ]
+        raw = ai_chat(messages=messages, temperature=0.2, max_tokens=1024)
+
+    else:
+        frappe.throw(f"Định dạng '{ext}' không được hỗ trợ. Hãy tải ảnh hoặc PDF.")
+
+    parsed = _extract_json(raw)
+    return {k: v for k, v in parsed.items() if k in LEAD_PARSE_FIELDS and v}
+
+
+# ===================================================================
+# READ APIs cho UI Sakura (Giai đoạn UI) — chỉ đọc, đi qua permission
+# query của từng DocType, KHÔNG dùng ignore_permissions.
+# ===================================================================
+
+def _student_name(student):
+    return frappe.db.get_value("Student", student, "full_name") or student
+
+
+@frappe.whitelist()
+def get_dashboard_overview():
+    """Tổng hợp dữ liệu Dashboard admin (§11). Gộp từ các list đã có quyền."""
+    today = getdate(nowdate())
+
+    active_students = frappe.db.count("Student", {"student_status": "Đang học"})
+    total_students = frappe.db.count("Student")
+    new_this_month = frappe.db.count(
+        "Student", {"creation": [">=", today.replace(day=1)]}
+    )
+    ongoing_classes = frappe.db.count("Class", {"status": "Ongoing"})
+    upcoming_classes = frappe.db.count("Class", {"status": "Upcoming"})
+
+    active_rates = frappe.get_list(
+        "Student", filters={"student_status": "Đang học"}, fields=["attendance_rate"]
+    )
+    avg_att = (
+        round(sum(flt(r.attendance_rate) for r in active_rates) / len(active_rates))
+        if active_rates else 0
+    )
+
+    invoices = frappe.get_list(
+        "Fee Invoice", filters={"docstatus": 1},
+        fields=["name", "student", "outstanding_amount", "due_date"],
+    )
+    outstanding = sum(flt(i.outstanding_amount) for i in invoices)
+    overdue = [
+        i for i in invoices
+        if flt(i.outstanding_amount) > 0 and i.due_date and getdate(i.due_date) < today
+    ]
+
+    sessions_today = frappe.get_list(
+        "Class Session", filters={"session_date": nowdate()},
+        fields=["name", "class_id", "start_time", "end_time", "lesson_topic",
+                "teacher", "classroom", "session_status"],
+        order_by="start_time asc",
+    )
+
+    classes = frappe.get_list(
+        "Class", filters={"status": ["in", ["Ongoing", "Upcoming"]]},
+        fields=["name", "class_name", "progress", "status", "max_capacity"],
+        order_by="modified desc", limit_page_length=6,
+    )
+    class_progress = [
+        {"name": c.class_name or c.name, "pct": flt(c.progress)} for c in classes
+    ]
+
+    # Cảnh báo cần xử lý
+    alerts = []
+    for i in overdue[:4]:
+        alerts.append({
+            "title": f"{_student_name(i.student)} · học phí quá hạn",
+            "detail": f"{i.name} · {frappe.utils.fmt_money(flt(i.outstanding_amount))}",
+            "level": "danger",
+        })
+    weak = frappe.get_list(
+        "Student",
+        filters={"student_status": "Đang học", "health_status": ["in", ["Cảnh báo", "Khẩn cấp"]]},
+        fields=["full_name", "health_status", "attendance_rate"], limit_page_length=4,
+    )
+    for w in weak:
+        alerts.append({
+            "title": f"{w.full_name} · {w.health_status}",
+            "detail": f"Chuyên cần {round(flt(w.attendance_rate))}%",
+            "level": "warning" if w.health_status == "Cảnh báo" else "danger",
+        })
+
+    # Hoạt động gần đây: phiếu thu + đăng ký mới nhất
+    activity = []
+    for p in frappe.get_list("Fee Payment", filters={"docstatus": 1},
+                             fields=["student", "amount", "creation"],
+                             order_by="creation desc", limit_page_length=3):
+        activity.append({
+            "text": f"Thu học phí {_student_name(p.student)} · {frappe.utils.fmt_money(flt(p.amount))}",
+            "time": p.creation, "dot": "#3f9b6e",
+        })
+    for e in frappe.get_list("Program Enrollment", filters={"docstatus": 1},
+                             fields=["student", "class_id", "creation"],
+                             order_by="creation desc", limit_page_length=3):
+        activity.append({
+            "text": f"Đăng ký {_student_name(e.student)} vào {e.class_id}",
+            "time": e.creation, "dot": "#9b6fc4",
+        })
+    activity.sort(key=lambda a: a["time"], reverse=True)
+
+    return {
+        "tiles": {
+            "active_students": active_students,
+            "total_students": total_students,
+            "new_this_month": new_this_month,
+            "ongoing_classes": ongoing_classes,
+            "upcoming_classes": upcoming_classes,
+            "avg_attendance": avg_att,
+            "outstanding": outstanding,
+            "overdue_count": len(overdue),
+        },
+        "sessions_today": sessions_today,
+        "class_progress": class_progress,
+        "alerts": alerts,
+        "activity": activity[:6],
+    }
+
+
+@frappe.whitelist()
+def get_student_profile(student):
+    """Hồ sơ học viên đầy đủ cho trang chi tiết (6 tab)."""
+    _get_doc_checked("Student", student, "read")
+    profile = frappe.db.get_value(
+        "Student", student,
+        ["name", "full_name", "student_status", "health_status", "date_of_birth",
+         "gender", "email", "phone", "source", "occupation", "progress",
+         "attendance_rate", "average_score", "guardian"],
+        as_dict=True,
+    )
+    guardian = None
+    if profile and profile.guardian:
+        guardian = frappe.db.get_value(
+            "Guardian", profile.guardian, ["guardian_name", "phone"], as_dict=True
+        )
+
+    enrollments = frappe.get_list(
+        "Program Enrollment", filters={"student": student},
+        fields=["name", "class_id", "enrollment_type", "enrollment_status",
+                "enrollment_date", "list_price", "net_fee", "creation"],
+        order_by="creation desc",
+    )
+    attendance = frappe.get_list(
+        "Student Attendance", filters={"student": student},
+        fields=["class_session", "attendance_date", "status", "attendance_type", "minutes_late"],
+        order_by="attendance_date desc", limit_page_length=12,
+    )
+    assessments = frappe.get_list(
+        "Student Assessment", filters={"student": student},
+        fields=["assessment_name", "assessment_type", "class_session", "score",
+                "max_score", "weight", "notes"],
+        order_by="creation desc", limit_page_length=20,
+    )
+    invoices = frappe.get_list(
+        "Fee Invoice", filters={"student": student, "docstatus": 1},
+        fields=["name", "total_amount", "outstanding_amount", "status", "due_date", "posting_date"],
+        order_by="due_date asc",
+    )
+    total = sum(flt(i.total_amount) for i in invoices)
+    outstanding = sum(flt(i.outstanding_amount) for i in invoices)
+    return {
+        "profile": profile,
+        "guardian": guardian,
+        "enrollments": enrollments,
+        "attendance": attendance,
+        "assessments": assessments,
+        "invoices": invoices,
+        "fees": {"total": total, "paid": total - outstanding, "outstanding": outstanding},
+    }
+
+
+@frappe.whitelist()
+def get_class_roster(class_id):
+    """Danh sách học viên của lớp kèm chuyên cần/điểm TB/trạng thái."""
+    _get_doc_checked("Class", class_id, "read")
+    enrollments = frappe.get_list(
+        "Program Enrollment",
+        filters={"class_id": class_id, "docstatus": 1,
+                 "enrollment_status": ["in", ["Active", "Deferred"]]},
+        fields=["name", "student", "enrollment_status", "enrollment_date", "net_fee"],
+    )
+    rows = []
+    for e in enrollments:
+        s = frappe.db.get_value(
+            "Student", e.student,
+            ["full_name", "attendance_rate", "average_score", "health_status"],
+            as_dict=True,
+        ) or frappe._dict()
+        invoices = frappe.get_list(
+            "Fee Invoice",
+            filters={"student": e.student, "program_enrollment": e.name, "docstatus": 1},
+            fields=["total_amount", "outstanding_amount"],
+        )
+        invoice_total = sum(flt(i.total_amount) for i in invoices)
+        outstanding = sum(flt(i.outstanding_amount) for i in invoices)
+        rows.append({
+            "enrollment": e.name,
+            "student": e.student,
+            "name": s.get("full_name") or e.student,
+            "attendance_rate": flt(s.get("attendance_rate")),
+            "average_score": s.get("average_score"),
+            "health_status": s.get("health_status"),
+            "enrollment_status": e.enrollment_status,
+            "enrollment_date": e.enrollment_date,
+            "net_fee": flt(e.net_fee),
+            "invoice_total": invoice_total,
+            "paid_amount": max(0, invoice_total - outstanding),
+            "outstanding_amount": outstanding,
+        })
+    return rows
+
+
+@frappe.whitelist()
+def get_sessions_by_range(from_date, to_date):
+    """Buổi học trong khoảng ngày (cho lịch tuần/tháng)."""
+    sessions = frappe.get_list(
+        "Class Session",
+        filters={"session_date": ["between", [from_date, to_date]]},
+        fields=["name", "class_id", "session_date", "start_time", "end_time",
+                "lesson_topic", "classroom", "teacher", "session_status"],
+        order_by="session_date asc, start_time asc",
+    )
+    names = {}
+    for cid in {s.class_id for s in sessions if s.class_id}:
+        names[cid] = frappe.db.get_value("Class", cid, "class_name") or cid
+    for s in sessions:
+        s["class_name"] = names.get(s.class_id, s.class_id)
+    return sessions
+
+
+@frappe.whitelist()
+def get_invoices(status=None):
+    """Danh sách hóa đơn đã submit (kèm tên học viên) cho trang Tài chính."""
+    filters = {"docstatus": 1}
+    if status and status not in ("all", "Tất cả"):
+        filters["status"] = status
+    invoices = frappe.get_list(
+        "Fee Invoice", filters=filters,
+        fields=["name", "student", "program_enrollment", "total_amount",
+                "outstanding_amount", "status", "due_date", "posting_date"],
+        order_by="posting_date desc",
+    )
+    for i in invoices:
+        i["student_name"] = _student_name(i.student)
+    return invoices
+
+
+@frappe.whitelist()
+def get_invoice_detail(invoice):
+    """Chi tiết một hóa đơn + lịch sử phiếu thu đã phân bổ."""
+    inv = _get_doc_checked("Fee Invoice", invoice, "read")
+    refs = frappe.get_all(
+        "Fee Payment Reference", filters={"invoice": invoice},
+        fields=["parent", "allocated_amount"],
+    )
+    pays = []
+    for r in refs:
+        p = frappe.db.get_value(
+            "Fee Payment", r.parent,
+            ["payment_date", "payment_method", "docstatus"], as_dict=True,
+        )
+        if p and p.docstatus == 1:
+            pays.append({
+                "date": p.payment_date, "amount": flt(r.allocated_amount),
+                "method": p.payment_method,
+            })
+    pays.sort(key=lambda x: x["date"] or "")
+    return {
+        "name": inv.name,
+        "student": inv.student,
+        "student_name": _student_name(inv.student),
+        "program_enrollment": inv.program_enrollment,
+        "posting_date": inv.posting_date,
+        "due_date": inv.due_date,
+        "total_amount": flt(inv.total_amount),
+        "outstanding_amount": flt(inv.outstanding_amount),
+        "status": inv.status,
+        "items": [{"item_name": it.item_name, "amount": flt(it.amount)} for it in inv.items],
+        "payments": pays,
+    }
+
+
+@frappe.whitelist()
+def get_reports_overview(month=None, year=None):
+    """Báo cáo tháng: doanh thu, công nợ, chuyên cần, doanh thu 6 tháng."""
+    today = getdate(nowdate())
+    payments = frappe.get_list(
+        "Fee Payment", filters={"docstatus": 1}, fields=["amount", "payment_date"],
+    )
+    # doanh thu 6 tháng gần nhất
+    buckets = []
+    for k in range(5, -1, -1):
+        d = getdate(frappe.utils.add_months(today, -k))
+        buckets.append({"key": (d.year, d.month), "label": f"T{d.month}", "value": 0.0})
+    bmap = {b["key"]: b for b in buckets}
+    for p in payments:
+        if not p.payment_date:
+            continue
+        pd = getdate(p.payment_date)
+        b = bmap.get((pd.year, pd.month))
+        if b:
+            b["value"] += flt(p.amount)
+    revenue_month = buckets[-1]["value"]
+
+    invoices = frappe.get_list(
+        "Fee Invoice", filters={"docstatus": 1}, fields=["outstanding_amount", "due_date"],
+    )
+    outstanding = sum(flt(i.outstanding_amount) for i in invoices)
+    overdue_count = sum(
+        1 for i in invoices
+        if flt(i.outstanding_amount) > 0 and i.due_date and getdate(i.due_date) < today
+    )
+
+    # chuyên cần theo lớp = TB attendance_rate của HV active trong lớp
+    att_by_class = []
+    all_att = []
+    for c in frappe.get_list("Class", filters={"status": ["in", ["Ongoing", "Upcoming"]]},
+                             fields=["name", "class_name"]):
+        enr = frappe.get_list(
+            "Program Enrollment",
+            filters={"class_id": c.name, "docstatus": 1, "enrollment_status": "Active"},
+            fields=["student"],
+        )
+        rates = [
+            flt(frappe.db.get_value("Student", e.student, "attendance_rate")) for e in enr
+        ]
+        if rates:
+            avg = round(sum(rates) / len(rates))
+            att_by_class.append({"name": c.class_name or c.name, "pct": avg})
+            all_att.extend(rates)
+    avg_attendance = round(sum(all_att) / len(all_att)) if all_att else 0
+
+    return {
+        "revenue_month": revenue_month,
+        "outstanding": outstanding,
+        "overdue_count": overdue_count,
+        "avg_attendance": avg_attendance,
+        "attendance_by_class": att_by_class,
+        "revenue_6m": [{"label": b["label"], "value": b["value"]} for b in buckets],
+    }

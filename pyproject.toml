@@ -9,6 +9,7 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=16.0.0" # Installed and managed by bench.
+    "pdfplumber>=0.11.0",  # Trích text từ PDF cho AI parse tài liệu lead.
 ]
 
 [build-system]

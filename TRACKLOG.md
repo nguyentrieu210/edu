@@ -4,6 +4,20 @@ Nhật ký tiến độ phát triển phân hệ Quản lý Đào tạo & Học 
 
 ---
 
+## 2026-06-20 — **Viết lại toàn bộ Frontend theo Design "Sakura"** ✅
+
+**Bối cảnh:** Thay frontend cũ (phong cách neutral, 24 trang) bằng giao diện mới theo bản design `Education ERP - Sakura.dc.html` (theme hồng hoa anh đào), gói gọn đúng 11 màn hình, nối dữ liệu thật.
+
+**Nội dung thực hiện:**
+- **[REPLACE] Tokens & shell:** Viết lại `index.css` (token Sakura, keyframes, scrollbar), cập nhật `tailwind.config.js` (palette `sakura`, font display Zen Kaku Gothic New). Viết lại `App.vue` (sidebar 250px gradient + nav 6 nhóm + overlays toàn cục) và `router.js` (11 route, export `NAV_SECTIONS`/`NAV_ITEMS`).
+- **[ADD] Bộ component Sakura (`components/ui/`):** `SkButton`, `SkBadge`, `SkAvatar`, `SkSegmented`, `SkStatTile`, `SkState` (loading/empty/error/denied), `SkModal`, `SkDrawer`, `SkToaster` + store `utils/toast.js`. Viết lại `CommandPalette.vue` (⌘K) và `AIDrawer.vue` (tái dùng `ai_chat`).
+- **[ADD] 11 trang:** Dashboard, Tuyển sinh (CRM Kanban), Học viên (master-detail 6 tab), Lớp học (3 tab), Điểm danh (workflow lưu & hoàn tất buổi), Lịch học (tuần), Tài chính (hóa đơn + thu tiền), Báo cáo, Cổng giáo viên, Cổng học viên (mobile), Component Library.
+- **[ADD] Backend read-only (`api.py`):** `get_dashboard_overview`, `get_student_profile`, `get_class_roster`, `get_sessions_by_range`, `get_invoices`/`get_invoice_detail`, `get_reports_overview` — đều đi qua permission query, không dùng `ignore_permissions`.
+- **[REMOVE]** Xóa 24 trang cũ + `AIChatBubble.vue` và 4 component ui cũ. Giữ nguyên `vite.config.js`, `main.js`, `api.js`, `utils/format.js`, `utils/labels.js`, `index.html`.
+- **[NOTE]** Build chạy ở môi trường bench: `cd frontend && npm install && npm run build` → sinh `edu/www/education_app.html`; sau đó `bench build --app edu` + `bench clear-cache`.
+
+---
+
 ## 2026-06-19 (lần 2) — **Trang Thẻ Học Viên, Lịch Hẹn & Tái sắp xếp Menu** ✅
 
 **Nội dung thực hiện:**

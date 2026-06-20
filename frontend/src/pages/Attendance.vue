@@ -1,293 +1,189 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h3 class="text-xl font-bold text-ink-2">Điểm Danh Lớp Học</h3>
-        <p class="text-xs text-muted mt-1">Điểm danh theo từng buổi học (Class Session); mỗi học viên một bản ghi duy nhất / buổi.</p>
-      </div>
-      <div v-if="sessionLoaded" class="flex items-center gap-2">
-        <button @click="saveAttendance" :disabled="saving || completing" class="flex items-center gap-2 px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-deep transition-colors shadow-sm shadow-emerald-600/20 disabled:opacity-50">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-1.5-1.5M12 14l3-3m-3 3V4" />
-          </svg>
-          Lưu Điểm Danh
-        </button>
-        <button v-if="currentSession.session_status !== 'Completed'" @click="completeSession" :disabled="saving || completing" class="flex items-center gap-2 px-4 py-2 bg-white text-ink-2 border border-border text-sm font-medium rounded-lg hover:bg-hover/40 transition-colors disabled:opacity-50">
-          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          {{ completing ? 'Đang xử lý...' : 'Hoàn tất buổi' }}
-        </button>
-        <span v-else class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700">
-          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-          Đã hoàn tất
-        </span>
-      </div>
+  <div class="ws">
+    <header class="ws-head">
+      <span class="ws-head__title">Điểm danh</span>
+      <span class="ws-head__sub">{{ sessionLabel }}</span>
+    </header>
+
+    <!-- toolbar -->
+    <div class="toolbar">
+      <select v-model="selectedClass" class="field field--sel" @change="onClassChange">
+        <option value="" disabled>Chọn lớp…</option>
+        <option v-for="c in classes" :key="c.name" :value="c.name">{{ c.class_name || c.name }}</option>
+      </select>
+      <select v-model="selectedSession" class="field field--sel" :disabled="!sessions.length" @change="loadRoster">
+        <option value="" disabled>Chọn buổi…</option>
+        <option v-for="(s, i) in sessions" :key="s.name" :value="s.name">Buổi {{ i + 1 }} · {{ formatDate(s.session_date) }}</option>
+      </select>
+      <SkButton variant="secondary" size="sm" :disabled="!roster.length" @click="markAll('Present')">Có mặt tất cả</SkButton>
+      <span class="toolbar__hint">{{ roster.length ? `${roster.length} học viên` : 'Chọn lớp và buổi để điểm danh' }}</span>
     </div>
 
-    <!-- Filters Toolbar -->
-    <div class="rounded-xl border border-border bg-white p-4 shadow-sm flex flex-col md:flex-row items-stretch md:items-end gap-4">
-      <div class="flex-1">
-        <FormControl type="select" label="Lớp học *" v-model="selectedClass" :options="classOptions" @change="onClassChange" />
-      </div>
-      <div class="flex-1">
-        <FormControl type="select" label="Buổi học *" v-model="selectedSession" :options="sessionOptions" :disabled="!selectedClass || loadingSessions" :placeholder="loadingSessions ? 'Đang tải buổi học...' : 'Chọn buổi học'" />
-      </div>
-      <button @click="loadSessionData" :disabled="loading || !selectedSession" class="px-6 py-2.5 text-sm font-medium text-ink-2 bg-white border border-border rounded-lg hover:bg-hover/40 transition-colors disabled:opacity-50">
-        {{ loading ? 'Đang tải...' : 'Tải Danh Sách' }}
-      </button>
-    </div>
+    <!-- body -->
+    <div class="ws-body sk-scroll">
+      <SkState v-if="loadingRoster" state="loading" />
+      <SkState v-else-if="!selectedSession" state="empty" title="Chưa chọn buổi học" message="Chọn lớp và buổi học ở thanh trên để bắt đầu điểm danh." />
+      <SkState v-else-if="!roster.length" state="empty" title="Lớp chưa có học viên Active" message="Buổi học này không có học viên cần điểm danh." />
 
-    <div v-if="loading" class="flex justify-center py-8">
-      <LoadingIndicator />
-    </div>
-
-    <div v-else-if="sessionLoaded" class="space-y-6 animate-fade-in">
-      <!-- Stats -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-5">
-        <div class="bg-white p-4 rounded-xl border border-border shadow-sm">
-          <p class="text-xs text-muted font-semibold uppercase tracking-wider">Tổng học viên</p>
-          <h4 class="text-lg font-bold text-ink-2 mt-1">{{ stats.total }}</h4>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-border shadow-sm">
-          <p class="text-xs text-muted font-semibold uppercase tracking-wider">Có mặt</p>
-          <h4 class="text-lg font-bold text-brand mt-1">{{ stats.present }}</h4>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-border shadow-sm">
-          <p class="text-xs text-muted font-semibold uppercase tracking-wider">Đi muộn</p>
-          <h4 class="text-lg font-bold text-blue-600 mt-1">{{ stats.late }}</h4>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-border shadow-sm">
-          <p class="text-xs text-muted font-semibold uppercase tracking-wider">Vắng (Có phép)</p>
-          <h4 class="text-lg font-bold text-amber-600 mt-1">{{ stats.excused }}</h4>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-border shadow-sm">
-          <p class="text-xs text-muted font-semibold uppercase tracking-wider">Vắng (Không phép)</p>
-          <h4 class="text-lg font-bold text-thaco-red mt-1">{{ stats.unexcused }}</h4>
-        </div>
-      </div>
-
-      <!-- Session + Teacher Attendance -->
-      <div class="rounded-xl border border-border bg-white p-6 shadow-sm">
-        <h4 class="text-sm font-semibold text-ink-2 uppercase tracking-wider mb-4">Buổi học & Điểm danh Giáo viên</h4>
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-brand-soft text-brand flex items-center justify-center font-bold text-sm">
-              {{ (currentSession.teacher || 'GV').charAt(0) }}
-            </div>
-            <div>
-              <p class="font-semibold text-ink-2">{{ currentSession.session_date }} · {{ formatTime(currentSession.start_time) }}–{{ formatTime(currentSession.end_time) }}</p>
-              <p class="text-xs text-muted">GV: {{ currentSession.teacher || '—' }} · Chủ đề: {{ currentSession.lesson_topic || 'Chưa cập nhật' }}</p>
-            </div>
+      <div v-else class="roster">
+        <div v-for="r in roster" :key="r.program_enrollment" class="att-row">
+          <SkAvatar :name="r.student_name" :size="38" />
+          <div class="att-row__main">
+            <div class="att-row__name">{{ r.student_name }}</div>
+            <div class="att-row__code tnum">{{ r.student }}</div>
           </div>
-          <div class="w-full sm:w-64">
-            <select v-model="teacherStatus"
-              class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 bg-white font-medium text-ink-2">
-              <option value="">Điểm danh GV: chưa chọn...</option>
-              <option value="Present">Có mặt (Present)</option>
-              <option value="Absent">Vắng mặt (Absent)</option>
-            </select>
+          <div class="seg">
+            <button v-for="o in OPTS" :key="o.value" class="seg__btn" :class="{ 'seg__btn--on': r.status === o.value }"
+              :style="r.status === o.value ? { color: o.color, background: '#fff', boxShadow: '0 1px 3px rgba(180,80,120,0.18)' } : {}"
+              @click="r.status = o.value">{{ o.label }}</button>
           </div>
         </div>
       </div>
-
-      <!-- Student Attendance Table -->
-      <div class="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-        <div class="px-6 py-4 border-b border-border bg-hover/40 flex items-center justify-between">
-          <h4 class="text-sm font-semibold text-ink-2 uppercase tracking-wider">Danh sách Học viên (Active)</h4>
-          <span class="text-xs text-muted font-medium font-mono">{{ students.length }} học viên</span>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-border">
-            <thead class="bg-hover/40">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Học Viên</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted w-72">Trạng Thái</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted w-40">Loại tham dự</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted w-32">Phút muộn</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-border bg-white">
-              <tr v-if="students.length === 0">
-                <td colspan="4" class="px-6 py-8 text-center text-sm text-muted">Lớp này chưa có học viên Active nào. Hãy đăng ký học viên vào lớp trước.</td>
-              </tr>
-              <tr v-for="st in students" :key="st.program_enrollment" class="hover:bg-hover/40 transition-colors">
-                <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-ink-2">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-hover flex items-center justify-center font-bold text-xs text-muted">{{ (st.student || 'S').charAt(4) || 'S' }}</div>
-                    <div>
-                      <p class="font-medium text-ink-2">{{ st.student }}</p>
-                      <p class="text-[11px] text-faint font-mono">{{ st.program_enrollment }}</p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4">
-                  <select v-model="st.status"
-                    class="w-full px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 bg-white font-medium text-ink-2">
-                    <option value="Present">Có mặt</option>
-                    <option value="Late">Đi muộn</option>
-                    <option value="Absent with Permission">Vắng có phép</option>
-                    <option value="Absent without Permission">Vắng không phép</option>
-                  </select>
-                </td>
-                <td class="px-6 py-4">
-                  <select v-model="st.attendance_type"
-                    class="w-full px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 bg-white text-ink-2">
-                    <option value="Regular">Chính khóa</option>
-                    <option value="Make-up">Học bù</option>
-                    <option value="Trial">Học thử</option>
-                  </select>
-                </td>
-                <td class="px-6 py-4">
-                  <input v-if="st.status === 'Late'" type="number" min="0" v-model="st.minutes_late"
-                    class="w-24 px-3 py-1.5 border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-brand/30 text-ink-2" />
-                  <span v-else class="text-xs text-faint">—</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
-    <div v-else-if="searched && !sessionLoaded" class="rounded-xl border border-border bg-white p-12 text-center shadow-sm">
-      <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-      <h3 class="mt-4 text-sm font-semibold text-ink">Chưa tải được buổi học</h3>
-      <p class="mt-1 text-sm text-muted">Hãy chọn lớp và buổi học rồi bấm "Tải Danh Sách".</p>
+    <!-- footer -->
+    <div v-if="roster.length" class="foot">
+      <span class="foot__total">Tổng <b>{{ roster.length }}</b> học viên</span>
+      <span class="foot__c" style="color:#2f8a5d;">Có mặt {{ counts.present }}</span>
+      <span class="foot__c" style="color:#b07a1f;">Muộn {{ counts.late }}</span>
+      <span class="foot__c" style="color:#c44a3f;">Vắng {{ counts.absent }}</span>
+      <div class="foot__actions">
+        <SkButton variant="secondary" :loading="saving" @click="save(false)">Lưu nháp</SkButton>
+        <SkButton variant="solid" size="lg" :loading="completing" @click="save(true)">Lưu & hoàn tất buổi</SkButton>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { FormControl, LoadingIndicator } from 'frappe-ui'
-import { apiResource, call } from '../api'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { call } from '../api'
+import { formatDate, formatTime } from '../utils/format'
+import { toast } from '../utils/toast'
+import SkAvatar from '../components/ui/SkAvatar.vue'
+import SkButton from '../components/ui/SkButton.vue'
+import SkState from '../components/ui/SkState.vue'
 
-const classesList = apiResource('get_classes', { auto: true })
+const OPTS = [
+  { value: 'Present', label: 'Có mặt', color: '#2f8a5d' },
+  { value: 'Late', label: 'Muộn', color: '#b07a1f' },
+  { value: 'Absent without Permission', label: 'Vắng', color: '#c44a3f' },
+]
 
-const classOptions = computed(() => {
-  if (!classesList.data) return []
-  return [{ label: 'Chọn lớp...', value: '' }, ...classesList.data.map(c => ({ label: `${c.name} - ${c.class_name}`, value: c.name }))]
-})
-
+const classes = ref([])
+const sessions = ref([])
 const selectedClass = ref('')
 const selectedSession = ref('')
-const sessions = ref([])
-const loadingSessions = ref(false)
-const loading = ref(false)
+const roster = ref([])
+const names = ref({})
+const loadingRoster = ref(false)
 const saving = ref(false)
 const completing = ref(false)
-const searched = ref(false)
-const sessionLoaded = ref(false)
-const currentSession = ref({})
-const teacherStatus = ref('')
-const students = ref([])
 
-const sessionOptions = computed(() => [
-  { label: 'Chọn buổi học...', value: '' },
-  ...sessions.value.map(s => ({
-    label: `${s.session_date} · ${formatTime(s.start_time)} · ${s.lesson_topic || 'Buổi học'}`,
-    value: s.name,
-  })),
-])
-
-const stats = computed(() => {
-  const list = students.value || []
-  return {
-    total: list.length,
-    present: list.filter(s => s.status === 'Present').length,
-    late: list.filter(s => s.status === 'Late').length,
-    excused: list.filter(s => s.status === 'Absent with Permission').length,
-    unexcused: list.filter(s => s.status === 'Absent without Permission').length,
-  }
+const sessionLabel = computed(() => {
+  const s = sessions.value.find((x) => x.name === selectedSession.value)
+  if (!s) return ''
+  const cls = classes.value.find((c) => c.name === selectedClass.value)
+  return `${cls?.class_name || selectedClass.value} · ${formatDate(s.session_date)} · ${formatTime(s.start_time)}`
 })
 
-const onClassChange = async () => {
-  selectedSession.value = ''
-  sessions.value = []
-  sessionLoaded.value = false
-  searched.value = false
-  if (!selectedClass.value) return
-  loadingSessions.value = true
-  try {
-    sessions.value = await call('get_class_sessions', { class_id: selectedClass.value }) || []
-  } catch (err) {
-    console.error(err)
-  } finally {
-    loadingSessions.value = false
-  }
+const counts = computed(() => ({
+  present: roster.value.filter((r) => r.status === 'Present').length,
+  late: roster.value.filter((r) => r.status === 'Late').length,
+  absent: roster.value.filter((r) => r.status.startsWith('Absent')).length,
+}))
+
+function markAll(status) {
+  roster.value.forEach((r) => (r.status = status))
 }
 
-const loadSessionData = async () => {
-  if (!selectedSession.value) { alert('Vui lòng chọn buổi học.'); return }
-  loading.value = true
-  searched.value = true
-  sessionLoaded.value = false
+async function onClassChange() {
+  selectedSession.value = ''
+  roster.value = []
+  sessions.value = []
+  if (!selectedClass.value) return
+  sessions.value = (await call('get_class_sessions', { class_id: selectedClass.value })) || []
+  // tự chọn buổi gần hôm nay nhất chưa hoàn thành
+  const pending = sessions.value.find((s) => s.session_status !== 'Completed')
+  if (pending) { selectedSession.value = pending.name; loadRoster() }
+}
+
+async function loadRoster() {
+  if (!selectedSession.value) return
+  loadingRoster.value = true
   try {
     const res = await call('get_session_roster', { class_session: selectedSession.value })
-    currentSession.value = res.session || {}
-    teacherStatus.value = res.session?.teacher_attendance_status || ''
-    students.value = (res.rows || []).map(r => ({ ...r }))
-    sessionLoaded.value = true
-  } catch (err) {
-    console.error(err)
-    alert('Có lỗi xảy ra khi tải dữ liệu.')
+    roster.value = (res?.rows || []).map((r) => ({
+      ...r,
+      student_name: names.value[r.student] || r.student,
+      status: r.status || 'Present',
+    }))
   } finally {
-    loading.value = false
+    loadingRoster.value = false
   }
 }
 
-const saveAttendance = async () => {
-  saving.value = true
+async function save(complete) {
+  const rows = roster.value.map((r) => ({
+    program_enrollment: r.program_enrollment,
+    status: r.status,
+    attendance_type: r.attendance_type || 'Regular',
+    minutes_late: r.minutes_late || 0,
+  }))
+  if (complete) completing.value = true
+  else saving.value = true
   try {
-    const rows = students.value.map(s => ({
-      program_enrollment: s.program_enrollment,
-      student: s.student,
-      status: s.status,
-      attendance_type: s.attendance_type,
-      minutes_late: s.status === 'Late' ? Number(s.minutes_late || 0) : 0,
-    }))
-    const res = await call('save_session_attendance', {
-      class_session: selectedSession.value,
-      rows: JSON.stringify(rows),
-      teacher_attendance_status: teacherStatus.value || undefined,
-    })
-    alert(`Đã lưu điểm danh cho ${res.saved} học viên.`)
-    loadSessionData()
-  } catch (err) {
-    console.error(err)
-    alert('Lỗi khi lưu: ' + (err.messages?.join('\n') || err.message || ''))
+    await call('save_session_attendance', { class_session: selectedSession.value, rows })
+    if (complete) {
+      await call('complete_class_session', { class_session: selectedSession.value })
+      toast.success('Đã hoàn tất buổi học', sessionLabel.value)
+      // refresh sessions status
+      await onClassChange()
+    } else {
+      toast.success('Đã lưu điểm danh', `${rows.length} học viên`)
+    }
+  } catch (e) {
+    toast.error(complete ? 'Không hoàn tất được buổi' : 'Lưu thất bại', e?.message || String(e))
   } finally {
     saving.value = false
-  }
-}
-
-const completeSession = async () => {
-  if (!confirm('Hoàn tất buổi học này? Hệ thống sẽ tính lại tiến độ lớp và chuyên cần.')) return
-  completing.value = true
-  try {
-    await call('save_session_attendance', {
-      class_session: selectedSession.value,
-      rows: JSON.stringify(students.value.map(s => ({
-        program_enrollment: s.program_enrollment,
-        student: s.student,
-        status: s.status,
-        attendance_type: s.attendance_type,
-        minutes_late: s.status === 'Late' ? Number(s.minutes_late || 0) : 0,
-      }))),
-      teacher_attendance_status: teacherStatus.value || undefined,
-    })
-    await call('complete_class_session', { class_session: selectedSession.value })
-    alert('Đã hoàn tất buổi học và cập nhật tiến độ/chuyên cần.')
-    loadSessionData()
-  } catch (err) {
-    console.error(err)
-    alert('Lỗi: ' + (err.messages?.join('\n') || err.message || ''))
-  } finally {
     completing.value = false
   }
 }
 
-const formatTime = (t) => (t ? String(t).slice(0, 5) : '')
+async function load() {
+  const [cls, studs] = await Promise.all([call('get_classes'), call('get_students')])
+  classes.value = cls || []
+  const map = {}
+  for (const s of studs || []) map[s.name] = s.full_name
+  names.value = map
+}
+onMounted(load)
 </script>
+
+<style scoped>
+.ws { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #fffdfe; height: 100vh; }
+.ws-head { height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #f1dbe3; }
+.ws-head__title { font-size: 16px; font-weight: 600; color: #3d2530; }
+.ws-head__sub { font-size: 13px; color: #a98c98; }
+
+.toolbar { height: 52px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 24px; border-bottom: 1px solid #f4dde5; background: #fffafb; }
+.field--sel { width: auto; min-width: 180px; appearance: none; height: 34px; }
+.toolbar__hint { margin-left: auto; font-size: 12.5px; color: #a98c98; }
+
+.ws-body { flex: 1; overflow-y: auto; }
+.roster { padding: 14px 24px 24px; }
+.att-row { display: flex; align-items: center; gap: 14px; padding: 9px 4px; border-bottom: 1px solid #f6e3ea; }
+.att-row__main { flex: 1; min-width: 0; }
+.att-row__name { font-size: 14px; font-weight: 500; color: #3d2530; }
+.att-row__code { font-size: 11.5px; color: #a98c98; }
+
+.seg { display: flex; background: #fbe6ee; border-radius: 8px; padding: 3px; gap: 2px; flex: none; }
+.seg__btn { height: 30px; padding: 0 14px; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500; background: transparent; color: #a07c8a; transition: all 0.12s ease; }
+.seg__btn--on { font-weight: 600; }
+
+.foot { flex: none; height: 60px; border-top: 1px solid #f1dbe3; background: #fffafb; display: flex; align-items: center; gap: 18px; padding: 0 24px; }
+.foot__total { font-size: 13px; color: #7a5c68; }
+.foot__total b { color: #3d2530; }
+.foot__c { font-size: 13px; font-weight: 600; }
+.foot__actions { margin-left: auto; display: flex; gap: 10px; }
+</style>

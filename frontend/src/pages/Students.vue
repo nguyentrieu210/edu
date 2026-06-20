@@ -1,711 +1,833 @@
 <template>
-  <div class="relative h-full flex flex-col space-y-4 overflow-hidden">
-    <!-- Header Toolbar -->
-    <div class="flex items-center justify-between flex-shrink-0">
-      <div>
-        <h3 class="ff-display text-xl font-bold text-ink">Danh sách Học Viên</h3>
-        <p class="text-xs text-muted mt-1 font-medium">Quản lý hồ sơ học viên, thông tin liên hệ và trạng thái học tập.</p>
+  <div class="md">
+    <section class="ctx">
+      <div class="ctx__head">
+        <div>
+          <span class="ctx__title">Học viên</span>
+          <span class="ctx__count">{{ filtered.length }}</span>
+        </div>
+        <SkButton size="sm" variant="solid" left-icon="plus" @click="openCreateStudent">Thêm</SkButton>
       </div>
-      <button @click="openCreateModal" class="btn btn-brand">Thêm Học Viên</button>
-    </div>
 
-    <!-- Search & Filters -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white p-4 rounded-xl border border-border shadow-sm flex-shrink-0 flex-wrap">
-      <div class="relative flex-1">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-faint">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </span>
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Tìm kiếm theo tên, mã học viên..."
-          class="w-full pl-10 pr-4 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400"
+      <div class="ctx__tools">
+        <div class="field field--icon">
+          <FeatherIcon name="search" style="width:15px;height:15px;color:#bd8d9c;" />
+          <input v-model="q" placeholder="Tìm theo tên, mã, SĐT..." />
+        </div>
+        <SkSegmented v-model="filter" :options="FILTERS" />
+      </div>
+
+      <div class="ctx__list sk-scroll">
+        <SkState v-if="loading" state="loading" />
+        <SkState
+          v-else-if="error"
+          state="error"
+          title="Không tải được học viên"
+          :message="error"
+          action-label="Thử lại"
+          @action="load"
         />
-      </div>
-
-      <!-- Filters -->
-      <select v-model="filterGender" class="text-sm border border-border rounded-lg px-3 py-2 bg-white text-muted focus:outline-none focus:ring-2 focus:ring-brand/30">
-        <option value="">Tất cả giới tính</option>
-        <option value="Nam">Nam</option>
-        <option value="Nữ">Nữ</option>
-        <option value="Khác">Khác</option>
-      </select>
-
-      <select v-model="filterClass" class="text-sm border border-border rounded-lg px-3 py-2 bg-white text-muted focus:outline-none focus:ring-2 focus:ring-brand/30 w-48">
-        <option value="">Tất cả lớp học</option>
-        <option v-for="c in classesList.data" :key="c.name" :value="c.name">{{ c.class_name }}</option>
-      </select>
-
-      <div class="flex items-center gap-1 bg-hover/40 border border-border rounded-lg p-1">
-        <button v-for="p in periods" :key="p.value" @click="periodFilter = p.value"
-          class="px-3 py-1 text-xs font-medium rounded-md transition-all border border-transparent"
-          :class="periodFilter === p.value ? 'bg-white text-ink-2 shadow-sm border-border' : 'text-muted hover:bg-white'">
-          {{ p.label }}
+        <SkState
+          v-else-if="!filtered.length"
+          state="empty"
+          title="Không có học viên"
+          message="Thử đổi bộ lọc hoặc thêm học viên mới."
+          action-label="Thêm học viên"
+          @action="openCreateStudent"
+        />
+        <button
+          v-for="s in filtered"
+          :key="s.name"
+          class="srow"
+          :class="{ 'srow--active': s.name === selectedId }"
+          @click="select(s.name)"
+        >
+          <SkAvatar :name="s.full_name" :size="38" />
+          <div class="srow__main">
+            <div class="srow__top">
+              <span class="srow__name">{{ s.full_name }}</span>
+              <SkBadge v-bind="healthMeta(s.health_status)" />
+            </div>
+            <div class="srow__bottom">
+              <span class="srow__sub">{{ s.phone || s.name }}</span>
+              <span class="srow__note">{{ s.progress || '—' }}</span>
+            </div>
+          </div>
         </button>
       </div>
+    </section>
 
-      <!-- Bulk delete bar -->
-      <transition name="fade">
-        <div v-if="selected.length > 0" class="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg">
-          <span class="text-xs text-red-700 font-medium">Đã chọn {{ selected.length }}</span>
-          <button @click="showDeleteConfirm = true" class="flex items-center gap-1 px-2.5 py-1 bg-red-600 text-white text-xs font-semibold rounded-md hover:bg-red-700">
-            Xóa
+    <main class="dtl">
+      <SkState
+        v-if="!selectedId && !loading"
+        state="empty"
+        title="Chọn một học viên"
+        message="Chọn học viên ở danh sách bên trái để xem chi tiết."
+      />
+
+      <template v-else-if="selectedId">
+        <header class="dtl__head">
+          <SkAvatar :name="profileName" :size="36" />
+          <div class="dtl__id">
+            <span class="dtl__name">{{ profileName }}</span>
+            <span class="dtl__slash">/</span>
+            <span class="dtl__code tnum">{{ selectedId }}</span>
+            <SkBadge v-bind="statusMeta('Student', 'student_status', prof.profile.student_status)" />
+          </div>
+          <div class="dtl__actions">
+            <SkButton variant="secondary" left-icon="external-link" @click="openDesk">Mở hồ sơ</SkButton>
+            <SkButton variant="solid" left-icon="edit-2" @click="openEditStudent">Sửa hồ sơ</SkButton>
+          </div>
+        </header>
+
+        <div class="dtl__tabs">
+          <button
+            v-for="t in TABS"
+            :key="t.id"
+            class="tab"
+            :class="{ 'tab--active': tab === t.id }"
+            @click="tab = t.id"
+          >
+            {{ t.label }}
           </button>
-          <button @click="selected = []" class="text-xs text-red-500 hover:text-red-700">Bỏ chọn</button>
-        </div>
-      </transition>
-
-      <span class="text-xs text-muted font-medium bg-hover/80 px-3 py-1.5 rounded-lg border border-border">
-        Tổng số: <strong class="text-ink font-semibold">{{ filteredStudents.length }}</strong>
-      </span>
-    </div>
-
-    <!-- Main Table View -->
-    <div class="flex-1 overflow-y-auto bg-white border border-border rounded-xl shadow-sm">
-      <div v-if="students.loading" class="flex justify-center py-12">
-        <LoadingIndicator />
-      </div>
-      <div v-else-if="filteredStudents.length === 0" class="flex flex-col items-center justify-center py-20 text-faint">
-        <svg class="h-12 w-12 mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        <p class="text-sm font-medium">Không tìm thấy học viên nào</p>
-      </div>
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-hover/40 border-b border-border sticky top-0 z-10">
-            <tr>
-              <th class="px-4 py-3 w-10">
-                <input type="checkbox" :checked="allSelected" @change="toggleSelectAll" class="w-4 h-4 rounded border-border text-brand focus:ring-brand cursor-pointer" />
-              </th>
-              <th class="px-3 py-3 text-left text-xs font-semibold text-muted uppercase tracking-wider w-12">STT</th>
-              <th class="text-left px-6 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider">Họ tên / Mã HV</th>
-              <th class="text-left px-6 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider">Thông tin liên hệ</th>
-              <th class="text-left px-6 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider">Giới tính / Ngày sinh</th>
-              <th class="text-left px-6 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider">Đánh giá</th>
-              <th class="text-left px-6 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider">Tình trạng học tập</th>
-              <th class="text-left px-6 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider">Trạng thái (Vòng đời)</th>
-              <th class="text-right px-6 py-3.5 text-xs font-semibold text-muted uppercase tracking-wider w-24">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-border bg-white">
-            <tr
-              v-for="(student, idx) in filteredStudents"
-              :key="student.name"
-              @click="selectStudent(student)"
-              class="hover:bg-hover/40 transition-colors cursor-pointer"
-              :class="selected.includes(student.name) ? 'bg-brand-tint/30' : (selectedStudent?.name === student.name ? 'bg-brand-tint/10 border-l-2 border-brand' : '')"
-            >
-              <td class="px-4 py-3" @click.stop>
-                <input type="checkbox" :value="student.name" v-model="selected" class="w-4 h-4 rounded border-border text-brand focus:ring-brand cursor-pointer" />
-              </td>
-              <td class="px-3 py-4 text-xs text-faint font-mono tabular-nums">{{ idx + 1 }}</td>
-              <td class="px-6 py-4">
-                <div class="font-bold text-ink-2">{{ student.full_name }}</div>
-                <div class="text-[11px] text-faint font-mono mt-0.5">{{ student.name }}</div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="font-medium text-ink-2 text-xs">{{ student.phone || 'Không có SĐT' }}</div>
-                <div class="text-[11px] text-faint mt-0.5">{{ student.email || 'Chưa cập nhật email' }}</div>
-              </td>
-              <td class="px-6 py-4 text-xs">
-                <div class="font-medium text-ink-2">{{ student.gender || 'Chưa rõ' }}</div>
-                <div class="text-faint mt-0.5">{{ student.date_of_birth || '---' }}</div>
-              </td>
-              <td class="px-6 py-4 text-amber text-xs font-semibold">
-                {{ getStars(student.rating) }}
-              </td>
-              <td class="px-6 py-4">
-                <span class="pill" :class="getHealthPillClass(student.health_status)">
-                  {{ student.health_status || 'Đang học đều' }}
-                </span>
-              </td>
-              <td class="px-6 py-4">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold"
-                  :class="getLifecycleBadgeClass(student.student_status)">
-                  {{ student.student_status || 'Mới nhập học' }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-right" @click.stop>
-                <div class="flex items-center justify-end gap-2">
-                  <button @click="editStudent(student)" class="p-1 text-muted hover:text-brand hover:bg-hover rounded transition-colors" title="Chỉnh sửa">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Student Detail Modal (Replacing Drawer) -->
-    <div v-if="selectedStudent" @click.self="selectedStudent = null" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm cursor-pointer">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl mx-4 p-6 overflow-y-auto max-h-[90vh] cursor-default flex flex-col">
-        <div class="flex items-center justify-between mb-4 border-b border-divider pb-3 flex-shrink-0">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center text-brand font-bold text-sm">
-              {{ selectedStudent.full_name?.charAt(0) }}
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h2 class="text-lg font-bold text-ink-2">{{ selectedStudent.full_name }}</h2>
-                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-muted border border-border">{{ selectedStudent.name }}</span>
-              </div>
-              <p class="text-xs text-muted mt-0.5 flex items-center gap-2">
-                <span class="flex items-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg> {{ selectedStudent.phone || 'Chưa cập nhật' }}</span>
-                <span class="text-border">•</span>
-                <span class="flex items-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> {{ selectedStudent.email || 'Chưa cập nhật' }}</span>
-              </p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2">
-            <button @click="editStudent(selectedStudent)" class="p-1.5 text-muted hover:text-brand hover:bg-hover rounded border border-transparent transition-colors" title="Chỉnh sửa">
-              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-              </svg>
-            </button>
-            <button @click="selectedStudent = null" class="p-1.5 text-faint hover:text-muted rounded transition-colors">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
         </div>
 
-        <!-- Pipeline Lifecycle Progress Bar -->
-        <div class="mb-5 bg-hover/40 p-3 rounded-xl border border-border flex items-center justify-between flex-shrink-0">
-          <div class="flex items-center gap-1.5 flex-1">
-            <template v-for="(step, idx) in lifecycleSteps" :key="step.id">
-              <button 
-                @click="triggerStatusTransition(selectedStudent, step.id)"
-                class="flex-1 py-1.5 text-xs font-bold rounded-lg border transition-all text-center"
-                :class="getLifecycleStepClass(selectedStudent.student_status, step.id)"
-              >
-                {{ step.label }}
-              </button>
-              <svg v-if="idx < lifecycleSteps.length - 1" class="h-4 w-4 text-faint" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </template>
-          </div>
-          <div class="ml-4 border-l border-divider pl-4 flex gap-2">
-            <button 
-              @click="triggerStatusTransition(selectedStudent, 'Bảo lưu')"
-              class="px-4 py-1.5 text-xs font-bold rounded-lg border transition-all"
-              :class="selectedStudent.student_status === 'Bảo lưu' ? 'bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-500/20' : 'bg-white border-border text-amber-600 hover:bg-amber-50'"
-            >
-              Bảo lưu
-            </button>
-            <button 
-              @click="triggerStatusTransition(selectedStudent, 'Nghỉ học')"
-              class="px-4 py-1.5 text-xs font-bold rounded-lg border transition-all"
-              :class="selectedStudent.student_status === 'Nghỉ học' ? 'bg-red-500 text-white border-red-500 shadow-sm shadow-red-500/20' : 'bg-white border-border text-red-600 hover:bg-red-50'"
-            >
-              Nghỉ học
-            </button>
-          </div>
-        </div>
-
-        <div class="flex-1 overflow-y-auto grid grid-cols-12 gap-5 pr-1">
-          <!-- Cột 1: Thông tin cá nhân -->
-          <div class="col-span-4 bg-slate-50 p-4 rounded-xl border border-border space-y-4 text-xs h-max">
-            <div>
-              <h4 class="font-bold text-ink-2 border-b border-divider pb-2 text-xs uppercase tracking-wider text-brand">Hồ sơ chi tiết</h4>
-              <div class="grid grid-cols-3 gap-y-2 mt-3 text-muted">
-                <span class="font-semibold">Ngày sinh:</span>
-                <span class="col-span-2 text-ink-2">{{ selectedStudent.date_of_birth || '—' }}</span>
-
-                <span class="font-semibold">Giới tính:</span>
-                <span class="col-span-2 text-ink-2">{{ selectedStudent.gender || '—' }}</span>
-
-                <span class="font-semibold">Nguồn:</span>
-                <span class="col-span-2 text-ink-2">{{ selectedStudent.source || '—' }}</span>
-
-                <span class="font-semibold">Ngành nghề:</span>
-                <span class="col-span-2 text-ink-2">{{ selectedStudent.occupation || '—' }}</span>
-
-                <span class="font-semibold">Người giám hộ:</span>
-                <span class="col-span-2 text-ink-2 font-medium">{{ selectedStudent.guardian_name || '—' }}</span>
-
-                <span class="font-semibold">SĐT Phụ huynh:</span>
-                <span class="col-span-2 text-ink-2">{{ selectedStudent.guardian_phone || '—' }}</span>
-
-                <span class="font-semibold text-brand">Đánh giá:</span>
-                <span class="col-span-2 text-amber-500 font-bold">{{ getStars(selectedStudent.rating) }}</span>
-                
-                <span class="font-semibold">Rep tin nhắn:</span>
-                <span class="col-span-2 text-ink-2">{{ selectedStudent.message_response || '—' }}</span>
-                
-                <span class="font-semibold">Ngày nhập học:</span>
-                <span class="col-span-2 text-ink-2 font-medium">{{ (selectedStudent.creation || '').split(' ')[0] }}</span>
+        <div class="dtl__body sk-scroll">
+          <SkState v-if="detailLoading" state="loading" />
+          <div v-else class="dtl__inner">
+            <div v-if="tab === 'overview'" class="ovw">
+              <div class="grid4">
+                <SkStatTile label="Chuyên cần" :value="pct(prof.profile.attendance_rate)" />
+                <SkStatTile label="Điểm trung bình" :value="score(prof.profile.average_score)" note="Điểm chuẩn hóa" note-color="#3f9b6e" />
+                <SkStatTile label="Buổi đã học" :value="sessionsDone" :note="`Tổng ${sessionsTotal} buổi`" />
+                <SkStatTile label="Tiến độ khóa" :value="progressPct" accent value-color="#b8456a" :progress="progressPct" />
               </div>
-            </div>
 
-            <div class="border-t border-divider pt-3 space-y-2">
-              <h5 class="font-bold text-ink-2 text-xs uppercase tracking-wider text-brand">Tiến độ học tập chung</h5>
-              <div class="grid grid-cols-2 gap-2 mt-2">
-                <div class="bg-white p-2 rounded border border-border">
-                  <p class="text-[10px] text-faint font-semibold uppercase">Điểm TB</p>
-                  <p class="text-base font-bold text-brand mt-0.5">{{ selectedStudent.average_score || '0' }}</p>
+              <div class="block">
+                <div class="block__head">
+                  <div class="block__title">Thông tin cá nhân</div>
+                  <SkButton size="sm" variant="ghost" left-icon="edit-2" @click="openEditStudent">Chỉnh sửa</SkButton>
                 </div>
-                <div class="bg-white p-2 rounded border border-border">
-                  <p class="text-[10px] text-faint font-semibold uppercase">Chuyên cần</p>
-                  <p class="text-sm font-bold text-ink-2 mt-0.5">{{ selectedStudent.attendance_status || 'Tốt' }}</p>
+                <div class="info">
+                  <div class="info__c"><div class="info__l">Họ và tên</div><div class="info__v">{{ profileName }}</div></div>
+                  <div class="info__c"><div class="info__l">Mã học viên</div><div class="info__v tnum">{{ selectedId }}</div></div>
+                  <div class="info__c"><div class="info__l">Ngày sinh</div><div class="info__v">{{ formatDate(prof.profile.date_of_birth) }}</div></div>
+                  <div class="info__c"><div class="info__l">Điện thoại</div><div class="info__v">{{ prof.profile.phone || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Email</div><div class="info__v">{{ prof.profile.email || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Nghề nghiệp</div><div class="info__v">{{ prof.profile.occupation || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Nguồn</div><div class="info__v">{{ prof.profile.source || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Tình trạng học tập</div><div class="info__v"><SkBadge v-bind="healthMeta(prof.profile.health_status)" /></div></div>
+                  <div class="info__c"><div class="info__l">Trạng thái vòng đời</div><div class="info__v"><SkBadge v-bind="statusMeta('Student', 'student_status', prof.profile.student_status)" /></div></div>
+                </div>
+              </div>
+
+              <div class="divider" />
+
+              <div class="grid2">
+                <div>
+                  <div class="block__title">Người giám hộ</div>
+                  <div v-if="prof.guardian" class="guardian">
+                    <SkAvatar :name="prof.guardian.guardian_name" :size="42" />
+                    <div>
+                      <div class="guardian__name">{{ prof.guardian.guardian_name }}</div>
+                      <div class="guardian__sub">{{ prof.guardian.phone || '—' }}</div>
+                    </div>
+                  </div>
+                  <div v-else class="muted">Chưa có người giám hộ.</div>
+                </div>
+                <div>
+                  <div class="block__head">
+                    <div class="block__title">Lớp đang học</div>
+                    <SkButton size="sm" variant="ghost" left-icon="plus" @click="openEnrollment">Đăng ký</SkButton>
+                  </div>
+                  <div v-if="activeEnr" class="clscard">
+                    <div class="clscard__top">
+                      <span class="clscard__name">{{ activeEnr.class_id }}</span>
+                      <SkBadge variant="success" label="Active" />
+                    </div>
+                    <div class="clscard__sub">Net fee {{ formatVND(activeEnr.net_fee) }} · Đăng ký {{ formatDate(activeEnr.enrollment_date) }}</div>
+                  </div>
+                  <div v-else class="muted">Chưa có lớp đang học.</div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Cột 2: Khóa học, Điểm danh, Lịch sử học -->
-          <div class="col-span-4 bg-white p-4 rounded-xl border border-border flex flex-col h-[400px]">
-            <div class="flex items-center justify-between border-b border-divider pb-2 mb-3 flex-shrink-0">
-              <h4 class="font-bold text-ink-2 text-xs uppercase tracking-wider text-brand">Lớp học đang tham gia</h4>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto space-y-3">
-              <div v-if="loadingEnrollments" class="text-center py-4"><span class="animate-pulse text-faint">Đang tải...</span></div>
-              <div v-else-if="!studentEnrollments.length" class="text-center py-8 text-faint text-xs">
-                Học viên chưa đăng ký lớp học nào.
-              </div>
-              <div v-else v-for="enr in studentEnrollments" :key="enr.name" class="p-3 bg-brand-soft/30 border border-brand/20 rounded-lg">
-                <div class="flex justify-between items-start mb-1">
-                  <h5 class="font-bold text-ink-2 text-sm">{{ getClassName(enr.class_id) }}</h5>
-                  <span class="px-2 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 font-bold rounded border border-emerald-200">Đang học</span>
+            <div v-else-if="tab === 'enrollment'" class="stack">
+              <div class="block__head">
+                <div>
+                  <div class="block__title">Lịch sử đăng ký lớp</div>
+                  <div class="block__hint">Tạo đăng ký sẽ tự submit, chốt học phí và sinh hóa đơn theo backend.</div>
                 </div>
-                <p class="text-[11px] text-muted">Ngày ghi danh: {{ enr.enrollment_date }}</p>
+                <SkButton variant="solid" left-icon="plus" @click="openEnrollment">Đăng ký lớp</SkButton>
               </div>
-              
-              <!-- Placeholder cho Lịch sử kiểm tra / điểm danh -->
-              <div class="mt-4 pt-4 border-t border-border">
-                <h5 class="font-bold text-ink-2 text-xs mb-2 uppercase tracking-wider text-brand">Lịch sử điểm danh</h5>
-                <div class="text-[11px] text-faint italic p-3 bg-slate-50 rounded border border-border">
-                  Chưa có dữ liệu điểm danh.
+              <div v-if="!prof.enrollments.length" class="empty-action">
+                <div class="muted">Chưa có đăng ký nào.</div>
+                <SkButton size="sm" variant="secondary" left-icon="plus" @click="openEnrollment">Đăng ký lớp đầu tiên</SkButton>
+              </div>
+              <div v-for="e in prof.enrollments" :key="e.name" class="enr">
+                <div>
+                  <div class="enr__title">{{ e.class_id }}</div>
+                  <div class="enr__sub">{{ e.name }} · {{ formatDate(e.enrollment_date) }} · {{ e.enrollment_type }} · Net fee {{ formatVND(e.net_fee) }}</div>
+                </div>
+                <div class="enr__actions">
+                  <SkBadge v-bind="enrMeta(e.enrollment_status)" />
+                  <SkButton size="sm" variant="ghost" @click="openEnrollmentDesk(e.name)">Mở</SkButton>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Cột 3: Phễu Cảnh báo & Ghi chú -->
-          <div class="col-span-4 flex flex-col gap-4">
-            <div class="bg-white p-4 rounded-xl border border-border flex flex-col items-center relative overflow-hidden flex-1 h-[400px]">
-              <h4 class="text-xs font-bold text-muted uppercase tracking-wider mb-2 self-start w-full">Phễu Tình Trạng Học Tập</h4>
-              
-              <div class="relative w-full flex-1 flex justify-center items-center mt-2 min-h-[220px]">
-                <svg viewBox="0 0 120 200" class="absolute w-24 h-full z-0" preserveAspectRatio="none">
-                  <polygon points="10,2 110,2 102,38 18,38" :fill="getFunnelFill(0)"/>
-                  <polygon points="18,42 102,42 94,78 26,78" :fill="getFunnelFill(1)"/>
-                  <polygon points="26,82 94,82 86,118 34,118" :fill="getFunnelFill(2)"/>
-                  <polygon points="34,122 86,122 78,158 42,158" :fill="getFunnelFill(3)"/>
-                  <polygon points="42,162 78,162 70,198 50,198" :fill="getFunnelFill(4)"/>
-                </svg>
-                <div class="absolute inset-0 flex flex-col justify-between py-2 z-10 pl-10">
-                  <div v-for="(stage, idx) in funnelStages" :key="stage.label" class="flex items-center w-full relative">
-                    <div class="w-3 h-3 rounded-full mr-3 z-20 shadow-sm border border-white/50" :class="stage.colorClass + (selectedStudent?.health_status === stage.label ? ' ring-4 ring-opacity-40 ' + stage.ringClass : '')"></div>
-                    <span class="text-[11px] font-semibold whitespace-nowrap" :class="selectedStudent?.health_status === stage.label ? 'text-ink font-bold' : 'text-muted'">{{ stage.label }}</span>
+            <div v-else-if="tab === 'attendance'">
+              <div class="block__head">
+                <div class="block__title">Chuyên cần · {{ prof.attendance.length }} buổi gần nhất</div>
+                <SkButton size="sm" variant="secondary" left-icon="clipboard" @click="$router.push('/attendance')">Mở điểm danh</SkButton>
+              </div>
+              <div class="tblwrap">
+                <table class="tbl">
+                  <thead><tr><th>Ngày</th><th>Loại</th><th>Trạng thái</th><th style="text-align:right;">Đi muộn</th></tr></thead>
+                  <tbody>
+                    <tr v-if="!prof.attendance.length"><td colspan="4" class="muted" style="padding:16px;">Chưa có điểm danh.</td></tr>
+                    <tr v-for="(a, i) in prof.attendance" :key="i">
+                      <td class="tbl__name tnum">{{ formatDate(a.attendance_date) }}</td>
+                      <td class="tbl__sub">{{ a.attendance_type || '—' }}</td>
+                      <td><SkBadge v-bind="statusMeta('Student Attendance', 'status', a.status)" /></td>
+                      <td class="tbl__sub tnum" style="text-align:right;">{{ a.minutes_late ? a.minutes_late + ' phút' : '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div v-else-if="tab === 'grades'">
+              <div class="block__head">
+                <div class="block__title">Điểm số theo kỹ năng · TB {{ score(prof.profile.average_score) }}</div>
+                <SkButton size="sm" variant="secondary" left-icon="edit-3" @click="$router.push('/attendance')">Nhập điểm</SkButton>
+              </div>
+              <div class="tblwrap">
+                <table class="tbl">
+                  <thead><tr><th>Đánh giá</th><th>Loại</th><th style="text-align:right;">Điểm</th><th style="text-align:right;">Chuẩn hóa</th><th>Nhận xét</th></tr></thead>
+                  <tbody>
+                    <tr v-if="!prof.assessments.length"><td colspan="5" class="muted" style="padding:16px;">Chưa có điểm.</td></tr>
+                    <tr v-for="(g, i) in prof.assessments" :key="i">
+                      <td class="tbl__name">{{ g.assessment_name || '—' }}</td>
+                      <td class="tbl__sub">{{ g.assessment_type || '—' }}</td>
+                      <td class="tbl__name tnum" style="text-align:right;">{{ g.score }}</td>
+                      <td class="tnum" style="text-align:right;" :style="{ color: normColor(g) }">{{ normalized(g) }}</td>
+                      <td class="tbl__sub">{{ g.notes || '—' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div v-else-if="tab === 'fees'" class="stack">
+              <div class="grid3">
+                <SkStatTile label="Tổng học phí" :value="formatVND(prof.fees.total)" />
+                <SkStatTile label="Đã thu" :value="formatVND(prof.fees.paid)" value-color="#2f8a5d" />
+                <SkStatTile label="Còn nợ" :value="formatVND(prof.fees.outstanding)" value-color="#c43232" :accent="prof.fees.outstanding > 0" />
+              </div>
+              <div>
+                <div class="block__head">
+                  <div class="block__title">Hóa đơn</div>
+                  <SkButton
+                    v-if="nextPayableInvoice"
+                    size="sm"
+                    variant="solid"
+                    left-icon="credit-card"
+                    @click="openPayment(nextPayableInvoice)"
+                  >
+                    Thu học phí
+                  </SkButton>
+                </div>
+                <div class="tblwrap">
+                  <table class="tbl">
+                    <thead><tr><th>Mã hóa đơn</th><th>Hạn</th><th style="text-align:right;">Số tiền</th><th style="text-align:right;">Còn nợ</th><th style="text-align:right;">Trạng thái</th><th></th></tr></thead>
+                    <tbody>
+                      <tr v-if="!prof.invoices.length"><td colspan="6" class="muted" style="padding:16px;">Chưa có hóa đơn.</td></tr>
+                      <tr v-for="i in prof.invoices" :key="i.name">
+                        <td class="tbl__name tnum">{{ i.name }}</td>
+                        <td class="tbl__sub tnum">{{ formatDate(i.due_date) }}</td>
+                        <td class="tbl__name tnum" style="text-align:right;">{{ formatVND(i.total_amount) }}</td>
+                        <td class="tnum" style="text-align:right;" :style="{ color: i.outstanding_amount > 0 ? '#c43232' : '#2f8a5d' }">{{ formatVND(i.outstanding_amount) }}</td>
+                        <td style="text-align:right;"><SkBadge v-bind="statusMeta('Fee Invoice', 'status', i.status)" /></td>
+                        <td style="text-align:right;">
+                          <SkButton v-if="Number(i.outstanding_amount) > 0" size="sm" variant="ghost" @click="openPayment(i)">Thu</SkButton>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="tab === 'history'">
+              <div class="block__title">Lịch sử hoạt động</div>
+              <div v-if="!timeline.length" class="muted">Chưa có hoạt động.</div>
+              <div class="timeline">
+                <div v-for="(h, i) in timeline" :key="i" class="tl">
+                  <div class="tl__rail"><span class="tl__dot" :style="{ background: h.dot }" /><span class="tl__line" /></div>
+                  <div class="tl__body">
+                    <div class="tl__date tnum">{{ formatDate(h.date) }}</div>
+                    <div class="tl__title">{{ h.title }}</div>
+                    <div class="tl__detail">{{ h.detail }}</div>
                   </div>
                 </div>
               </div>
-              
-              <div class="mt-4 w-full">
-                <label class="block text-[10px] font-bold text-muted uppercase mb-1">Cập nhật phân khúc:</label>
-                <select @change="updateHealthStatus($event.target.value)" :value="selectedStudent.health_status || 'Đang học đều'" class="w-full text-xs px-2 py-2 border border-border rounded-lg bg-white text-ink-2 font-semibold focus:ring-1 focus:ring-brand">
-                  <option v-for="s in funnelStages" :key="s.label" :value="s.label">{{ s.label }}</option>
-                </select>
-              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </main>
 
-    <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal" @click.self="closeCreateModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm cursor-pointer">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden cursor-default animate-fade-in animate-duration-200">
-        <div class="px-5 py-4 border-b border-border flex items-center justify-between">
-          <h3 class="ff-display text-base font-bold text-ink-2">{{ isEditing ? 'Chỉnh Sửa Học Viên' : 'Thêm Học Viên Mới' }}</h3>
-          <button @click="closeCreateModal" class="text-faint hover:text-muted transition-colors"><FeatherIcon name="x" class="w-4 h-4" /></button>
+    <SkModal v-model="studentOpen" :title="studentMode === 'create' ? 'Thêm học viên' : 'Sửa hồ sơ học viên'" width="620px">
+      <form class="form" @submit.prevent="saveStudent">
+        <div class="form-grid">
+          <label class="fg fg--full">
+            <span>Họ và tên</span>
+            <input v-model.trim="studentForm.full_name" class="field" required placeholder="Nguyễn Văn An" />
+          </label>
+          <label class="fg">
+            <span>Điện thoại</span>
+            <input v-model.trim="studentForm.phone" class="field" placeholder="09..." />
+          </label>
+          <label class="fg">
+            <span>Email</span>
+            <input v-model.trim="studentForm.email" class="field" type="email" placeholder="email@example.com" />
+          </label>
+          <label class="fg">
+            <span>Ngày sinh</span>
+            <input v-model="studentForm.date_of_birth" class="field" type="date" />
+          </label>
+          <label class="fg">
+            <span>Giới tính</span>
+            <select v-model="studentForm.gender" class="field">
+              <option value=""></option>
+              <option value="Nam">Nam</option>
+              <option value="Nữ">Nữ</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Nguồn</span>
+            <select v-model="studentForm.source" class="field">
+              <option value=""></option>
+              <option value="Website">Website</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Google">Google</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Nghề nghiệp</span>
+            <input v-model.trim="studentForm.occupation" class="field" placeholder="Sinh viên, nhân viên..." />
+          </label>
+          <label class="fg">
+            <span>Trạng thái</span>
+            <select v-model="studentForm.student_status" class="field">
+              <option v-for="s in STUDENT_STATUS" :key="s" :value="s">{{ s }}</option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Tình trạng học tập</span>
+            <select v-model="studentForm.health_status" class="field">
+              <option v-for="s in HEALTH_STATUS" :key="s" :value="s">{{ s }}</option>
+            </select>
+          </label>
         </div>
-        <div class="p-5 max-h-[70vh] overflow-y-auto space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Họ và tên *</label>
-              <input type="text" v-model="formData.full_name" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400" placeholder="Nhập họ và tên" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Email</label>
-              <input type="email" v-model="formData.email" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400" placeholder="example@mail.com" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Số điện thoại</label>
-              <input type="text" v-model="formData.phone" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400" placeholder="Số điện thoại" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Ngày sinh</label>
-              <input type="date" v-model="formData.date_of_birth" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Giới tính</label>
-              <select v-model="formData.gender" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400 bg-white">
-                <option value="Nam">Nam</option>
-                <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Trạng thái (Vòng đời)</label>
-              <select v-model="formData.student_status" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400 bg-white">
-                <option value="Mới nhập học">Mới nhập học</option>
-                <option value="Đang học">Đang học</option>
-                <option value="Bảo lưu">Bảo lưu</option>
-                <option value="Đã tốt nghiệp">Đã tốt nghiệp</option>
-                <option value="Nghỉ học">Nghỉ học</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Ngành nghề</label>
-              <input type="text" v-model="formData.occupation" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400" placeholder="Ngành nghề" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Đánh giá</label>
-              <select v-model="formData.rating" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400 bg-white">
-                <option value="1 Sao">1 Sao</option>
-                <option value="2 Sao">2 Sao</option>
-                <option value="3 Sao">3 Sao</option>
-                <option value="4 Sao">4 Sao</option>
-                <option value="5 Sao">5 Sao</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Phản hồi tin nhắn</label>
-              <select v-model="formData.message_response" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400 bg-white">
-                <option value="Tốt">Tốt</option>
-                <option value="Bình thường">Bình thường</option>
-                <option value="Chậm">Chậm</option>
-                <option value="Không trả lời">Không trả lời</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-muted mb-1.5 uppercase tracking-wider">Tình trạng học tập</label>
-              <select v-model="formData.health_status" class="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400 bg-white">
-                <option value="Đang học đều">Đang học đều</option>
-                <option value="Cần theo dõi">Cần theo dõi</option>
-                <option value="Cảnh báo">Cảnh báo</option>
-                <option value="Khẩn cấp">Khẩn cấp</option>
-                <option value="Ngừng học">Ngừng học</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <!-- Modal Footer -->
-        <div class="px-5 py-3.5 border-t border-border bg-hover/40 flex justify-end gap-2.5">
-          <button @click="closeCreateModal" class="flex-1 sm:flex-none px-4 py-2 border border-border text-sm font-semibold text-muted rounded-lg hover:bg-hover transition-colors">Hủy</button>
-          <button @click="saveStudent" :disabled="saving" class="flex-1 sm:flex-none px-5 py-2 bg-brand text-white text-sm font-semibold rounded-lg hover:bg-brand-deep transition-colors disabled:opacity-50">
-            {{ saving ? 'Đang lưu...' : 'Lưu học viên' }}
-          </button>
-        </div>
-      </div>
-    </div>
+      </form>
+      <template #footer>
+        <SkButton variant="secondary" :disabled="savingStudent" @click="studentOpen = false">Hủy</SkButton>
+        <SkButton variant="solid" :loading="savingStudent" @click="saveStudent">{{ studentMode === 'create' ? 'Tạo học viên' : 'Lưu hồ sơ' }}</SkButton>
+      </template>
+    </SkModal>
 
-    <!-- Bulk Delete Confirm Modal -->
-    <div v-if="showDeleteConfirm" @click.self="showDeleteConfirm = false" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm cursor-pointer">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 cursor-default">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-            <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-ink-2">Xác nhận xóa</h3>
-            <p class="text-xs text-muted mt-0.5">Bạn sắp xóa <span class="font-bold text-red-600">{{ selected.length }}</span> học viên. Hành động này không thể hoàn tác.</p>
-          </div>
+    <SkModal v-model="enrollmentOpen" title="Đăng ký lớp" width="600px">
+      <form class="form" @submit.prevent="saveEnrollment">
+        <div class="form-grid">
+          <label class="fg fg--full">
+            <span>Lớp học</span>
+            <select v-model="enrollmentForm.class_id" class="field" required>
+              <option value="">Chọn lớp</option>
+              <option v-for="c in classOptions" :key="c.name" :value="c.name">
+                {{ c.class_name || c.name }} · {{ c.status || '—' }}
+              </option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Ngày nhập học</span>
+            <input v-model="enrollmentForm.enrollment_date" class="field" type="date" required />
+          </label>
+          <label class="fg">
+            <span>Loại đăng ký</span>
+            <select v-model="enrollmentForm.enrollment_type" class="field">
+              <option value="Official">Official</option>
+              <option value="Trial">Trial</option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Giá niêm yết</span>
+            <input v-model.number="enrollmentForm.list_price" class="field" type="number" min="0" step="1000" placeholder="Tự lấy theo lớp" />
+          </label>
+          <label class="fg">
+            <span>Loại ưu đãi</span>
+            <select v-model="enrollmentForm.discount_type" class="field">
+              <option value=""></option>
+              <option value="Percent">Percent</option>
+              <option value="Amount">Amount</option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Giá trị ưu đãi</span>
+            <input v-model.number="enrollmentForm.discount_value" class="field" type="number" min="0" step="1000" />
+          </label>
+          <label class="fg fg--full">
+            <span>Lý do ưu đãi</span>
+            <textarea v-model.trim="enrollmentForm.discount_reason" class="field field--area" placeholder="Ví dụ: ưu đãi học viên cũ, duyệt bởi..." />
+          </label>
         </div>
-        <div class="flex gap-3">
-          <button @click="showDeleteConfirm = false" class="flex-1 py-2 text-sm font-medium text-muted border border-border rounded-lg hover:bg-hover/40">Hủy</button>
-          <button @click="confirmDelete" :disabled="deleting" class="flex-1 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50">{{ deleting ? 'Đang xóa...' : 'Xóa' }}</button>
+      </form>
+      <template #footer>
+        <SkButton variant="secondary" :disabled="savingEnrollment" @click="enrollmentOpen = false">Hủy</SkButton>
+        <SkButton variant="solid" :loading="savingEnrollment" @click="saveEnrollment">Đăng ký</SkButton>
+      </template>
+    </SkModal>
+
+    <SkModal v-model="paymentOpen" title="Thu học phí" width="520px">
+      <form class="form" @submit.prevent="savePayment">
+        <div class="form-grid">
+          <label class="fg fg--full">
+            <span>Hóa đơn</span>
+            <select v-model="paymentForm.invoice" class="field" required @change="syncInvoiceAmount">
+              <option v-for="i in payableInvoices" :key="i.name" :value="i.name">
+                {{ i.name }} · còn {{ formatVND(i.outstanding_amount) }}
+              </option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Số tiền thu</span>
+            <input v-model.number="paymentForm.amount" class="field" type="number" min="0" step="1000" required />
+          </label>
+          <label class="fg">
+            <span>Ngày thu</span>
+            <input v-model="paymentForm.payment_date" class="field" type="date" required />
+          </label>
+          <label class="fg">
+            <span>Phương thức</span>
+            <select v-model="paymentForm.payment_method" class="field">
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Card">Card</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Mã tham chiếu</span>
+            <input v-model.trim="paymentForm.reference_no" class="field" placeholder="Mã giao dịch" />
+          </label>
         </div>
-      </div>
-    </div>
+      </form>
+      <template #footer>
+        <SkButton variant="secondary" :disabled="savingPayment" @click="paymentOpen = false">Hủy</SkButton>
+        <SkButton variant="solid" :loading="savingPayment" @click="savePayment">Xác nhận thu</SkButton>
+      </template>
+    </SkModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { LoadingIndicator, FeatherIcon } from 'frappe-ui'
-import { apiResource, listResource, db } from '../api'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { FeatherIcon } from 'frappe-ui'
+import { call, db } from '../api'
+import { formatVND, formatDate } from '../utils/format'
+import { statusMeta } from '../utils/labels'
+import { toast } from '../utils/toast'
+import SkAvatar from '../components/ui/SkAvatar.vue'
+import SkBadge from '../components/ui/SkBadge.vue'
+import SkButton from '../components/ui/SkButton.vue'
+import SkModal from '../components/ui/SkModal.vue'
+import SkSegmented from '../components/ui/SkSegmented.vue'
+import SkStatTile from '../components/ui/SkStatTile.vue'
+import SkState from '../components/ui/SkState.vue'
 
-const showCreateModal = ref(false)
-const saving = ref(false)
-const isEditing = ref(false)
-const selectedStudent = ref(null)
-const searchQuery = ref('')
-const selected = ref([])
-const showDeleteConfirm = ref(false)
-const deleting = ref(false)
-
-const filterGender = ref('')
-const filterClass = ref('')
-const periodFilter = ref('')
-const periods = [
-  { label: 'Tất cả', value: '' },
-  { label: 'Tháng này', value: 'month' },
-  { label: 'Năm nay', value: 'year' },
+const TABS = [
+  { id: 'overview', label: 'Tổng quan' },
+  { id: 'enrollment', label: 'Đăng ký lớp' },
+  { id: 'attendance', label: 'Chuyên cần' },
+  { id: 'grades', label: 'Điểm số' },
+  { id: 'fees', label: 'Học phí' },
+  { id: 'history', label: 'Lịch sử' },
 ]
+const FILTERS = ['Tất cả', 'Đang học', 'Cảnh báo']
+const STUDENT_STATUS = ['Mới nhập học', 'Đang học', 'Bảo lưu', 'Đã tốt nghiệp', 'Nghỉ học']
+const HEALTH_STATUS = ['Đang học đều', 'Cần theo dõi', 'Cảnh báo', 'Khẩn cấp', 'Ngừng học']
 
-function getDateRange(period) {
-  const now = new Date()
-  if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1)
-  if (period === 'year') return new Date(now.getFullYear(), 0, 1)
-  return null
+const loading = ref(true)
+const error = ref('')
+const students = ref([])
+const q = ref('')
+const filter = ref('Tất cả')
+const selectedId = ref(null)
+const tab = ref('overview')
+const today = () => new Date().toISOString().slice(0, 10)
+
+const detailLoading = ref(false)
+const prof = reactive({ profile: {}, guardian: null, enrollments: [], attendance: [], assessments: [], invoices: [], fees: {} })
+
+const studentOpen = ref(false)
+const studentMode = ref('create')
+const savingStudent = ref(false)
+const studentForm = ref(defaultStudentForm())
+
+const enrollmentOpen = ref(false)
+const savingEnrollment = ref(false)
+const enrollmentForm = ref(defaultEnrollmentForm())
+const classOptions = ref([])
+
+const paymentOpen = ref(false)
+const savingPayment = ref(false)
+const paymentForm = ref(defaultPaymentForm())
+
+const healthMeta = (s) => statusMeta('Student', 'health_status', s)
+const enrMeta = (s) => {
+  const map = { Active: 'success', Pending: 'warning', Deferred: 'warning', Completed: 'neutral', Dropped: 'danger', Transferred: 'info', Rejected: 'danger' }
+  return { label: s || '—', variant: map[s] || 'neutral' }
 }
+const pct = (v) => `${Math.round(Number(v) || 0)}%`
+const score = (v) => (v == null || v === '' ? '—' : Number(v).toFixed(1))
 
-const defaultForm = {
-  full_name: '', email: '', phone: '', date_of_birth: '', gender: 'Nam', 
-  source: 'Facebook', occupation: '', rating: '5 Sao', message_response: 'Tốt', health_status: 'Đang học đều',
-  student_status: 'Mới nhập học'
-}
-const formData = ref({ ...defaultForm })
-const editableStudentFields = [
-  'full_name',
-  'email',
-  'phone',
-  'date_of_birth',
-  'gender',
-  'source',
-  'occupation',
-  'rating',
-  'message_response',
-  'health_status',
-  'student_status',
-]
-
-const students = apiResource('get_students', { auto: true })
-
-const classesList = listResource('Class', {
-  fields: ['name', 'class_name'],
-  limit_page_length: 500,
-  auto: true
+const filtered = computed(() => {
+  let list = students.value
+  const s = q.value.trim().toLowerCase()
+  if (s) {
+    list = list.filter((x) =>
+      [x.full_name, x.name, x.phone, x.email].some((v) => String(v || '').toLowerCase().includes(s)),
+    )
+  }
+  if (filter.value === 'Đang học') list = list.filter((x) => x.student_status === 'Đang học')
+  else if (filter.value === 'Cảnh báo') list = list.filter((x) => ['Cảnh báo', 'Khẩn cấp'].includes(x.health_status))
+  return list
 })
 
-// Fetch enrollments mapped by student
-const enrollmentsList = listResource('Program Enrollment', {
-  fields: ['name', 'student', 'class_id', 'enrollment_date'],
-  limit_page_length: 1000,
-  auto: true
+const profileName = computed(() => prof.profile.full_name || selectedId.value)
+const activeEnr = computed(() => prof.enrollments.find((e) => e.enrollment_status === 'Active'))
+const payableInvoices = computed(() => prof.invoices.filter((i) => Number(i.outstanding_amount) > 0))
+const nextPayableInvoice = computed(() => payableInvoices.value[0])
+
+const progParts = computed(() => {
+  const m = String(prof.profile.progress || '').match(/(\d+)\s*\/\s*(\d+)/)
+  return m ? { done: +m[1], total: +m[2] } : { done: 0, total: 0 }
+})
+const sessionsDone = computed(() => progParts.value.done)
+const sessionsTotal = computed(() => progParts.value.total)
+const progressPct = computed(() => (progParts.value.total ? `${Math.round((progParts.value.done / progParts.value.total) * 100)}%` : '0%'))
+
+function normalized(g) {
+  const max = Number(g.max_score) || 100
+  return max ? `${Math.round((Number(g.score) / max) * 100)}%` : '—'
+}
+function normColor(g) {
+  const max = Number(g.max_score) || 100
+  const n = max ? (Number(g.score) / max) * 100 : 0
+  return n >= 80 ? '#2f8a5d' : n >= 70 ? '#b07a1f' : '#c44a3f'
+}
+
+const timeline = computed(() => {
+  const items = []
+  for (const e of prof.enrollments) items.push({ date: e.enrollment_date || e.creation, title: `Đăng ký lớp ${e.class_id}`, detail: `${e.name} · Trạng thái ${e.enrollment_status}`, dot: '#9b6fc4' })
+  for (const i of prof.invoices) items.push({ date: i.posting_date, title: `Hóa đơn ${i.name}`, detail: `${formatVND(i.total_amount)} · ${statusMeta('Fee Invoice', 'status', i.status).label}`, dot: '#3f9b6e' })
+  return items.filter((x) => x.date).sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 12)
 })
 
-const studentEnrollmentsMap = computed(() => {
-  const map = {}
-  if (enrollmentsList.data) {
-    enrollmentsList.data.forEach(e => {
-      if (!map[e.student]) map[e.student] = []
-      map[e.student].push(e)
-    })
-  }
-  return map
-})
-
-const getClassName = (classId) => {
-  const cls = classesList.data?.find(c => c.name === classId)
-  return cls ? cls.class_name : classId
-}
-
-const filteredStudents = computed(() => {
-  if (!students.data) return []
-  let data = students.data
-  
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    data = data.filter(s => s.full_name.toLowerCase().includes(q) || s.name.toLowerCase().includes(q))
-  }
-  
-  if (filterGender.value) {
-    data = data.filter(s => s.gender === filterGender.value)
-  }
-  
-  if (filterClass.value) {
-    data = data.filter(s => {
-      const enrs = studentEnrollmentsMap.value[s.name] || []
-      return enrs.some(e => e.class_id === filterClass.value)
-    })
-  }
-  
-  const start = getDateRange(periodFilter.value)
-  if (start) {
-    data = data.filter(s => {
-      if (!s.creation) return false
-      return new Date(s.creation) >= start
-    })
-  }
-  
-  return data
-})
-
-const allSelected = computed(() =>
-  filteredStudents.value.length > 0 && filteredStudents.value.every(s => selected.value.includes(s.name))
-)
-
-const toggleSelectAll = () => {
-  allSelected.value ? selected.value = [] : selected.value = filteredStudents.value.map(s => s.name)
-}
-
-const confirmDelete = async () => {
-  deleting.value = true
-  try {
-    for (const name of selected.value) {
-      await db.delete('Student', name)
-    }
-    selected.value = []
-    showDeleteConfirm.value = false
-    await students.fetch()
-    selectedStudent.value = null
-  } catch (err) {
-    alert('Lỗi khi xóa: ' + (err.message || ''))
-  } finally {
-    deleting.value = false
+function defaultStudentForm() {
+  return {
+    full_name: '',
+    phone: '',
+    email: '',
+    date_of_birth: '',
+    gender: '',
+    source: '',
+    occupation: '',
+    student_status: 'Mới nhập học',
+    health_status: 'Đang học đều',
   }
 }
-
-// Lifecycle Pipeline
-const lifecycleSteps = [
-  { id: 'Mới nhập học', label: 'Mới' },
-  { id: 'Đang học', label: 'Đang học' },
-  { id: 'Đã tốt nghiệp', label: 'Tốt nghiệp' }
-]
-
-const getLifecycleStepClass = (currentStatus, stepId) => {
-  if (currentStatus === stepId) {
-    return 'bg-brand text-white border-brand shadow-sm shadow-emerald-500/20'
-  }
-  const statusOrder = ['Mới nhập học', 'Đang học', 'Đã tốt nghiệp']
-  const curIdx = statusOrder.indexOf(currentStatus || 'Mới nhập học')
-  const stIdx = statusOrder.indexOf(stepId)
-  if (stIdx < curIdx && currentStatus !== 'Bảo lưu' && currentStatus !== 'Nghỉ học') {
-    return 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-  }
-  return 'bg-white border-border text-muted hover:bg-slate-100'
-}
-
-const getLifecycleBadgeClass = (status) => {
-  if (status === 'Đang học') return 'bg-emerald-100 text-emerald-700'
-  if (status === 'Bảo lưu') return 'bg-amber-100 text-amber-700'
-  if (status === 'Đã tốt nghiệp') return 'bg-blue-100 text-blue-700'
-  if (status === 'Nghỉ học') return 'bg-red-100 text-red-700'
-  return 'bg-slate-100 text-slate-700' // Mới nhập học
-}
-
-const triggerStatusTransition = async (student, newStatus) => {
-  if (student.student_status === newStatus) return
-  if (!confirm(`Chuyển trạng thái học viên sang: ${newStatus}?`)) return
-  try {
-    await db.setValue('Student', student.name, 'student_status', newStatus)
-    student.student_status = newStatus
-    students.fetch()
-  } catch (err) {
-    alert('Lỗi: ' + err.message)
+function defaultEnrollmentForm() {
+  return {
+    class_id: '',
+    enrollment_date: today(),
+    enrollment_type: 'Official',
+    list_price: '',
+    discount_type: '',
+    discount_value: 0,
+    discount_reason: '',
   }
 }
-
-// Funnel
-const funnelStages = [
-  { label: 'Đang học đều', colorClass: 'bg-sage', ringClass: 'ring-sage', activeColor: 'var(--sage)', inactiveColor: 'var(--sage-soft)' },
-  { label: 'Cần theo dõi', colorClass: 'bg-brand', ringClass: 'ring-brand', activeColor: 'var(--brand)', inactiveColor: 'var(--brand-soft)' },
-  { label: 'Cảnh báo', colorClass: 'bg-amber', ringClass: 'ring-amber', activeColor: 'var(--amber)', inactiveColor: 'var(--amber-soft)' },
-  { label: 'Khẩn cấp', colorClass: 'bg-rose', ringClass: 'ring-rose', activeColor: 'var(--rose)', inactiveColor: 'var(--rose-soft)' },
-  { label: 'Ngừng học', colorClass: 'bg-ink', ringClass: 'ring-ink', activeColor: 'var(--ink)', inactiveColor: 'var(--hover)' }
-]
-
-const getFunnelFill = (idx) => {
-  if (!selectedStudent.value) return 'var(--hover)'
-  const studentStatus = selectedStudent.value.health_status || 'Đang học đều'
-  const currentIdx = funnelStages.findIndex(s => s.label === studentStatus)
-  const stage = funnelStages[idx]
-  if (idx === currentIdx) return stage.activeColor
-  return stage.inactiveColor
+function defaultPaymentForm() {
+  return { invoice: '', amount: 0, payment_date: today(), payment_method: 'Cash', reference_no: '' }
+}
+function cleanPayload(values) {
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== '' && value != null))
 }
 
-const updateHealthStatus = async (val) => {
-  try {
-    await db.setValue('Student', selectedStudent.value.name, 'health_status', val)
-    selectedStudent.value.health_status = val
-    students.fetch()
-  } catch (err) {
-    alert('Lỗi cập nhật phễu.')
+function openCreateStudent() {
+  studentMode.value = 'create'
+  studentForm.value = defaultStudentForm()
+  studentOpen.value = true
+}
+function openEditStudent() {
+  if (!selectedId.value) return
+  studentMode.value = 'edit'
+  studentForm.value = {
+    ...defaultStudentForm(),
+    full_name: prof.profile.full_name || '',
+    phone: prof.profile.phone || '',
+    email: prof.profile.email || '',
+    date_of_birth: prof.profile.date_of_birth || '',
+    gender: prof.profile.gender || '',
+    source: prof.profile.source || '',
+    occupation: prof.profile.occupation || '',
+    student_status: prof.profile.student_status || 'Mới nhập học',
+    health_status: prof.profile.health_status || 'Đang học đều',
   }
+  studentOpen.value = true
 }
-
-const getStars = (val) => {
-  if (!val) return '⭐⭐⭐⭐⭐'
-  const n = parseInt(val.split(' ')[0])
-  return '⭐'.repeat(n)
-}
-
-const loadingEnrollments = ref(false)
-const studentEnrollments = ref([])
-
-const selectStudent = (student) => {
-  selectedStudent.value = student
-  studentEnrollments.value = studentEnrollmentsMap.value[student.name] || []
-}
-
-const openCreateModal = () => {
-  formData.value = { ...defaultForm }
-  isEditing.value = false
-  showCreateModal.value = true
-}
-
-const closeCreateModal = () => {
-  showCreateModal.value = false
-  formData.value = { ...defaultForm }
-  isEditing.value = false
-}
-
-const editStudent = (student) => {
-  formData.value = { ...student }
-  isEditing.value = true
-  showCreateModal.value = true
-}
-
-const getHealthPillClass = (status) => {
-  if (status === 'Khẩn cấp') return 'pill-rose'
-  if (status === 'Cảnh báo') return 'pill-amber'
-  if (status === 'Cần theo dõi') return 'pill-sky'
-  if (status === 'Đang học đều') return 'pill-sage'
-  return 'pill-faint'
-}
-
-const saveStudent = async () => {
-  if (!formData.value.full_name) {
-    alert('Vui lòng nhập họ và tên học viên.')
+async function saveStudent() {
+  if (!studentForm.value.full_name) {
+    toast.error('Thiếu họ tên học viên')
     return
   }
-  
-  saving.value = true
+  savingStudent.value = true
   try {
-    if (isEditing.value) {
-      const values = {}
-      for (const key of editableStudentFields) values[key] = formData.value[key]
-      await db.setValue('Student', formData.value.name, values)
+    let id = selectedId.value
+    if (studentMode.value === 'create') {
+      const created = await db.insert({ doctype: 'Student', ...cleanPayload(studentForm.value) })
+      id = created.name
+      toast.success('Đã thêm học viên')
     } else {
-      const doc = { doctype: 'Student' }
-      for (const key of editableStudentFields) doc[key] = formData.value[key]
-      await db.insert(doc)
+      await db.setValue('Student', selectedId.value, cleanPayload(studentForm.value))
+      toast.success('Đã lưu hồ sơ')
     }
-    showCreateModal.value = false
-    await students.fetch()
-    if (isEditing.value) {
-      selectedStudent.value = students.data.find(s => s.name === formData.value.name)
-    }
-    formData.value = { ...defaultForm }
-    isEditing.value = false
-  } catch (err) {
-    console.error(err)
-    alert('Có lỗi xảy ra.')
+    studentOpen.value = false
+    await reloadStudents()
+    await select(id, true)
+  } catch (e) {
+    toast.error('Không lưu được học viên', e?.messages?.[0] || e?.message || String(e))
   } finally {
-    saving.value = false
+    savingStudent.value = false
   }
 }
+
+function openEnrollment() {
+  if (!selectedId.value) return
+  enrollmentForm.value = defaultEnrollmentForm()
+  if (!classOptions.value.length) loadClassOptions()
+  enrollmentOpen.value = true
+}
+async function saveEnrollment() {
+  if (!selectedId.value || !enrollmentForm.value.class_id) {
+    toast.error('Thiếu lớp đăng ký')
+    return
+  }
+  savingEnrollment.value = true
+  try {
+    await call('create_enrollment', { student: selectedId.value, ...cleanPayload(enrollmentForm.value), submit: 1 })
+    toast.success('Đã đăng ký lớp')
+    enrollmentOpen.value = false
+    tab.value = 'enrollment'
+    await reloadStudents()
+    await loadDetail(selectedId.value)
+  } catch (e) {
+    toast.error('Không đăng ký được lớp', e?.messages?.[0] || e?.message || String(e))
+  } finally {
+    savingEnrollment.value = false
+  }
+}
+
+function openPayment(invoice) {
+  paymentForm.value = {
+    ...defaultPaymentForm(),
+    invoice: invoice.name,
+    amount: Number(invoice.outstanding_amount) || 0,
+  }
+  paymentOpen.value = true
+}
+function syncInvoiceAmount() {
+  const inv = payableInvoices.value.find((i) => i.name === paymentForm.value.invoice)
+  if (inv) paymentForm.value.amount = Number(inv.outstanding_amount) || 0
+}
+async function savePayment() {
+  if (!selectedId.value || !paymentForm.value.invoice || Number(paymentForm.value.amount) <= 0) {
+    toast.error('Thiếu thông tin thu học phí')
+    return
+  }
+  savingPayment.value = true
+  try {
+    await call('create_payment', { student: selectedId.value, ...cleanPayload(paymentForm.value) })
+    toast.success('Đã ghi nhận học phí')
+    paymentOpen.value = false
+    tab.value = 'fees'
+    await loadDetail(selectedId.value)
+  } catch (e) {
+    toast.error('Không thu được học phí', e?.messages?.[0] || e?.message || String(e))
+  } finally {
+    savingPayment.value = false
+  }
+}
+
+function openDesk() {
+  if (selectedId.value) window.open(`/app/student/${selectedId.value}`, '_blank')
+}
+function openEnrollmentDesk(name) {
+  window.open(`/app/program-enrollment/${name}`, '_blank')
+}
+
+async function select(id, keepTab = false) {
+  selectedId.value = id
+  if (!keepTab) tab.value = 'overview'
+  await loadDetail(id)
+}
+async function loadDetail(id) {
+  detailLoading.value = true
+  try {
+    const res = await call('get_student_profile', { student: id })
+    Object.assign(prof, { profile: {}, guardian: null, enrollments: [], attendance: [], assessments: [], invoices: [], fees: {} }, res || {})
+  } catch (e) {
+    toast.error('Không tải được hồ sơ', e?.message || String(e))
+  } finally {
+    detailLoading.value = false
+  }
+}
+async function reloadStudents() {
+  students.value = (await call('get_students')) || []
+}
+async function loadClassOptions() {
+  try {
+    classOptions.value = await db.getList('Class', {
+      fields: ['name', 'class_name', 'status', 'standard_fee'],
+      filters: { status: ['in', ['Upcoming', 'Ongoing']] },
+      order_by: 'modified desc',
+      limit_page_length: 100,
+    })
+  } catch (e) {
+    toast.error('Không tải được danh sách lớp', e?.message || String(e))
+  }
+}
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    await reloadStudents()
+    loadClassOptions()
+    if (students.value.length) {
+      const next = selectedId.value && students.value.some((s) => s.name === selectedId.value) ? selectedId.value : students.value[0].name
+      await select(next, true)
+    } else {
+      selectedId.value = null
+    }
+  } catch (e) {
+    error.value = e?.message || String(e)
+    students.value = []
+    selectedId.value = null
+  } finally {
+    loading.value = false
+  }
+}
+onMounted(load)
 </script>
+
+<style scoped>
+.md { flex: 1; min-width: 0; display: flex; height: 100vh; }
+
+.ctx { flex: none; width: 326px; display: flex; flex-direction: column; background: rgba(255, 252, 253, 0.82); border-right: 1px solid #f2d4df; }
+.ctx__head { height: 56px; flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px 0 18px; border-bottom: 1px solid #f4dde5; }
+.ctx__title { font-size: 16px; font-weight: 600; color: #4a2230; }
+.ctx__count { margin-left: 8px; font-size: 11.5px; color: #a98c98; }
+.ctx__tools { padding: 12px 14px 10px; display: flex; flex-direction: column; gap: 10px; }
+.field--icon { display: flex; align-items: center; gap: 8px; }
+.field--icon input { flex: 1; min-width: 0; border: none; outline: none; background: none; font-family: inherit; font-size: 13px; color: #3d2530; }
+.field--icon input::placeholder { color: #bd8d9c; }
+.ctx__list { flex: 1; overflow-y: auto; padding-bottom: 12px; }
+
+.srow { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: none; border-bottom: 1px solid #f7e6ec; background: transparent; padding: 10px 14px 10px 11px; cursor: pointer; border-left: 3px solid transparent; font-family: inherit; }
+.srow:hover { background: #fdf2f6; }
+.srow--active { background: #fbd9e5; border-left-color: #d6557e; }
+.srow__main { flex: 1; min-width: 0; }
+.srow__top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.srow__name { font-size: 13.5px; font-weight: 600; color: #3d2530; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srow__bottom { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.srow__sub { font-size: 11.5px; color: #a98c98; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.srow__note { font-size: 11px; color: #bd97a5; flex: none; }
+
+.dtl { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #fffdfe; }
+.dtl__head { height: 56px; flex: none; display: flex; align-items: center; gap: 11px; padding: 0 18px; border-bottom: 1px solid #f1dbe3; }
+.dtl__id { min-width: 0; display: flex; align-items: center; gap: 9px; }
+.dtl__name { font-size: 16px; font-weight: 600; color: #3d2530; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dtl__slash { font-size: 13px; color: #bd97a5; }
+.dtl__code { font-size: 13px; color: #a98c98; }
+.dtl__actions { margin-left: auto; display: flex; gap: 8px; }
+.dtl__tabs { flex: none; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid #f1dbe3; overflow-x: auto; }
+.tab { border: none; background: none; padding: 13px 2px 12px; margin-right: 28px; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 500; color: #7a5c68; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tab--active { color: #b8456a; font-weight: 600; border-bottom-color: #d6557e; }
+.dtl__body { flex: 1; overflow-y: auto; }
+.dtl__inner { padding: 26px 30px 44px; max-width: 1120px; }
+
+.ovw { display: flex; flex-direction: column; gap: 30px; }
+.grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.stack { display: flex; flex-direction: column; gap: 22px; }
+.block__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.block__title { font-size: 15px; font-weight: 600; color: #4a2230; }
+.block__hint { margin-top: 3px; font-size: 12px; color: #a98c98; }
+.info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 32px; }
+.info__l { font-size: 11.5px; color: #a98c98; margin-bottom: 3px; }
+.info__v { font-size: 14px; color: #3d2530; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.divider { height: 1px; background: #f4dde5; }
+.guardian { display: flex; align-items: center; gap: 12px; }
+.guardian__name { font-size: 14px; font-weight: 600; color: #3d2530; }
+.guardian__sub { font-size: 12px; color: #a98c98; }
+.clscard { border: 1px solid #f3d9e1; border-radius: 11px; padding: 14px 16px; background: #fff; }
+.clscard__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.clscard__name { font-size: 14px; font-weight: 600; color: #3d2530; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clscard__sub { font-size: 12.5px; color: #a98c98; margin-top: 7px; }
+.muted { font-size: 13px; color: #a98c98; }
+.empty-action { border: 1px dashed #efcdd9; border-radius: 11px; padding: 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #fffafb; }
+
+.enr { border: 1px solid #f3d9e1; border-radius: 11px; padding: 15px 17px; background: #fff; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.enr__title { font-size: 14px; font-weight: 600; color: #3d2530; }
+.enr__sub { font-size: 12.5px; color: #a98c98; margin-top: 4px; }
+.enr__actions { flex: none; display: flex; align-items: center; gap: 8px; }
+
+.tblwrap { border: 1px solid #f3d9e1; border-radius: 11px; overflow: auto; background: #fff; }
+.tbl { width: 100%; border-collapse: collapse; min-width: 720px; }
+.tbl thead tr { background: #fdf2f6; }
+.tbl th { text-align: left; font-size: 11.5px; font-weight: 600; color: #a07c8a; padding: 10px 16px; }
+.tbl td { padding: 12px 16px; border-top: 1px solid #f6e3ea; }
+.tbl tbody tr:hover { background: #fefafb; }
+.tbl__name { font-size: 13.5px; font-weight: 500; color: #3d2530; }
+.tbl__sub { font-size: 13px; color: #7a5c68; }
+
+.timeline { display: flex; flex-direction: column; }
+.tl { display: flex; gap: 14px; }
+.tl__rail { flex: none; display: flex; flex-direction: column; align-items: center; }
+.tl__dot { width: 11px; height: 11px; border-radius: 50%; margin-top: 4px; }
+.tl__line { flex: 1; width: 2px; background: #f4dde5; }
+.tl__body { padding-bottom: 20px; }
+.tl__date { font-size: 11.5px; color: #bd97a5; }
+.tl__title { font-size: 13.5px; font-weight: 500; color: #3d2530; margin-top: 2px; }
+.tl__detail { font-size: 12.5px; color: #a98c98; margin-top: 2px; }
+
+.form { margin: 0; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.fg { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fg--full { grid-column: 1 / -1; }
+.fg > span { font-size: 12px; font-weight: 600; color: #7a5c68; }
+.field { width: 100%; min-height: 36px; border: 1px solid #ecd0da; border-radius: 9px; background: #fff; padding: 0 11px; color: #3d2530; font-family: inherit; font-size: 13.5px; outline: none; }
+.field--area { min-height: 72px; resize: vertical; padding: 9px 11px; }
+.field:focus { border-color: #d4567f; box-shadow: 0 0 0 3px rgba(212, 86, 127, 0.12); }
+
+@media (max-width: 1100px) {
+  .ctx { width: 292px; }
+  .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .info { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>

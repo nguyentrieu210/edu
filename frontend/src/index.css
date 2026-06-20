@@ -3,333 +3,134 @@
 @tailwind utilities;
 
 /* ============================================================
-   IKE Education ERP — Design tokens
-   Phong cách ChatGPT: neutral palette + đỏ IKE làm accent.
-   Giữ NGUYÊN tên biến/lớp cũ để toàn bộ page reskin tự động.
-   Tham chiếu: education_erp_ui_ux_chatgpt_style.md §6.
+   IKE Education ERP — "Sakura" design tokens
+   Theme hồng hoa anh đào. Giữ NGUYÊN tên biến mà tailwind.config.js
+   tham chiếu để toàn bộ token map sang palette Sakura.
+   Nguồn: "Education ERP - Sakura.dc.html"
    ============================================================ */
 :root {
+  /* Sakura scale */
+  --sakura-300: #f7a8c4;
+  --sakura-400: #e87aa3;
+  --sakura-500: #d6557e;
+  --sakura-600: #b8456a;
+  --sakura-700: #a8345f;
+
   /* Surfaces */
-  --canvas: #f7f7f8;       /* nền trang (bg-app) */
-  --paper: #ffffff;        /* nền surface/card */
+  --canvas: #fffdfe;            /* nền workspace */
+  --paper: #ffffff;            /* nền card */
   --surface: #ffffff;
-  --bg-sidebar: #f2f3f5;
-  --bg-context: #fafafa;
-  --hover: #ececef;        /* bg-hover */
-  --active: #e5e5e9;       /* bg-active */
+  --bg-context: rgba(255, 252, 253, 0.82);
+  --hover: #fdf2f6;            /* row hover */
+  --active: #fbd9e5;          /* nav/row selected */
+  --tint: #fdf2f6;
+  --pill: #fbe6ee;            /* nền segmented */
 
   /* Text */
-  --ink: #202123;          /* text-primary */
-  --ink-2: #5f6368;        /* text-secondary */
-  --muted: #8a8f98;        /* text-muted */
-  --faint: #a3a7af;        /* text rất mờ */
+  --ink: #3d2530;
+  --ink-2: #7a5c68;
+  --muted: #a98c98;
+  --faint: #bd97a5;
+  --eyebrow-color: #c79aaa;
 
   /* Borders */
-  --border: #e7e7ea;       /* border-subtle */
-  --divider: #e7e7ea;
-  --line: #d9d9de;         /* border-default (input) */
-  --strong: #b8b8c0;       /* border-strong */
+  --border: #f3d9e1;
+  --border-2: #f1dbe3;
+  --divider: #f4dde5;
+  --line: #ecd0da;            /* viền input */
+  --strong: #e3aec1;
 
-  /* Brand — đỏ IKE, chỉ dùng làm accent */
-  --brand: #d71920;        /* brand-500 */
-  --brand-deep: #b91219;   /* brand-600 */
-  --brand-700: #941016;
-  --brand-soft: #ffe0e3;   /* brand-100 (pill/selection) */
-  --brand-tint: #fff1f2;   /* brand-50 (hover/row select) */
-  --brand-grad: var(--brand);     /* phẳng — không gradient */
-  --brand-grad-bar: var(--brand);
-  --brand-shadow: none;
+  /* Brand = Sakura */
+  --brand: #d6557e;
+  --brand-deep: #b8456a;
+  --brand-700: #a8345f;
+  --brand-soft: #fbdce7;
+  --brand-tint: #fdf2f6;
+  --brand-grad: linear-gradient(135deg, #e87aa3, #d4567f);
+  --brand-grad-bar: linear-gradient(90deg, #f7a8c4, #d6557e);
 
-  /* Semantic — chữ + nền nhạt */
-  --sage: #18794e;         /* success-600 */
-  --sage-soft: #edf8f1;    /* success-50 */
-  --amber: #8a5a00;        /* warning-700 */
-  --amber-soft: #fff8e6;   /* warning-50 */
-  --info: #2864b7;         /* info-600 */
-  --info-soft: #eef5ff;    /* info-50 */
-  --rose: #c43232;         /* danger-600 */
-  --rose-soft: #fff0f0;    /* danger-50 */
-  --clay: #c43232;
-  --clay-soft: #fff0f0;
-  --thaco-red: #c43232;    /* alias cũ → danger */
-  --thaco-red-soft: #fff0f0;
+  /* Semantic */
+  --sage: #2f8a5d;   --sage-soft: #e4f3ea;
+  --amber: #b07a1f;  --amber-soft: #fbe6cf;
+  --rose: #c44a3f;   --rose-soft: #fbe0dd;
+  --info: #4a6fb5;   --info-soft: #e7eefb;
+  --clay: #b07a1f;   --clay-soft: #fbe6cf;
+  --thaco-red: #c44a3f; --thaco-red-soft: #fbe0dd;
 
-  /* Shadow — chỉ cho menu/modal (§6.4) */
-  --shadow-menu: 0 8px 24px rgb(0 0 0 / 0.10);
-  --shadow-modal: 0 18px 50px rgb(0 0 0 / 0.16);
+  /* Shadow */
+  --shadow-card: 0 1px 3px rgba(180, 80, 120, 0.12);
+  --shadow-menu: 0 8px 24px rgba(160, 60, 100, 0.16);
+  --shadow-pop: 0 24px 60px rgba(80, 30, 50, 0.35);
+  --shadow-btn: 0 3px 9px rgba(212, 86, 127, 0.28);
 }
 
 @layer base {
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
-
+  *, *::before, *::after { box-sizing: border-box; }
   html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
+    margin: 0; padding: 0; height: 100%;
     color: var(--ink);
     font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    letter-spacing: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-
-  /* Nền phẳng, trung tính — không gradient (§6.1) */
-  body {
-    background: var(--canvas);
-  }
-
-  #app {
-    height: 100%;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    letter-spacing: 0;
-  }
-
-  /* Số tiền/cột số dùng tabular-nums (§6.2) */
-  .tabular-nums, .num {
-    font-variant-numeric: tabular-nums;
-  }
+  body { font-size: 14px; line-height: 1.5; }
+  #app { height: 100%; }
 }
 
 @layer utilities {
-  .scrollbar-thin::-webkit-scrollbar,
-  .sk-scroll::-webkit-scrollbar {
-    width: 9px;
-    height: 9px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-track,
-  .sk-scroll::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb,
+  .tnum, .tabular-nums, .num { font-variant-numeric: tabular-nums; }
+  .font-display { font-family: 'Zen Kaku Gothic New', sans-serif; }
+
+  /* Scrollbar Sakura */
+  .sk-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
   .sk-scroll::-webkit-scrollbar-thumb {
-    background: #d2d2d8;
-    border-radius: 9999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
+    background: #f0cdd9; border-radius: 8px;
+    border: 2px solid transparent; background-clip: content-box;
   }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover,
-  .sk-scroll::-webkit-scrollbar-thumb:hover {
-    background: #b8b8c0;
-    background-clip: content-box;
-  }
+  .sk-scroll::-webkit-scrollbar-thumb:hover { background: #e3aec1; background-clip: content-box; }
+  .sk-scroll::-webkit-scrollbar-track { background: transparent; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  /* Alias cũ — phẳng về nền trung tính/đỏ đặc để mọi usage cũ tự reskin */
-  .bg-sakura {
-    background: var(--canvas);
-  }
-  .bg-brand-grad {
-    background: var(--brand);
+  /* Avatar ring giống design (.av image-slot) */
+  .av > * {
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 0 3px #f3cede;
   }
 }
 
 @layer components {
-  /* Font utilities — đều dùng Inter (§6.2) */
-  .ff-display {
-    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    letter-spacing: 0;
-  }
-  .ff-serif {
-    font-family: Inter, ui-sans-serif, sans-serif;
-  }
-  .ff-mono {
-    font-family: ui-monospace, 'JetBrains Mono', monospace;
-  }
-
-  /* Hairline borders */
-  .hr { border: 1px solid var(--border); }
-  .hr-b { border-bottom: 1px solid var(--border); }
-  .hr-t { border-top: 1px solid var(--border); }
-  .hr-r { border-right: 1px solid var(--border); }
-  .hr-l { border-left: 1px solid var(--border); }
-  .divide-hr > * + * { border-top: 1px solid var(--border); }
-
-  /* Input fields (§7.3) — cao 36px, radius 6px, focus ring đỏ nhạt */
-  .field {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    font-size: 14px;
-    border: 1px solid var(--line);
-    background: var(--paper);
-    color: var(--ink);
-    outline: none;
-    transition: border-color 0.12s ease, box-shadow 0.12s ease;
-  }
-  .field::placeholder {
-    color: var(--faint);
-  }
-  .field:focus {
-    border-color: var(--brand);
-    box-shadow: 0 0 0 2px var(--brand-soft);
-  }
-  .field-sm {
-    padding: 0.4rem 0.6rem;
-    font-size: 13px;
-    border-radius: 6px;
-  }
-  .label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--ink-2);
-    display: block;
-    margin-bottom: 0.4rem;
-  }
-  .hint {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 0.3rem;
-  }
-  .req::after {
-    content: '*';
-    color: var(--rose);
-    margin-left: 0.25rem;
-  }
-
-  /* Eyebrows / group label (§3.3) — không uppercase đoạn dài */
   .eyebrow {
-    font-size: 11px;
-    letter-spacing: 0;
-    font-weight: 600;
-    color: var(--muted);
+    font-size: 10.5px; font-weight: 700; color: var(--eyebrow-color);
+    letter-spacing: 0.6px; text-transform: uppercase;
   }
-  .eyebrow-muted {
-    font-size: 11px;
-    letter-spacing: 0;
-    font-weight: 600;
-    color: var(--muted);
+  .field {
+    width: 100%; height: 36px; padding: 0 12px;
+    border-radius: 8px; font-size: 13px;
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+    outline: none; transition: border-color 0.12s ease, box-shadow 0.12s ease;
   }
-
-  /* Buttons (§7.1) — radius 6px, đặc, không gradient, không shadow */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0 0.85rem;
-    height: 36px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background-color 0.12s ease, border-color 0.12s ease;
-    user-select: none;
-  }
-  .btn-primary,
-  .btn-brand {
-    background: var(--brand);
-    color: #fff;
-  }
-  .btn-primary:hover,
-  .btn-brand:hover {
-    background: var(--brand-deep);
-  }
-  .btn-ghost {
-    background: var(--paper);
-    color: var(--ink-2);
-    border: 1px solid var(--line);
-    font-weight: 500;
-  }
-  .btn-ghost:hover {
-    background: var(--hover);
-  }
-  .btn-soft {
-    background: transparent;
-    color: var(--ink-2);
-    font-weight: 500;
-  }
-  .btn-soft:hover {
-    background: var(--hover);
-  }
-  .btn-danger {
-    background: var(--rose-soft);
-    color: var(--rose);
-    border: 1px solid #f3cdc9;
-  }
-  .btn-danger:hover {
-    background: #ffe2e0;
-  }
-  .btn-text {
-    height: auto;
-    padding: 0.4rem 0.6rem;
-    color: var(--muted);
-    border-radius: 6px;
-    font-weight: 500;
-  }
-  .btn-text:hover {
-    color: var(--ink);
-    background: var(--hover);
-  }
-  .btn:active {
-    transform: scale(0.985);
-  }
-
-  /* Cards (§6.4) — radius 8px, viền nhẹ, không shadow */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-  .card-paper {
-    background: var(--paper);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-
-  /* Badges (§7.5) — radius 5px, chữ 11/600, chữ + màu */
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 2px 8px;
-    border-radius: 5px;
-    font-size: 11px;
-    line-height: 16px;
-    font-weight: 600;
-    border: 1px solid transparent;
-  }
-  .pill-brand {
-    color: var(--brand-deep);
-    background: var(--brand-soft);
-  }
-  .pill-amber {
-    color: var(--amber);
-    background: var(--amber-soft);
-  }
-  .pill-sky,
-  .pill-info {
-    color: var(--info);
-    background: var(--info-soft);
-  }
-  .pill-sage {
-    color: var(--sage);
-    background: var(--sage-soft);
-  }
-  .pill-rose {
-    color: var(--rose);
-    background: var(--rose-soft);
-  }
-  .pill-faint {
-    color: var(--ink-2);
-    background: var(--hover);
-  }
-
-  /* Press effect */
-  .press {
-    transition: transform 0.12s ease-out;
-  }
-  .press:active {
-    transform: scale(0.985);
-  }
+  .field::placeholder { color: var(--faint); }
+  .field:focus { border-color: var(--brand); box-shadow: 0 0 0 3px #fbdce7; }
+  .press { transition: transform 0.12s ease-out; }
+  .press:active { transform: scale(0.985); }
 }
+
+/* Animations (từ design) */
+@keyframes skpop { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes skspin { to { transform: rotate(360deg); } }
+@keyframes skshimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
+@keyframes sktoast { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.sk-anim-pop { animation: skpop 0.25s ease; }
+.sk-spin { display: inline-block; animation: skspin 0.7s linear infinite; }
+.sk-skel {
+  background: linear-gradient(90deg, #f6e2ea 25%, #fbeef3 50%, #f6e2ea 75%);
+  background-size: 400px 100%;
+  animation: skshimmer 1.3s linear infinite;
+  border-radius: 6px;
+}
+
+/* Route transition */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }

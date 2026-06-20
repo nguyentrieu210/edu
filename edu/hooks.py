@@ -257,7 +257,9 @@ app_license = "mit"
 # ignore_translatable_strings_from = []
 
 website_route_rules = [
-    {"from_route": "/education_app/<path:app_path>", "to_route": "education_app"},
+    {"from_route": "/edu/<path:app_path>", "to_route": "edu"},
+    {"from_route": "/education_app", "to_route": "edu"},
+    {"from_route": "/education_app/<path:app_path>", "to_route": "edu"},
 ]
 
 # Phân quyền theo phạm vi dữ liệu cho portal Giáo viên/Học viên (§9.1, SEC-01/02)

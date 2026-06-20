@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base=/assets/edu/frontend/ && node -e \"require('fs').copyFileSync('../edu/public/frontend/index.html', '../edu/www/education_app.html')\"",
-    "copy-html-entry": "node -e \"require('fs').copyFileSync('../edu/public/frontend/index.html', '../edu/www/education_app.html')\""
+    "build": "vite build --base=/assets/edu/frontend/ && node -e \"require('fs').copyFileSync('../edu/public/frontend/index.html', '../edu/www/edu.html')\"",
+    "copy-html-entry": "node -e \"require('fs').copyFileSync('../edu/public/frontend/index.html', '../edu/www/edu.html')\""
   },
   "dependencies": {
     "frappe-ui": "0.1.261",

@@ -1,371 +1,647 @@
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <h3 class="text-xl font-bold text-ink-2">Quản lý Lớp Học</h3>
-        <p class="text-xs text-muted mt-1">Quản lý danh sách lớp học, giáo viên chủ nhiệm và lịch học.</p>
-      </div>
-      <button @click="showCreateModal = true" class="flex items-center gap-2 px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-deep transition-colors shadow-sm shadow-emerald-600/20">
-        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        Mở Lớp Học
-      </button>
-    </div>
-
-    <!-- Stats Card Grid -->
-    <div v-if="!classes.loading" class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-      <div class="bg-white p-4 rounded-xl border border-border shadow-sm flex items-center gap-3">
-        <div class="p-3 bg-hover text-muted rounded-lg">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-xs text-muted font-medium">Tổng số lớp</p>
-          <h4 class="text-lg font-bold text-ink-2">{{ stats.total }}</h4>
+  <div class="md">
+    <!-- CONTEXT -->
+    <section class="ctx">
+      <div class="ctx__head">
+        <span class="ctx__title">Lớp học</span>
+        <div class="ctx__meta">
+          <span class="ctx__count">{{ classes.length }} lớp</span>
+          <SkButton size="sm" variant="solid" left-icon="plus" @click="openClass">Thêm lớp</SkButton>
         </div>
       </div>
-      <div class="bg-white p-4 rounded-xl border border-border shadow-sm flex items-center gap-3">
-        <div class="p-3 bg-brand-tint text-brand rounded-lg">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-xs text-muted font-medium">Đang giảng dạy</p>
-          <h4 class="text-lg font-bold text-ink-2">{{ stats.ongoing }}</h4>
-        </div>
-      </div>
-      <div class="bg-white p-4 rounded-xl border border-border shadow-sm flex items-center gap-3">
-        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-xs text-muted font-medium">Sắp khai giảng</p>
-          <h4 class="text-lg font-bold text-ink-2">{{ stats.upcoming }}</h4>
-        </div>
-      </div>
-      <div class="bg-white p-4 rounded-xl border border-border shadow-sm flex items-center gap-3">
-        <div class="p-3 bg-hover text-muted rounded-lg">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <div>
-          <p class="text-xs text-muted font-medium">Đã hoàn thành</p>
-          <h4 class="text-lg font-bold text-ink-2">{{ stats.completed }}</h4>
-        </div>
-      </div>
-    </div>
-
-    <!-- Toolbar: Search & Filter -->
-    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white p-4 rounded-xl border border-border shadow-sm flex-wrap">
-      <div class="relative flex-1">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-faint">
-          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </span>
-        <input v-model="searchQuery" placeholder="Tìm kiếm lớp học, mã lớp, hoặc khóa học..."
-          class="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-emerald-400" />
-      </div>
-      <div class="w-full sm:w-48">
-        <select v-model="statusFilter"
-          class="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 bg-white">
-          <option value="">Tất cả trạng thái</option>
-          <option value="Upcoming">Sắp khai giảng (Upcoming)</option>
-          <option value="Ongoing">Đang học (Ongoing)</option>
-          <option value="Completed">Hoàn thành (Completed)</option>
-          <option value="Closed">Đã đóng (Closed)</option>
-        </select>
-      </div>
-      <!-- Period Filter -->
-      <div class="flex items-center gap-1 bg-hover/40 border border-border rounded-lg p-1">
-        <button v-for="p in periods" :key="p.value" @click="periodFilter = p.value"
-          class="px-3 py-1 text-xs font-medium rounded-md transition-all"
-          :class="periodFilter === p.value ? 'bg-brand text-white shadow-sm' : 'text-muted hover:bg-white'">
-          {{ p.label }}
+      <div class="ctx__list sk-scroll">
+        <SkState v-if="loading" state="loading" />
+        <SkState v-else-if="!classes.length" state="empty" title="Chưa có lớp" message="Tạo lớp đầu tiên để bắt đầu." action-label="Thêm lớp" @action="openClass" />
+        <button v-for="c in classes" :key="c.name" class="crow" :class="{ 'crow--active': c.name === selectedId }" @click="select(c.name)">
+          <div class="crow__top">
+            <span class="crow__id">{{ c.class_name || c.name }}</span>
+            <SkBadge v-bind="clsMeta(c.status)" />
+          </div>
+          <div class="crow__sub">{{ c.course || '—' }} · {{ c.teacher || '—' }}</div>
+          <div class="crow__bar">
+            <div class="crow__track"><span :style="{ width: pct(c.progress) }" /></div>
+            <span class="crow__pct tnum">{{ pct(c.progress) }}</span>
+          </div>
         </button>
       </div>
-      <!-- Bulk delete bar -->
-      <transition name="fade">
-        <div v-if="selected.length > 0" class="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-          <span class="text-xs text-red-700 font-medium">Đã chọn {{ selected.length }}</span>
-          <button @click="showDeleteConfirm = true" class="flex items-center gap-1 px-2.5 py-1 bg-red-600 text-white text-xs font-medium rounded-md hover:bg-red-700">
-            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            Xóa
-          </button>
-          <button @click="selected = []" class="text-xs text-red-500 hover:text-red-700">Bỏ chọn</button>
+    </section>
+
+    <!-- DETAIL -->
+    <main class="dtl">
+      <SkState v-if="!selectedId && !loading" state="empty" title="Chọn một lớp" message="Chọn lớp ở danh sách bên trái để xem chi tiết." />
+
+      <template v-else-if="selectedId">
+        <header class="dtl__head">
+          <div class="dtl__id">
+            <span class="dtl__name">{{ cur.class_name || selectedId }}</span>
+            <span class="dtl__slash">·</span>
+            <span class="dtl__code">{{ cur.course || '—' }}</span>
+            <SkBadge v-bind="clsMeta(cur.status)" />
+          </div>
+          <div class="dtl__actions">
+            <SkButton variant="secondary" :loading="generatingSessions" @click="generateSessions">Sinh lịch</SkButton>
+            <SkButton variant="secondary" left-icon="user-plus" @click="openEnrollment">Gán học viên</SkButton>
+            <SkButton variant="solid" @click="$router.push('/attendance')">Mở buổi hôm nay</SkButton>
+          </div>
+        </header>
+
+        <div class="dtl__tabs">
+          <button v-for="t in TABS" :key="t.id" class="tab" :class="{ 'tab--active': tab === t.id }" @click="tab = t.id">{{ t.label }}</button>
         </div>
-      </transition>
-    </div>
 
-    <div v-if="classes.loading" class="flex justify-center py-8">
-      <LoadingIndicator />
-    </div>
+        <div class="dtl__body sk-scroll">
+          <SkState v-if="detailLoading" state="loading" />
+          <div v-else class="dtl__inner">
+            <!-- OVERVIEW -->
+            <div v-if="tab === 'overview'" class="stack">
+              <div>
+                <div class="block__title">Thông tin lớp</div>
+                <div class="info">
+                  <div class="info__c"><div class="info__l">Khóa học</div><div class="info__v">{{ cur.course || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Giáo viên chính</div><div class="info__v">{{ cur.teacher || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Giáo viên thay thế</div><div class="info__v">{{ cur.substitute_teacher || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Lịch học</div><div class="info__v">{{ schedule }}</div></div>
+                  <div class="info__c"><div class="info__l">Phòng học</div><div class="info__v">{{ cur.classroom || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Sĩ số</div><div class="info__v tnum">{{ roster.length }} / {{ cur.max_capacity || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Khai giảng</div><div class="info__v">{{ formatDate(cur.start_date) }}</div></div>
+                  <div class="info__c"><div class="info__l">Tổng số buổi</div><div class="info__v tnum">{{ cur.total_sessions || sessions.length }} buổi</div></div>
+                  <div class="info__c"><div class="info__l">Học phí chuẩn</div><div class="info__v tnum">{{ formatVND(cur.standard_fee) }}</div></div>
+                </div>
+              </div>
+              <div class="progcard">
+                <div class="progcard__top"><span class="progcard__label">Tiến độ khóa học</span><span class="progcard__pct tnum">{{ pct(cur.progress) }}</span></div>
+                <div class="progcard__bar"><span :style="{ width: pct(cur.progress) }" /></div>
+              </div>
 
-    <div v-else-if="filteredClasses.length === 0" class="rounded-xl border border-border bg-white p-12 text-center shadow-sm">
-      <svg class="mx-auto h-12 w-12 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-      <h3 class="mt-4 text-sm font-semibold text-ink">Không tìm thấy lớp học nào</h3>
-      <p class="mt-1 text-sm text-muted">Thử thay đổi bộ lọc hoặc tạo một lớp học mới.</p>
-      <div class="mt-6">
-        <button @click="showCreateModal = true" class="flex items-center gap-2 mx-auto px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-brand-deep transition-colors shadow-sm shadow-emerald-600/20">Mở Lớp Học</button>
-      </div>
-    </div>
-
-    <!-- Data Table -->
-    <div v-else class="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-border">
-          <thead class="bg-hover/40">
-            <tr>
-              <th class="px-4 py-3 w-10">
-                <input type="checkbox" :checked="allSelected" @change="toggleSelectAll" class="w-4 h-4 rounded border-border text-brand focus:ring-brand cursor-pointer" />
-              </th>
-              <th class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted w-12">STT</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Mã Lớp</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Tên Lớp Học</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Khóa Học</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Giáo Viên</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Khai Giảng</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Trạng Thái</th>
-              <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Hành Động</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-border bg-white">
-            <tr v-for="(cls, idx) in filteredClasses" :key="cls.name"
-              class="hover:bg-hover/40 transition-colors"
-              :class="selected.includes(cls.name) ? 'bg-brand-tint/30' : ''">
-              <td class="px-4 py-3">
-                <input type="checkbox" :value="cls.name" v-model="selected" class="w-4 h-4 rounded border-border text-brand focus:ring-brand cursor-pointer" />
-              </td>
-              <td class="px-3 py-4 text-xs text-faint font-mono tabular-nums">{{ idx + 1 }}</td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-brand">
-                <a :href="`/app/class/${cls.name}`" target="_blank" class="hover:underline">{{ cls.name }}</a>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-ink">{{ cls.class_name }}</td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-muted">{{ cls.course }}</td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-muted">{{ cls.teacher || 'Chưa xếp' }}</td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-muted">{{ cls.start_date || '—' }}</td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                  :class="cls.status === 'Ongoing' ? 'bg-brand-soft text-brand' : cls.status === 'Upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-hover text-muted'">
-                  {{ cls.status }}
-                </span>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-right text-sm">
-                <button :disabled="generating === cls.name" @click="generateSchedule(cls.name)" class="text-xs px-2.5 py-1 text-muted border border-border rounded-lg hover:bg-hover/40 transition-colors disabled:opacity-50">
-                  {{ generating === cls.name ? 'Đang sinh...' : 'Sinh Lịch' }}
+              <div class="flowgrid">
+                <button class="flowcard" @click="tab = 'roster'">
+                  <span class="flowcard__label">Danh sách học viên</span>
+                  <strong>{{ roster.length }} / {{ cur.max_capacity || '—' }}</strong>
+                  <small>Đã gán vào lớp</small>
                 </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+                <div class="flowcard">
+                  <span class="flowcard__label">Giáo viên phụ trách</span>
+                  <strong>{{ cur.teacher || 'Chưa gán' }}</strong>
+                  <small>{{ cur.substitute_teacher ? `Dự phòng ${cur.substitute_teacher}` : 'Giáo viên chính' }}</small>
+                </div>
+                <button class="flowcard" @click="tab = 'sessions'">
+                  <span class="flowcard__label">Lịch theo chương trình</span>
+                  <strong>{{ sessions.length }} buổi</strong>
+                  <small>{{ schedule }}</small>
+                </button>
+                <button class="flowcard" @click="$router.push('/attendance')">
+                  <span class="flowcard__label">Điểm danh / Nhập điểm</span>
+                  <strong>{{ completedSessions }} xong</strong>
+                  <small>Cập nhật từng buổi</small>
+                </button>
+                <div class="flowcard">
+                  <span class="flowcard__label">Tiến độ lớp</span>
+                  <strong>{{ pct(cur.progress) }}</strong>
+                  <small>{{ completedSessions }} / {{ sessions.length || cur.total_sessions || 0 }} buổi</small>
+                </div>
+                <button class="flowcard" @click="tab = 'roster'">
+                  <span class="flowcard__label">Học phí lớp / học viên</span>
+                  <strong>{{ formatVND(feeStats.outstanding) }}</strong>
+                  <small>Còn nợ · đã thu {{ formatVND(feeStats.paid) }}</small>
+                </button>
+              </div>
+            </div>
 
-    <!-- Bulk Delete Confirm Modal -->
-    <div v-if="showDeleteConfirm" @click.self="showDeleteConfirm = false" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm cursor-pointer">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 cursor-default">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-            <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-          </div>
-          <div>
-            <h3 class="text-sm font-bold text-ink-2">Xác nhận xóa</h3>
-            <p class="text-xs text-muted mt-0.5">Bạn sắp xóa <span class="font-bold text-red-600">{{ selected.length }}</span> lớp học. Hành động này không thể hoàn tác.</p>
-          </div>
-        </div>
-        <div class="flex gap-3">
-          <button @click="showDeleteConfirm = false" class="flex-1 py-2 text-sm font-medium text-muted border border-border rounded-lg hover:bg-hover/40">Hủy</button>
-          <button @click="confirmDelete" :disabled="deleting" class="flex-1 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50">{{ deleting ? 'Đang xóa...' : 'Xóa' }}</button>
-        </div>
-      </div>
-    </div>
+            <!-- ROSTER -->
+            <div v-else-if="tab === 'roster'">
+              <div class="block__head">
+                <div>
+                  <div class="block__title">Danh sách học viên · {{ roster.length }}</div>
+                  <div class="block__hint">Gán học viên vào lớp sẽ tạo Program Enrollment, chốt học phí và sinh hóa đơn.</div>
+                </div>
+                <SkButton variant="solid" left-icon="user-plus" @click="openEnrollment">Gán học viên</SkButton>
+              </div>
+              <div class="grid3 fee-mini">
+                <div><span>Tổng net fee</span><strong>{{ formatVND(feeStats.total) }}</strong></div>
+                <div><span>Đã thu</span><strong>{{ formatVND(feeStats.paid) }}</strong></div>
+                <div><span>Còn nợ</span><strong>{{ formatVND(feeStats.outstanding) }}</strong></div>
+              </div>
+              <div class="tblwrap">
+                <table class="tbl">
+                  <thead><tr><th>Học viên</th><th>Mã</th><th>Đăng ký</th><th style="text-align:right;">Net fee</th><th style="text-align:right;">Còn nợ</th><th style="text-align:right;">Chuyên cần</th><th style="text-align:right;">Điểm TB</th><th style="text-align:right;">Trạng thái</th></tr></thead>
+                  <tbody>
+                    <tr v-if="!roster.length"><td colspan="8" class="muted" style="padding:16px;">Lớp chưa có học viên.</td></tr>
+                    <tr v-for="r in roster" :key="r.student">
+                      <td><div class="cell-av"><SkAvatar :name="r.name" :size="32" /><span class="tbl__name">{{ r.name }}</span></div></td>
+                      <td class="tbl__sub tnum">{{ r.student }}</td>
+                      <td><SkBadge v-bind="enrMeta(r.enrollment_status)" /></td>
+                      <td class="tbl__name tnum" style="text-align:right;">{{ formatVND(r.net_fee) }}</td>
+                      <td class="tnum" style="text-align:right;" :style="{ color: Number(r.outstanding_amount) > 0 ? '#c43232' : '#2f8a5d' }">{{ formatVND(r.outstanding_amount) }}</td>
+                      <td class="tbl__sub tnum" style="text-align:right;">{{ pct(r.attendance_rate) }}</td>
+                      <td class="tbl__name tnum" style="text-align:right;">{{ score(r.average_score) }}</td>
+                      <td style="text-align:right;"><SkBadge v-bind="healthMeta(r.health_status)" /></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-    <!-- Custom Modal -->
-    <div v-if="showCreateModal" @click.self="showCreateModal = false" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm cursor-pointer">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 cursor-default">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-lg font-bold text-ink-2">Mở Lớp Học Mới</h2>
-          <button @click="showCreateModal = false" class="text-faint hover:text-muted transition-colors">
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div class="space-y-4">
-          <FormControl label="Tên lớp học *" v-model="newClass.class_name" :required="true" placeholder="VD: N5 Cấp tốc K1" />
-          <FormControl label="Mã Khóa học *" v-model="newClass.course" :required="true" placeholder="VD: Khóa N5..." />
-          <FormControl label="Giáo viên chủ nhiệm" v-model="newClass.teacher" placeholder="Nhập mã GV" />
-          <div class="grid grid-cols-2 gap-4">
-            <FormControl label="Ngày khai giảng" type="date" v-model="newClass.start_date" />
-            <FormControl type="select" label="Mẫu lịch học" v-model="newClass.schedule_template" :options="['', '2-4-6', '3-5-7', 'T7-CN']" />
+            <!-- SESSIONS -->
+            <div v-else-if="tab === 'sessions'">
+              <div class="block__head">
+                <div>
+                  <div class="block__title">Buổi học · {{ sessions.length }}</div>
+                  <div class="block__hint">Sinh lịch theo mẫu 2-4-6, 3-5-7 hoặc T7-CN từ ngày khai giảng.</div>
+                </div>
+                <SkButton variant="secondary" :loading="generatingSessions" @click="generateSessions">Sinh lịch</SkButton>
+              </div>
+              <div v-if="!sessions.length" class="muted">Chưa sinh lịch buổi học.</div>
+              <div class="sess">
+                <div v-for="(s, i) in sessions" :key="s.name" class="sess__row" :class="{ 'sess__row--today': isToday(s.session_date) }">
+                  <div class="sess__no">Buổi {{ i + 1 }}</div>
+                  <div class="sess__main">
+                    <div class="sess__topic">{{ s.lesson_topic || 'Chưa có chủ đề' }}</div>
+                    <div class="sess__date tnum">{{ formatDate(s.session_date) }} · {{ formatTime(s.start_time) }}</div>
+                  </div>
+                  <SkBadge v-bind="sesMeta(s.session_status)" />
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="grid grid-cols-3 gap-4">
-            <FormControl label="Giờ bắt đầu" type="time" v-model="newClass.start_time" />
-            <FormControl label="Giờ kết thúc" type="time" v-model="newClass.end_time" />
-            <FormControl label="Tổng số buổi" type="number" v-model="newClass.total_sessions" />
-          </div>
-          <FormControl 
-            type="select" 
-            label="Trạng thái" 
-            v-model="newClass.status" 
-            :options="[
-              { label: 'Upcoming', value: 'Upcoming' },
-              { label: 'Ongoing', value: 'Ongoing' },
-              { label: 'Completed', value: 'Completed' },
-              { label: 'Closed', value: 'Closed' }
-            ]" 
-          />
         </div>
-        <div class="flex justify-end gap-2 mt-6">
-          <button @click="showCreateModal = false" class="flex-1 py-2 text-sm font-medium text-muted border border-border rounded-lg hover:bg-hover/40 transition-colors">Hủy</button>
-          <button @click="saveClass" :disabled="saving" class="flex-1 py-2 text-sm font-medium text-white bg-brand rounded-lg hover:bg-brand-deep transition-colors disabled:opacity-50">{{ saving ? 'Đang lưu...' : 'Lưu' }}</button>
+      </template>
+    </main>
+
+    <SkModal v-model="classOpen" title="Thêm lớp học" width="620px">
+      <form class="form" @submit.prevent="saveClass">
+        <div class="form-grid">
+          <label class="fg fg--full">
+            <span>Tên lớp</span>
+            <input v-model.trim="classForm.class_name" class="field" required placeholder="N5-TP-001" />
+          </label>
+          <label class="fg">
+            <span>Khóa học</span>
+            <select v-model="classForm.course" class="field" required>
+              <option value="" disabled>Chọn khóa học</option>
+              <option v-for="course in courseOptions" :key="course.name" :value="course.name">
+                {{ course.course_name || course.name }}
+              </option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Giáo viên</span>
+            <select v-model="classForm.teacher" class="field">
+              <option value="">Chưa gán</option>
+              <option v-for="teacher in teacherOptions" :key="teacher.name" :value="teacher.name">
+                {{ teacher.teacher_name || teacher.name }}
+              </option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Ngày khai giảng</span>
+            <input v-model="classForm.start_date" class="field" type="date" />
+          </label>
+          <label class="fg">
+            <span>Mẫu lịch</span>
+            <select v-model="classForm.schedule_template" class="field">
+              <option value=""></option>
+              <option value="2-4-6">2-4-6</option>
+              <option value="3-5-7">3-5-7</option>
+              <option value="T7-CN">T7-CN</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Giờ bắt đầu</span>
+            <input v-model="classForm.start_time" class="field" type="time" />
+          </label>
+          <label class="fg">
+            <span>Giờ kết thúc</span>
+            <input v-model="classForm.end_time" class="field" type="time" />
+          </label>
+          <label class="fg">
+            <span>Tổng số buổi</span>
+            <input v-model.number="classForm.total_sessions" class="field" type="number" min="0" placeholder="30" />
+          </label>
+          <label class="fg">
+            <span>Sĩ số tối đa</span>
+            <input v-model.number="classForm.max_capacity" class="field" type="number" min="0" placeholder="18" />
+          </label>
+          <label class="fg">
+            <span>Học phí chuẩn</span>
+            <input v-model.number="classForm.standard_fee" class="field" type="number" min="0" step="1000" placeholder="4500000" />
+          </label>
+          <label class="fg">
+            <span>Trạng thái</span>
+            <select v-model="classForm.status" class="field">
+              <option value="Upcoming">Upcoming</option>
+              <option value="Ongoing">Ongoing</option>
+              <option value="Completed">Completed</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </label>
         </div>
-      </div>
-    </div>
+      </form>
+      <template #footer>
+        <SkButton variant="secondary" :disabled="savingClass" @click="classOpen = false">Hủy</SkButton>
+        <SkButton variant="solid" :loading="savingClass" @click="saveClass">Lưu lớp</SkButton>
+      </template>
+    </SkModal>
+
+    <SkModal v-model="enrollmentOpen" title="Gán học viên vào lớp" width="600px">
+      <form class="form" @submit.prevent="saveEnrollment">
+        <div class="form-grid">
+          <label class="fg fg--full">
+            <span>Học viên</span>
+            <select v-model="enrollmentForm.student" class="field" required>
+              <option value="">Chọn học viên</option>
+              <option v-for="s in availableStudents" :key="s.name" :value="s.name">
+                {{ s.full_name || s.name }} · {{ s.phone || s.email || s.name }}
+              </option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Ngày nhập học</span>
+            <input v-model="enrollmentForm.enrollment_date" class="field" type="date" required />
+          </label>
+          <label class="fg">
+            <span>Loại đăng ký</span>
+            <select v-model="enrollmentForm.enrollment_type" class="field">
+              <option value="Official">Official</option>
+              <option value="Trial">Trial</option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Giá niêm yết</span>
+            <input v-model.number="enrollmentForm.list_price" class="field" type="number" min="0" step="1000" />
+          </label>
+          <label class="fg">
+            <span>Loại ưu đãi</span>
+            <select v-model="enrollmentForm.discount_type" class="field">
+              <option value=""></option>
+              <option value="Percent">Percent</option>
+              <option value="Amount">Amount</option>
+            </select>
+          </label>
+          <label class="fg">
+            <span>Giá trị ưu đãi</span>
+            <input v-model.number="enrollmentForm.discount_value" class="field" type="number" min="0" step="1000" />
+          </label>
+          <label class="fg fg--full">
+            <span>Lý do ưu đãi</span>
+            <textarea v-model.trim="enrollmentForm.discount_reason" class="field field--area" placeholder="Ví dụ: ưu đãi học viên cũ, duyệt bởi..." />
+          </label>
+        </div>
+      </form>
+      <template #footer>
+        <SkButton variant="secondary" :disabled="savingEnrollment" @click="enrollmentOpen = false">Hủy</SkButton>
+        <SkButton variant="solid" :loading="savingEnrollment" @click="saveEnrollment">Gán vào lớp</SkButton>
+      </template>
+    </SkModal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { FormControl, LoadingIndicator } from 'frappe-ui'
-import { apiResource, db, call } from '../api'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { call, db } from '../api'
+import { formatVND, formatDate, formatTime } from '../utils/format'
+import { statusMeta } from '../utils/labels'
+import { toast } from '../utils/toast'
+import SkAvatar from '../components/ui/SkAvatar.vue'
+import SkBadge from '../components/ui/SkBadge.vue'
+import SkButton from '../components/ui/SkButton.vue'
+import SkModal from '../components/ui/SkModal.vue'
+import SkState from '../components/ui/SkState.vue'
 
-const showCreateModal = ref(false)
-const saving = ref(false)
-const generating = ref(null)
-const searchQuery = ref('')
-const statusFilter = ref('')
-const periodFilter = ref('')
-const selected = ref([])
-const showDeleteConfirm = ref(false)
-const deleting = ref(false)
-
-const periods = [
-  { label: 'Tất cả', value: '' },
-  { label: 'Tuần', value: 'week' },
-  { label: 'Tháng', value: 'month' },
-  { label: 'Quý', value: 'quarter' },
-  { label: 'Năm', value: 'year' },
+const TABS = [
+  { id: 'overview', label: 'Tổng quan' },
+  { id: 'roster', label: 'Học viên' },
+  { id: 'sessions', label: 'Buổi học' },
 ]
 
-function getDateRange(period) {
-  const now = new Date()
-  if (period === 'week') { const d = new Date(now); d.setDate(now.getDate() - 7); return d }
-  if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1)
-  if (period === 'quarter') return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
-  if (period === 'year') return new Date(now.getFullYear(), 0, 1)
-  return null
+const loading = ref(true)
+const classes = ref([])
+const selectedId = ref(null)
+const tab = ref('overview')
+const detailLoading = ref(false)
+const cur = reactive({})
+const roster = ref([])
+const sessions = ref([])
+const today = () => new Date().toISOString().slice(0, 10)
+const classOpen = ref(false)
+const savingClass = ref(false)
+const enrollmentOpen = ref(false)
+const savingEnrollment = ref(false)
+const generatingSessions = ref(false)
+const courseOptions = ref([])
+const teacherOptions = ref([])
+const studentOptions = ref([])
+const classForm = ref(defaultClassForm())
+const enrollmentForm = ref(defaultEnrollmentForm())
+
+const clsMeta = (s) => statusMeta('Class', 'status', s)
+const sesMeta = (s) => statusMeta('Class Session', 'session_status', s)
+const healthMeta = (s) => statusMeta('Student', 'health_status', s)
+const enrMeta = (s) => {
+  const map = { Active: 'success', Pending: 'warning', Deferred: 'warning', Completed: 'neutral', Dropped: 'danger', Transferred: 'info', Rejected: 'danger' }
+  return { label: s || '—', variant: map[s] || 'neutral' }
 }
+const pct = (v) => `${Math.round(Number(v) || 0)}%`
+const score = (v) => (v == null || v === '' ? '—' : Number(v).toFixed(1))
+const todayIso = new Date().toISOString().slice(0, 10)
+const isToday = (d) => d === todayIso
 
-const defaultClass = {
-  class_name: '',
-  course: '',
-  teacher: '',
-  start_date: '',
-  schedule_template: '',
-  start_time: '',
-  end_time: '',
-  total_sessions: 24,
-  status: 'Upcoming'
-}
-
-const newClass = ref({ ...defaultClass })
-
-const classes = apiResource('get_classes', { auto: true })
-
-// Search & filter logic
-const filteredClasses = computed(() => {
-  if (!classes.data) return []
-  const start = getDateRange(periodFilter.value)
-  return classes.data.filter(cls => {
-    const nameMatch = !searchQuery.value || 
-      cls.class_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      cls.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      cls.course.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const statusMatch = !statusFilter.value || cls.status === statusFilter.value
-    const periodMatch = !start || !cls.start_date || new Date(cls.start_date) >= start
-    return nameMatch && statusMatch && periodMatch
-  })
+const schedule = computed(() => {
+  const t = cur.schedule_template ? cur.schedule_template + ' · ' : ''
+  const h = cur.start_time ? `${formatTime(cur.start_time)}–${formatTime(cur.end_time)}` : ''
+  return (t + h) || '—'
+})
+const completedSessions = computed(() => sessions.value.filter((s) => s.session_status === 'Completed').length)
+const feeStats = computed(() => {
+  const total = roster.value.reduce((sum, r) => sum + (Number(r.invoice_total || r.net_fee) || 0), 0)
+  const paid = roster.value.reduce((sum, r) => sum + (Number(r.paid_amount) || 0), 0)
+  const outstanding = roster.value.reduce((sum, r) => sum + (Number(r.outstanding_amount) || 0), 0)
+  return { total, paid, outstanding }
+})
+const availableStudents = computed(() => {
+  const assigned = new Set(roster.value.map((r) => r.student))
+  return studentOptions.value.filter((s) => !assigned.has(s.name))
 })
 
-const allSelected = computed(() =>
-  filteredClasses.value.length > 0 && filteredClasses.value.every(c => selected.value.includes(c.name))
-)
-function toggleSelectAll() {
-  allSelected.value ? selected.value = [] : selected.value = filteredClasses.value.map(c => c.name)
-}
-const confirmDelete = async () => {
-  deleting.value = true
-  try {
-    for (const name of selected.value) {
-      await db.delete('Class', name)
-    }
-    selected.value = []; showDeleteConfirm.value = false; classes.fetch()
-  } catch (err) { alert('Lỗi khi xóa: ' + (err.message || '')) } finally { deleting.value = false }
-}
-
-// Stats calculations
-const stats = computed(() => {
-  const data = classes.data || []
+function defaultClassForm() {
   return {
-    total: data.length,
-    ongoing: data.filter(c => c.status === 'Ongoing').length,
-    upcoming: data.filter(c => c.status === 'Upcoming').length,
-    completed: data.filter(c => c.status === 'Completed').length
+    class_name: '',
+    course: '',
+    teacher: '',
+    start_date: '',
+    schedule_template: '',
+    start_time: '',
+    end_time: '',
+    total_sessions: '',
+    max_capacity: '',
+    standard_fee: '',
+    status: 'Upcoming',
   }
-})
+}
 
-const saveClass = async () => {
-  if (!newClass.value.class_name || !newClass.value.course) {
-    alert('Vui lòng nhập tên lớp và mã khóa học.')
+function defaultEnrollmentForm() {
+  return {
+    student: '',
+    enrollment_date: today(),
+    enrollment_type: 'Official',
+    list_price: Number(cur.standard_fee) || '',
+    discount_type: '',
+    discount_value: 0,
+    discount_reason: '',
+  }
+}
+
+function cleanPayload(values) {
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== '' && value != null))
+}
+
+async function loadFormOptions() {
+  try {
+    const [courses, teachers, students] = await Promise.all([
+      db.getList('Course', {
+        fields: ['name', 'course_name', 'base_fee'],
+        order_by: 'modified desc',
+        limit_page_length: 100,
+      }),
+      db.getList('Teacher', {
+        fields: ['name', 'teacher_name', 'status'],
+        filters: { status: 'Active' },
+        order_by: 'modified desc',
+        limit_page_length: 100,
+      }),
+      db.getList('Student', {
+        fields: ['name', 'full_name', 'phone', 'email', 'student_status'],
+        order_by: 'modified desc',
+        limit_page_length: 200,
+      }),
+    ])
+    courseOptions.value = courses || []
+    teacherOptions.value = teachers || []
+    studentOptions.value = students || []
+  } catch (e) {
+    courseOptions.value = []
+    teacherOptions.value = []
+    studentOptions.value = []
+  }
+}
+
+function openClass() {
+  classForm.value = defaultClassForm()
+  if (!courseOptions.value.length) loadFormOptions()
+  classOpen.value = true
+}
+
+async function saveClass() {
+  if (!classForm.value.class_name || !classForm.value.course) {
+    toast.error('Thiếu thông tin lớp', 'Cần nhập tên lớp và chọn khóa học.')
     return
   }
-  
-  saving.value = true
+  savingClass.value = true
   try {
-    await db.insert({
-      doctype: 'Class',
-      class_name: newClass.value.class_name,
-      course: newClass.value.course,
-      teacher: newClass.value.teacher,
-      start_date: newClass.value.start_date,
-      schedule_template: newClass.value.schedule_template,
-      start_time: newClass.value.start_time,
-      end_time: newClass.value.end_time,
-      total_sessions: newClass.value.total_sessions,
-      status: newClass.value.status
-    })
-    showCreateModal.value = false
-    classes.fetch()
-    newClass.value = { ...defaultClass }
-  } catch (err) {
-    console.error(err)
-    alert('Có lỗi xảy ra, vui lòng kiểm tra mã Khóa học và Giáo viên có tồn tại hay không.')
+    const created = await db.insert({ doctype: 'Class', ...cleanPayload(classForm.value) })
+    toast.success('Đã thêm lớp')
+    classOpen.value = false
+    await load()
+    if (created?.name) select(created.name)
+  } catch (e) {
+    toast.error('Không thêm được lớp', e?.messages?.[0] || e?.message || String(e))
   } finally {
-    saving.value = false
+    savingClass.value = false
   }
 }
 
-const generateSchedule = async (className) => {
-  if (!confirm(`Hệ thống sẽ xóa các ca học hiện tại của lớp ${className} và tự động sinh lại từ đầu. Bạn có chắc chắn?`)) return
-  generating.value = className
+async function openEnrollment() {
+  if (!selectedId.value) return
+  if (!studentOptions.value.length) await loadFormOptions()
+  enrollmentForm.value = defaultEnrollmentForm()
   try {
-    const res = await call('generate_class_sessions', { class_id: className })
-    alert(res || 'Thành công')
-  } catch (err) {
-    console.error(err)
-    alert('Có lỗi xảy ra: ' + (err.messages ? err.messages[0] : err.message || 'Vui lòng kiểm tra lại cấu hình mẫu lịch học của lớp'))
+    const info = await call('get_class_enrollment_info', { class_id: selectedId.value })
+    if (info?.list_price) enrollmentForm.value.list_price = info.list_price
+  } catch (e) {
+    /* keep class standard fee fallback */
+  }
+  enrollmentOpen.value = true
+}
+
+async function saveEnrollment() {
+  if (!selectedId.value || !enrollmentForm.value.student) {
+    toast.error('Thiếu học viên')
+    return
+  }
+  savingEnrollment.value = true
+  try {
+    await call('create_enrollment', {
+      ...cleanPayload(enrollmentForm.value),
+      class_id: selectedId.value,
+      submit: 1,
+    })
+    toast.success('Đã gán học viên vào lớp')
+    enrollmentOpen.value = false
+    tab.value = 'roster'
+    classes.value = (await call('get_classes')) || classes.value
+    await loadDetail(selectedId.value)
+  } catch (e) {
+    toast.error('Không gán được học viên', e?.messages?.[0] || e?.message || String(e))
   } finally {
-    generating.value = null
+    savingEnrollment.value = false
   }
 }
+
+async function generateSessions() {
+  if (!selectedId.value) return
+  generatingSessions.value = true
+  try {
+    const message = await call('generate_class_sessions', { class_id: selectedId.value })
+    toast.success('Đã sinh lịch', message)
+    tab.value = 'sessions'
+    await loadDetail(selectedId.value)
+  } catch (e) {
+    toast.error('Không sinh được lịch', e?.messages?.[0] || e?.message || String(e))
+  } finally {
+    generatingSessions.value = false
+  }
+}
+
+async function loadDetail(id) {
+  detailLoading.value = true
+  roster.value = []
+  sessions.value = []
+  try {
+    const [rows, rost, sess] = await Promise.all([
+      db.getList('Class', {
+        filters: { name: id },
+        fields: ['class_name', 'course', 'teacher', 'substitute_teacher', 'classroom', 'start_date',
+          'schedule_template', 'start_time', 'end_time', 'total_sessions', 'max_capacity',
+          'standard_fee', 'status', 'progress'],
+        limit_page_length: 1,
+      }),
+      call('get_class_roster', { class_id: id }),
+      call('get_class_sessions', { class_id: id }),
+    ])
+    Object.assign(cur, rows?.[0] || {})
+    roster.value = rost || []
+    sessions.value = sess || []
+  } catch (e) {
+    /* empty */
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+function select(id) {
+  selectedId.value = id
+  tab.value = 'overview'
+  loadDetail(id)
+}
+
+async function load() {
+  loading.value = true
+  try {
+    classes.value = (await call('get_classes')) || []
+    if (classes.value.length) select(classes.value[0].name)
+  } finally {
+    loading.value = false
+  }
+}
+onMounted(() => {
+  load()
+  loadFormOptions()
+})
 </script>
+
+<style scoped>
+.md { flex: 1; min-width: 0; display: flex; height: 100vh; }
+.ctx { flex: none; width: 326px; display: flex; flex-direction: column; background: rgba(255, 252, 253, 0.82); border-right: 1px solid #f2d4df; }
+.ctx__head { height: 56px; flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 18px; border-bottom: 1px solid #f4dde5; }
+.ctx__title { font-size: 16px; font-weight: 600; color: #4a2230; }
+.ctx__meta { display: flex; align-items: center; gap: 8px; }
+.ctx__count { font-size: 11.5px; color: #a98c98; }
+.ctx__list { flex: 1; overflow-y: auto; padding: 8px 0; }
+
+.crow { display: block; width: 100%; text-align: left; border: none; border-bottom: 1px solid #f7e6ec; background: transparent; padding: 12px 16px 12px 13px; cursor: pointer; border-left: 3px solid transparent; font-family: inherit; }
+.crow:hover { background: #fdf2f6; }
+.crow--active { background: #fbd9e5; border-left-color: #d6557e; }
+.crow__top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.crow__id { font-size: 13.5px; font-weight: 600; color: #3d2530; }
+.crow__sub { font-size: 11.5px; color: #a98c98; margin-top: 4px; }
+.crow__bar { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.crow__track { flex: 1; height: 5px; border-radius: 3px; background: #f6dde6; overflow: hidden; }
+.crow__track > span { display: block; height: 100%; background: linear-gradient(90deg, #f7a8c4, #d6557e); border-radius: 3px; }
+.crow__pct { font-size: 11px; color: #b8456a; font-weight: 600; }
+
+.dtl { flex: 1; min-width: 0; display: flex; flex-direction: column; background: #fffdfe; }
+.dtl__head { height: 56px; flex: none; display: flex; align-items: center; gap: 11px; padding: 0 18px; border-bottom: 1px solid #f1dbe3; }
+.dtl__id { min-width: 0; display: flex; align-items: center; gap: 9px; }
+.dtl__name { font-size: 16px; font-weight: 600; color: #3d2530; }
+.dtl__slash { font-size: 13px; color: #bd97a5; }
+.dtl__code { font-size: 13px; color: #a98c98; }
+.dtl__actions { margin-left: auto; display: flex; gap: 8px; }
+.dtl__tabs { flex: none; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid #f1dbe3; }
+.tab { border: none; background: none; padding: 13px 2px 12px; margin-right: 28px; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 500; color: #7a5c68; border-bottom: 2px solid transparent; }
+.tab--active { color: #b8456a; font-weight: 600; border-bottom-color: #d6557e; }
+.dtl__body { flex: 1; overflow-y: auto; }
+.dtl__inner { padding: 26px 30px 44px; max-width: 1080px; }
+
+.stack { display: flex; flex-direction: column; gap: 28px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.block__head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+.block__title { font-size: 15px; font-weight: 600; color: #4a2230; margin-bottom: 14px; }
+.block__head .block__title { margin-bottom: 0; }
+.block__hint { font-size: 12px; color: #a98c98; margin-top: 3px; }
+.info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px 32px; }
+.info__l { font-size: 11.5px; color: #a98c98; margin-bottom: 3px; }
+.info__v { font-size: 14px; color: #3d2530; font-weight: 500; }
+.muted { font-size: 13px; color: #a98c98; }
+
+.progcard { border: 1px solid #f3d9e1; border-radius: 12px; padding: 16px 18px; background: linear-gradient(135deg, #fdeef4, #fbe0ea); }
+.progcard__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.progcard__label { font-size: 13px; color: #a8607b; font-weight: 500; }
+.progcard__pct { font-size: 14px; color: #b8456a; font-weight: 700; }
+.progcard__bar { height: 8px; border-radius: 5px; background: rgba(255, 255, 255, 0.6); overflow: hidden; }
+.progcard__bar > span { display: block; height: 100%; background: linear-gradient(90deg, #f7a8c4, #d6557e); border-radius: 5px; }
+
+.flowgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.flowcard { min-height: 112px; border: 1px solid #f3d9e1; border-radius: 11px; background: #fff; padding: 14px 15px; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left; font-family: inherit; color: inherit; }
+button.flowcard { cursor: pointer; }
+button.flowcard:hover { border-color: #ecbcce; background: #fff7fa; }
+.flowcard__label { font-size: 11.5px; color: #a98c98; font-weight: 600; }
+.flowcard strong { font-size: 18px; color: #3d2530; line-height: 1.2; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flowcard small { font-size: 11.5px; color: #a98c98; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.fee-mini { margin-bottom: 14px; }
+.fee-mini > div { border: 1px solid #f3d9e1; border-radius: 10px; background: #fff; padding: 12px 14px; }
+.fee-mini span { display: block; font-size: 11.5px; color: #a98c98; margin-bottom: 4px; }
+.fee-mini strong { font-size: 15px; color: #3d2530; }
+
+.tblwrap { border: 1px solid #f3d9e1; border-radius: 11px; overflow: hidden; background: #fff; }
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl thead tr { background: #fdf2f6; }
+.tbl th { text-align: left; font-size: 11.5px; font-weight: 600; color: #a07c8a; padding: 10px 16px; }
+.tbl td { padding: 9px 16px; border-top: 1px solid #f6e3ea; }
+.tbl tbody tr:hover { background: #fefafb; }
+.tbl__name { font-size: 13.5px; font-weight: 500; color: #3d2530; }
+.tbl__sub { font-size: 13px; color: #7a5c68; }
+.cell-av { display: flex; align-items: center; gap: 10px; }
+
+.sess { display: flex; flex-direction: column; gap: 10px; }
+.sess__row { display: flex; align-items: center; gap: 14px; border: 1px solid #f3d9e1; border-radius: 11px; padding: 13px 16px; background: #fff; }
+.sess__row--today { background: linear-gradient(135deg, #fdeef4, #fbe0ea); border-color: #f0b9cd; }
+.sess__no { flex: none; width: 62px; font-size: 13.5px; font-weight: 600; color: #3d2530; }
+.sess__main { flex: 1; min-width: 0; }
+.sess__topic { font-size: 13.5px; font-weight: 500; color: #3d2530; }
+.sess__date { font-size: 12px; color: #a98c98; margin-top: 2px; }
+
+.form { margin: 0; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.fg { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fg--full { grid-column: 1 / -1; }
+.fg > span { font-size: 12px; font-weight: 600; color: #7a5c68; }
+.field { width: 100%; height: 36px; border: 1px solid #ecd0da; border-radius: 9px; background: #fff; padding: 0 11px; color: #3d2530; font-family: inherit; font-size: 13.5px; outline: none; }
+.field--area { height: auto; min-height: 74px; padding: 9px 11px; resize: vertical; }
+.field:focus { border-color: #d4567f; box-shadow: 0 0 0 3px rgba(212, 86, 127, 0.12); }
+
+@media (max-width: 1180px) {
+  .flowgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .info { grid-template-columns: repeat(2, 1fr); }
+}
+</style>

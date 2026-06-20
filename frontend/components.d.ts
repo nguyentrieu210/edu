@@ -8,9 +8,21 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AIChatBubble: typeof import('./src/components/AIChatBubble.vue')['default']
+    AIDrawer: typeof import('./src/components/AIDrawer.vue')['default']
     CommandPalette: typeof import('./src/components/CommandPalette.vue')['default']
+    LeadDetailDrawer: typeof import('./src/components/admissions/LeadDetailDrawer.vue')['default']
+    LeadStageModal: typeof import('./src/components/admissions/LeadStageModal.vue')['default']
+    LeadTimeline: typeof import('./src/components/admissions/LeadTimeline.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SkAvatar: typeof import('./src/components/ui/SkAvatar.vue')['default']
+    SkBadge: typeof import('./src/components/ui/SkBadge.vue')['default']
+    SkButton: typeof import('./src/components/ui/SkButton.vue')['default']
+    SkDrawer: typeof import('./src/components/ui/SkDrawer.vue')['default']
+    SkModal: typeof import('./src/components/ui/SkModal.vue')['default']
+    SkSegmented: typeof import('./src/components/ui/SkSegmented.vue')['default']
+    SkState: typeof import('./src/components/ui/SkState.vue')['default']
+    SkStatTile: typeof import('./src/components/ui/SkStatTile.vue')['default']
+    SkToaster: typeof import('./src/components/ui/SkToaster.vue')['default']
   }
 }

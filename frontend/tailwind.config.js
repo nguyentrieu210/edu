@@ -46,7 +46,18 @@ export default {
         purple:  colors.purple,
         fuchsia: colors.fuchsia,
         pink:    colors.pink,
-        // Các biến màu từ thiết kế Snuol
+        // Sakura palette
+        sakura: {
+          300: 'var(--sakura-300)',
+          400: 'var(--sakura-400)',
+          500: 'var(--sakura-500)',
+          600: 'var(--sakura-600)',
+          700: 'var(--sakura-700)',
+          soft: 'var(--brand-soft)',
+          tint: 'var(--brand-tint)',
+          DEFAULT: 'var(--sakura-500)',
+        },
+        // Surfaces
         canvas: 'var(--canvas)',
         paper: 'var(--paper)',
         surface: 'var(--surface)',
@@ -109,7 +120,7 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-        display: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        display: ['Zen Kaku Gothic New', 'Inter', '-apple-system', 'Segoe UI', 'sans-serif'],
         serif: ['Inter', 'Georgia', 'serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },

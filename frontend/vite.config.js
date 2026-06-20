@@ -6,11 +6,12 @@ import path from 'path'
 export default defineConfig({
   plugins: [
     frappeui({
-      frappeProxy: true,
+      frappeProxy: false,
       lucideIcons: true,
+      frappeTypes: false,
       jinjaBootData: true,
       buildConfig: {
-        indexHtmlPath: '../edu/www/education_app.html',
+        indexHtmlPath: '../edu/www/edu.html',
         emptyOutDir: true,
         sourcemap: false,
       },

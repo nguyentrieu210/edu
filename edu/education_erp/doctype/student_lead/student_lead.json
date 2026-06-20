@@ -5,6 +5,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "lead_image",
   "lead_name",
   "phone",
   "email",
@@ -15,9 +16,15 @@
   "occupation",
   "guardian_name",
   "guardian_phone",
-  "lost_reason"
+  "lost_reason",
+  "student"
  ],
  "fields": [
+  {
+   "fieldname": "lead_image",
+   "fieldtype": "Attach Image",
+   "label": "\u1ea2nh \u0111\u1ea1i di\u1ec7n"
+  },
   {
    "fieldname": "lead_name",
    "fieldtype": "Data",
@@ -81,6 +88,13 @@
    "fieldname": "lost_reason",
    "fieldtype": "Text",
    "label": "L\u00fd do th\u1ea5t b\u1ea1i"
+  },
+  {
+   "fieldname": "student",
+   "fieldtype": "Link",
+   "label": "H\u1ecdc vi\u00ean \u0111\u00e3 chuy\u1ec3n \u0111\u1ed5i",
+   "options": "Student",
+   "read_only": 1
   }
  ],
  "links": [],
