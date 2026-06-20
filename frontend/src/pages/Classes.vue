@@ -156,7 +156,28 @@
                 </div>
                 <SkButton variant="secondary" :loading="generatingSessions" @click="generateSessions">Lên lịch học</SkButton>
               </div>
-              <div v-if="!sessions.length" class="muted">Chưa sinh lịch buổi học.</div>
+
+              <!-- Cấu hình lịch: phải đủ trước khi "Lên lịch học" -->
+              <div class="schedcfg">
+                <div class="schedcfg__grid">
+                  <label class="schedcfg__fg"><span>Mẫu lịch</span>
+                    <select v-model="cur.schedule_template" class="field">
+                      <option value="">—</option>
+                      <option value="2-4-6">2-4-6 (T2-T4-T6)</option>
+                      <option value="3-5-7">3-5-7 (T3-T5-T7)</option>
+                      <option value="T7-CN">T7-CN (cuối tuần)</option>
+                    </select>
+                  </label>
+                  <label class="schedcfg__fg"><span>Giờ bắt đầu</span><input v-model="cur.start_time" type="time" class="field" /></label>
+                  <label class="schedcfg__fg"><span>Giờ kết thúc</span><input v-model="cur.end_time" type="time" class="field" /></label>
+                  <label class="schedcfg__fg"><span>Tổng số buổi</span><input v-model.number="cur.total_sessions" type="number" min="1" class="field" /></label>
+                  <label class="schedcfg__fg"><span>Ngày khai giảng</span><input v-model="cur.start_date" type="date" class="field" /></label>
+                  <SkButton variant="secondary" :loading="savingSched" @click="saveSchedule">Lưu cấu hình</SkButton>
+                </div>
+                <div class="schedcfg__hint">Cần đủ <b>Mẫu lịch · Giờ bắt đầu · Giờ kết thúc · Tổng số buổi · Ngày khai giảng</b> → bấm <b>Lưu cấu hình</b> rồi <b>Lên lịch học</b>.</div>
+              </div>
+
+              <div v-if="!sessions.length" class="muted">Chưa có buổi học. Điền cấu hình lịch ở trên rồi bấm "Lên lịch học".</div>
               <div class="sess">
                 <div v-for="(s, i) in sessions" :key="s.name" class="sess__row" :class="{ 'sess__row--today': isToday(s.session_date) }">
                   <div class="sess__no">Buổi {{ i + 1 }}</div>
@@ -515,6 +536,28 @@ async function saveEnrollment() {
   }
 }
 
+const savingSched = ref(false)
+async function saveSchedule() {
+  if (!selectedId.value) return
+  savingSched.value = true
+  try {
+    await db.setValue('Class', selectedId.value, {
+      schedule_template: cur.schedule_template || null,
+      start_time: cur.start_time || null,
+      end_time: cur.end_time || null,
+      total_sessions: cur.total_sessions || null,
+      start_date: cur.start_date || null,
+    })
+    toast.success('Đã lưu cấu hình lịch')
+    await loadDetail(selectedId.value)
+    await reloadClasses()
+  } catch (e) {
+    toast.error('Không lưu được cấu hình', e?.messages?.[0] || e?.message || String(e))
+  } finally {
+    savingSched.value = false
+  }
+}
+
 async function generateSessions() {
   if (!selectedId.value) return
   generatingSessions.value = true
@@ -664,6 +707,12 @@ button.flowcard:hover { border-color: #ecbcce; background: #fff7fa; }
 .tbl__sub { font-size: 13px; color: #7a5c68; }
 .cell-av { display: flex; align-items: center; gap: 10px; }
 
+.schedcfg { background: #fdf3f7; border: 1px solid #f3d3df; border-radius: 12px; padding: 14px; margin: 6px 0 14px; }
+.schedcfg__grid { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.schedcfg__fg { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: #8a5c6c; font-weight: 600; }
+.schedcfg__fg .field { height: 34px; border: 1px solid #ecd0da; border-radius: 8px; padding: 0 10px; font-size: 13px; font-family: inherit; outline: none; background: #fff; }
+.schedcfg__fg .field:focus { border-color: #d4567f; }
+.schedcfg__hint { font-size: 12px; color: #a98c98; margin-top: 10px; }
 .sess { display: flex; flex-direction: column; gap: 10px; }
 .sess__row { display: flex; align-items: center; gap: 14px; border: 1px solid #f3d9e1; border-radius: 11px; padding: 13px 16px; background: #fff; }
 .sess__row--today { background: linear-gradient(135deg, #fdeef4, #fbe0ea); border-color: #f0b9cd; }

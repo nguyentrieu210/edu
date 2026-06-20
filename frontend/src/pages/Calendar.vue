@@ -24,7 +24,7 @@
             <div v-for="e in d.events" :key="e.name" class="cal-ev" :style="{ background: bg(e.class_id), borderLeftColor: accent(e.class_id) }">
               <div class="cal-ev__time tnum" :style="{ color: accent(e.class_id) }">{{ formatTime(e.start_time) }}</div>
               <div class="cal-ev__klass">{{ e.class_name || e.class_id }}</div>
-              <div class="cal-ev__room">{{ e.classroom || '—' }}</div>
+              <div class="cal-ev__room">{{ e.classroom_name || e.classroom || '—' }}</div>
             </div>
             <div v-if="!d.events.length" class="cal-day__empty">—</div>
           </div>

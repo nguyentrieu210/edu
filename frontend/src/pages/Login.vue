@@ -1,5 +1,6 @@
 <template>
   <div class="login">
+    <router-link to="/" class="login__home">← Về trang chủ</router-link>
     <div class="login__card">
       <div class="login__brand">
         <div class="login__logo">
@@ -99,4 +100,6 @@ async function submit() {
 .login__forgot { text-align: center; font-size: 12px; color: #b07e90; text-decoration: none; margin-top: 2px; }
 .login__forgot:hover { color: #d6557e; text-decoration: underline; }
 .login__foot { font-size: 11.5px; color: #c79bab; }
+.login__home { position: fixed; top: 18px; left: 20px; font-size: 13px; color: #b07e90; text-decoration: none; font-weight: 600; }
+.login__home:hover { color: #d6557e; }
 </style>

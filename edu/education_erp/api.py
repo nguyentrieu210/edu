@@ -1684,7 +1684,7 @@ def get_my_teacher_overview(as_teacher=None):
         fields=["name", "class_id", "start_time", "end_time", "lesson_topic", "session_status"],
         order_by="start_time asc",
     ) if cids else []
-    _attach_class_names(sessions_today)
+    _attach_session_meta(sessions_today)
     teacher_name = frappe.db.get_value("Teacher", t, "teacher_name") or t
     return {"teacher": t, "teacher_name": teacher_name, "classes": classes,
             "sessions_today": sessions_today, "is_admin": admin}
@@ -2020,6 +2020,24 @@ def _attach_class_names(rows, field="class_id", out="class_name"):
     return rows
 
 
+def _attach_session_meta(rows):
+    """Gắn class_name, teacher_name, classroom_name cho danh sách buổi học (tránh hiện mã)."""
+    cids = list({r.get("class_id") for r in rows if r.get("class_id")})
+    tids = list({r.get("teacher") for r in rows if r.get("teacher")})
+    rids = list({r.get("classroom") for r in rows if r.get("classroom")})
+    cmap = {c.name: c.class_name for c in frappe.get_all("Class", filters={"name": ["in", cids]}, fields=["name", "class_name"])} if cids else {}
+    tmap = {t.name: t.teacher_name for t in frappe.get_all("Teacher", filters={"name": ["in", tids]}, fields=["name", "teacher_name"])} if tids else {}
+    rmap = {x.name: x.room_name for x in frappe.get_all("Classroom", filters={"name": ["in", rids]}, fields=["name", "room_name"])} if rids else {}
+    for r in rows:
+        if r.get("class_id"):
+            r["class_name"] = cmap.get(r["class_id"]) or r["class_id"]
+        if r.get("teacher"):
+            r["teacher_name"] = tmap.get(r["teacher"]) or r["teacher"]
+        if r.get("classroom"):
+            r["classroom_name"] = rmap.get(r["classroom"]) or r["classroom"]
+    return rows
+
+
 # ---------------------------------------------------------------------------
 # Quản lý tài khoản đăng nhập (User) cho HV/GV
 # ---------------------------------------------------------------------------
@@ -2230,7 +2248,7 @@ def get_dashboard_overview():
                 "teacher", "classroom", "session_status"],
         order_by="start_time asc",
     )
-    _attach_class_names(sessions_today)
+    _attach_session_meta(sessions_today)
 
     classes = frappe.get_list(
         "Class", filters={"status": ["in", ["Ongoing", "Upcoming"]]},
@@ -2402,11 +2420,7 @@ def get_sessions_by_range(from_date, to_date):
                 "lesson_topic", "classroom", "teacher", "session_status"],
         order_by="session_date asc, start_time asc",
     )
-    names = {}
-    for cid in {s.class_id for s in sessions if s.class_id}:
-        names[cid] = frappe.db.get_value("Class", cid, "class_name") or cid
-    for s in sessions:
-        s["class_name"] = names.get(s.class_id, s.class_id)
+    _attach_session_meta(sessions)
     return sessions
 
 

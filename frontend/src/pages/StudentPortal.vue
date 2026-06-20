@@ -330,7 +330,7 @@ onMounted(load)
 <style scoped>
 .admin-banner { background: #fff3cd; border: 1px solid #ffe08a; color: #8a6d1a; border-radius: 10px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; max-width: 420px; }
 .ws { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; background: linear-gradient(140deg, #fce3ec, #f7d3e0); display: flex; justify-content: center; padding: 28px 16px; }
-.phone { width: 420px; flex: none; border-radius: 34px; background: #fff; box-shadow: 0 24px 60px rgba(160, 60, 100, 0.28); overflow: hidden; border: 7px solid #2a1620; min-height: 720px; display: flex; flex-direction: column; }
+.phone { width: 420px; flex: none; border-radius: 34px; background: #fff; box-shadow: 0 24px 60px rgba(160, 60, 100, 0.28); overflow: hidden; border: 7px solid #2a1620; height: calc(100vh - 56px); max-height: 760px; display: flex; flex-direction: column; }
 .ph-head { background: linear-gradient(150deg, #e87aa3, #d4567f); padding: 22px 20px 24px; color: #fff; }
 .ph-head__top { display: flex; align-items: center; gap: 12px; }
 .ph-head__hi { font-size: 12px; opacity: 0.85; }

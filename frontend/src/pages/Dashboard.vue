@@ -37,7 +37,7 @@
               <span class="dot" :style="{ background: dotFor(s.class_id) }" />
               <div class="row-session__main">
                 <div class="row-session__title">{{ s.class_name || s.class_id }} · {{ s.lesson_topic || '—' }}</div>
-                <div class="row-session__sub">{{ s.teacher || '—' }} · {{ s.classroom || '—' }}</div>
+                <div class="row-session__sub">{{ s.teacher_name || s.teacher || '—' }} · {{ s.classroom_name || s.classroom || '—' }}</div>
               </div>
             </div>
           </div>
