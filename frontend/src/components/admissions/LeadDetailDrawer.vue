@@ -8,7 +8,9 @@
     <div v-if="lead" class="ld">
       <!-- Header -->
       <div class="ld__head">
-        <SkAvatar :name="lead.lead_name" :src="lead.lead_image" :size="52" />
+        <SkAvatar :name="lead.lead_name" :src="lead.lead_image" :size="52"
+          editable upload-doctype="Student Lead" :upload-name="lead.name" upload-field="lead_image"
+          @update:src="onAvatar" />
         <div class="ld__id">
           <div class="ld__name">{{ lead.lead_name }}</div>
           <SkBadge v-bind="statusMeta('Student Lead', 'status', curStatus)" />
@@ -35,19 +37,11 @@
         </div>
       </div>
 
-      <!-- Hành động chuyển stage -->
-      <section class="ld__sec">
-        <h4 class="ld__h">Hành động kế tiếp</h4>
+      <!-- Ghi nhận kết quả & tự chuyển bước -->
+      <section v-if="curStatus !== 'Enrolled'" class="ld__sec">
+        <h4 class="ld__h">Hành động</h4>
         <div class="ld__actions">
-          <SkButton
-            v-for="s in stageActions"
-            :key="s"
-            :variant="s === suggested ? 'solid' : 'secondary'"
-            size="sm"
-            @click="openStage(s)"
-          >
-            <template v-if="s === suggested">→ </template>{{ stageLabel(s) }}
-          </SkButton>
+          <SkButton variant="solid" size="sm" left-icon="zap" @click="openStage('')">Ghi nhận kết quả &amp; chuyển bước</SkButton>
           <SkButton v-if="curStatus !== 'Lost'" variant="ghost" size="sm" @click="openStage('Lost')">Thất bại</SkButton>
         </div>
       </section>
@@ -74,17 +68,17 @@
       </section>
     </div>
 
-    <LeadStageModal v-model="stageOpen" :lead="lead" :to-status="stageTarget" @done="onStageDone" />
+    <LeadStageModal v-model="stageOpen" :lead="lead" :preset-action="stagePreset" @done="onStageDone" />
   </SkDrawer>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
 import { call, crm, db } from '../../api'
 import { toast } from '../../utils/toast'
 import { statusMeta } from '../../utils/labels'
-import { STAGE_ORDER, stageLabel, nextStage } from './stages'
+import { stageLabel } from './stages'
 import SkDrawer from '../ui/SkDrawer.vue'
 import SkAvatar from '../ui/SkAvatar.vue'
 import SkBadge from '../ui/SkBadge.vue'
@@ -104,7 +98,7 @@ const curStatus = ref('New')
 const edit = ref({ phone: '', email: '' })
 
 const stageOpen = ref(false)
-const stageTarget = ref('')
+const stagePreset = ref('')
 
 const aiBusy = ref(false)
 const aiOut = ref('')
@@ -115,12 +109,6 @@ const AI_ACTIONS = [
   { kind: 'summary', label: 'Tóm tắt & chấm điểm', icon: 'award' },
   { kind: 'course', label: 'Gợi ý khóa học', icon: 'book-open' },
 ]
-
-const suggested = computed(() => nextStage(curStatus.value))
-// Các stage có thể chuyển tới (bỏ 'New' và chính trạng thái hiện tại).
-const stageActions = computed(() =>
-  STAGE_ORDER.filter((s) => s !== 'New' && s !== curStatus.value),
-)
 
 watch(
   () => [props.modelValue, props.lead?.name],
@@ -160,8 +148,13 @@ async function saveField(field) {
   }
 }
 
-function openStage(status) {
-  stageTarget.value = status
+function onAvatar(fileUrl) {
+  if (props.lead) props.lead.lead_image = fileUrl
+  emit('changed')
+}
+
+function openStage(presetAction = '') {
+  stagePreset.value = presetAction
   stageOpen.value = true
 }
 

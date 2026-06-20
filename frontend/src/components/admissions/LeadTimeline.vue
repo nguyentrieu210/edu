@@ -13,6 +13,7 @@
           <span class="tl__title">{{ it.title }}</span>
           <SkBadge v-if="badge(it)" v-bind="badge(it)" />
         </div>
+        <div v-if="it.result" class="tl__result">Đánh giá: {{ it.result }}</div>
         <div v-if="it.detail" class="tl__detail">{{ it.detail }}</div>
         <div class="tl__foot">
           <span>{{ formatDate(it.date) }}</span>
@@ -59,6 +60,7 @@ function badge(it) {
 .tl__body { flex: 1; min-width: 0; padding-bottom: 16px; }
 .tl__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .tl__title { font-size: 13px; font-weight: 600; color: #3d2530; }
+.tl__result { display: inline-block; font-size: 11.5px; font-weight: 600; color: #b8456a; background: #fbeef3; border-radius: 6px; padding: 2px 8px; margin-top: 5px; }
 .tl__detail { font-size: 12.5px; color: #7a5c68; margin-top: 4px; white-space: pre-wrap; word-break: break-word; }
 .tl__foot { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px; font-size: 11px; color: #bd97a5; }
 .tl__follow { color: #b8456a; }

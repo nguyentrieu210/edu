@@ -39,6 +39,7 @@ CLIENT_WRITE_FIELDS = {
         "start_date", "schedule_template", "start_time", "end_time",
         "total_sessions", "max_capacity", "standard_fee", "status",
     },
+    "Class Session": {"lesson_topic", "classroom"},
     "Course": {"course_name", "description", "base_fee"},
     "Curriculum Module": {"course", "module_name", "sequence", "description"},
     "Fee Invoice": {
@@ -65,7 +66,7 @@ CLIENT_WRITE_FIELDS = {
     "Student": {
         "full_name", "user", "guardian", "health_status", "date_of_birth", "gender",
         "email", "phone", "source", "occupation", "rating", "message_response",
-        "student_status",
+        "student_status", "student_image",
     },
     "Student Appointment": {"lead", "appointment_date", "appointment_time", "purpose", "status"},
     "Student Assessment": {
@@ -251,7 +252,7 @@ def get_csrf_token():
 def get_students():
     return frappe.get_list(
         "Student", 
-        fields=["name", "full_name", "progress", "average_score", "attendance_status", "health_status", "student_status", "date_of_birth", "gender", "email", "phone", "source", "occupation", "rating", "message_response", "creation"], 
+        fields=["name", "full_name", "student_image", "progress", "average_score", "attendance_status", "health_status", "student_status", "date_of_birth", "gender", "email", "phone", "source", "occupation", "rating", "message_response", "creation"],
         order_by="creation desc"
     )
 
@@ -436,77 +437,37 @@ def _create_lead_appointment(lead_id, appointment_date, purpose, appointment_tim
     return doc.name
 
 
-# Các stage hợp lệ để chuyển tới qua advance_lead_stage.
+# Các stage hợp lệ để chuyển tới.
 LEAD_STAGE_TARGETS = {"Consulting", "Testing", "Trial", "Enrolled", "Lost"}
 
 
-@frappe.whitelist()
-def advance_lead_stage(lead_id, to_status, payload=None):
-    """Chuyển lead sang stage mới VÀ tạo tác vụ theo sau — trong MỘT transaction.
+def _lead_step_from_status(status):
+    """Bước đang ghi nhận suy ra từ trạng thái hiện tại của lead."""
+    if status == "Testing":
+        return "Testing"
+    if status == "Trial":
+        return "Trial"
+    return "Consulting"
 
-    Mỗi request Frappe là một transaction: bất kỳ frappe.throw nào ở giữa sẽ
-    tự rollback toàn bộ (không tạo bản ghi mồ côi). KHÔNG nuốt exception, KHÔNG
-    gọi frappe.db.commit() giữa chừng.
 
-    payload (dict hoặc JSON string) theo từng stage:
-      Consulting: {appointment_date, appointment_time?, purpose?, contact_date?, notes?, next_follow_up?}
-      Testing:    {appointment_date?, appointment_time?, purpose?, test_date?, score?, recommended_course?}
-      Trial:      {class_id, enrollment_date?, list_price?, submit?, appointment_date?, appointment_time?, notes?}
-      Enrolled:   {}  -> _ensure_student_for_lead + status=Enrolled
-      Lost:       {lost_reason}
-    Trả về: {status, created:{...}, student?}
-    """
-    payload = _parse_payload(payload)
-    if to_status not in LEAD_STAGE_TARGETS:
-        frappe.throw(f"Trạng thái '{to_status}' không hợp lệ.")
-
-    lead = _get_doc_checked("Student Lead", lead_id, "write")
-    created = {}
-    result = {"status": to_status, "created": created}
-
-    if to_status == "Consulting":
-        if not payload.get("appointment_date"):
-            frappe.throw("Cần ngày hẹn để chuyển sang Tư vấn.")
-        created["appointment"] = _create_lead_appointment(
-            lead_id,
-            payload.get("appointment_date"),
-            payload.get("purpose") or "Tư vấn",
-            payload.get("appointment_time"),
-        )
-        if payload.get("notes"):
-            created["consultation_log"] = add_consultation_log(
-                lead_id,
-                payload.get("notes"),
-                payload.get("contact_date") or nowdate(),
-                payload.get("next_follow_up"),
-            )
-        lead.status = "Consulting"
-        lead.save()
-
-    elif to_status == "Testing":
+def _apply_lead_target(lead, target, payload, created):
+    """ONBOARDING khi lead BƯỚC VÀO một stage đích — set trạng thái + tạo bản ghi
+    cần thiết. Dùng chung cho record_lead_outcome và advance_lead_stage.
+    Mọi create đi qua _require_create; throw giữa chừng -> transaction rollback."""
+    lead_id = lead.name
+    if target == "Testing":
         if payload.get("appointment_date"):
             created["appointment"] = _create_lead_appointment(
-                lead_id,
-                payload.get("appointment_date"),
-                payload.get("purpose") or "Test đầu vào",
-                payload.get("appointment_time"),
-            )
-        if payload.get("score") not in (None, ""):
-            created["placement_test"] = add_placement_test(
-                lead_id,
-                payload.get("test_date") or nowdate(),
-                payload.get("score"),
-                payload.get("recommended_course"),
+                lead_id, payload.get("appointment_date"), "Test đầu vào", payload.get("appointment_time"),
             )
         lead.status = "Testing"
         lead.save()
 
-    elif to_status == "Trial":
+    elif target == "Trial":
         if not payload.get("class_id"):
             frappe.throw("Cần chọn lớp để ghi danh học thử.")
         student = _ensure_student_for_lead(lead)
         created["student"] = student.name
-        result["student"] = {"student_id": student.name, "student_name": student.full_name}
         created["enrollment"] = create_enrollment(
             student=student.name,
             class_id=payload.get("class_id"),
@@ -515,29 +476,35 @@ def advance_lead_stage(lead_id, to_status, payload=None):
             list_price=payload.get("list_price"),
             submit=int(payload.get("submit") or 0),
         )
-        if payload.get("appointment_date"):
-            created["appointment"] = _create_lead_appointment(
-                lead_id,
-                payload.get("appointment_date"),
-                payload.get("purpose") or "Học thử",
-                payload.get("appointment_time"),
-            )
-        if payload.get("notes"):
-            created["consultation_log"] = add_consultation_log(
-                lead_id,
-                payload.get("notes"),
-                payload.get("contact_date") or nowdate(),
-                payload.get("next_follow_up"),
-            )
         lead.status = "Trial"
         lead.save()
 
-    elif to_status == "Enrolled":
-        conv = convert_lead_to_student(lead_id)
-        created["student"] = conv["student_id"]
-        result["student"] = conv
+    elif target == "Enrolled":
+        if not payload.get("class_id"):
+            frappe.throw("Cần chọn lớp để nhập học chính thức.")
+        student = _ensure_student_for_lead(lead)
+        created["student"] = student.name
+        created["enrollment"] = create_enrollment(
+            student=student.name,
+            class_id=payload.get("class_id"),
+            enrollment_date=payload.get("enrollment_date") or nowdate(),
+            enrollment_type="Official",
+            list_price=payload.get("list_price"),
+            submit=1,
+        )
+        if lead.status != "Enrolled":
+            lead.status = "Enrolled"
+            lead.save()
 
-    elif to_status == "Lost":
+    elif target == "Consulting":
+        lead.status = "Consulting"
+        lead.save()
+
+    elif target == "Stay":
+        # Giữ nguyên stage (vd học thử cần thêm thời gian) — chỉ ghi nhận, không onboard lại.
+        pass
+
+    elif target == "Lost":
         reason = payload.get("lost_reason") or lead.get("lost_reason")
         if not reason:
             frappe.throw("Lead thất bại cần có lý do.")
@@ -545,7 +512,89 @@ def advance_lead_stage(lead_id, to_status, payload=None):
         lead.status = "Lost"
         lead.save()
 
-    return result
+    else:
+        frappe.throw(f"Trạng thái '{target}' không hợp lệ.")
+
+
+@frappe.whitelist()
+def record_lead_outcome(lead_id, payload=None):
+    """Ghi nhận KẾT QUẢ bước hiện tại + TỰ ĐỘNG chuyển sang bước tiếp theo — MỘT transaction.
+
+    payload (dict|JSON):
+      current_step?   : Consulting | Testing | Trial (mặc định suy từ lead.status)
+      next_action     : Testing | Trial | Enrolled | Consulting | Lost
+      # dữ liệu bước hiện tại
+      Consulting/Trial: {contact_date?, notes?, result?, next_follow_up?}
+      Testing         : {test_date?, score, level?, recommended_course?, test_notes?}
+      # dữ liệu bước sau (theo next_action)
+      Trial/Enrolled  : {class_id, enrollment_date?, list_price?}
+      Testing         : {appointment_date?, appointment_time?}
+      Lost            : {lost_reason}
+      appointment?    : tên Student Appointment -> đánh dấu Completed
+    Trả về: {status, created:{...}}
+    """
+    payload = _parse_payload(payload)
+    lead = _get_doc_checked("Student Lead", lead_id, "write")
+    current_step = payload.get("current_step") or _lead_step_from_status(lead.status)
+    next_action = payload.get("next_action")
+    if not next_action:
+        frappe.throw("Thiếu 'Bước tiếp theo'.")
+
+    created = {}
+
+    # 1) Ghi nhận bước hiện tại
+    if current_step == "Testing":
+        if payload.get("score") in (None, ""):
+            frappe.throw("Cần nhập điểm test đầu vào.")
+        created["placement_test"] = add_placement_test(
+            lead_id,
+            payload.get("test_date") or nowdate(),
+            payload.get("score"),
+            payload.get("recommended_course"),
+            payload.get("level"),
+            payload.get("test_notes"),
+        )
+    else:  # Consulting / Trial -> ghi nhật ký tư vấn (có kết quả đánh giá)
+        if payload.get("notes") or payload.get("result") or payload.get("next_follow_up"):
+            created["consultation_log"] = add_consultation_log(
+                lead_id,
+                payload.get("notes"),
+                payload.get("contact_date") or nowdate(),
+                payload.get("next_follow_up"),
+                payload.get("result"),
+            )
+
+    # Đánh dấu lịch hẹn liên quan là Hoàn thành (nếu ghi từ lịch hẹn)
+    if payload.get("appointment"):
+        appt = _get_doc_checked("Student Appointment", payload.get("appointment"), "write")
+        if appt.status == "Scheduled":
+            appt.status = "Completed"
+            appt.save()
+
+    # 2) Tự động chuyển sang bước tiếp theo
+    _apply_lead_target(lead, next_action, payload, created)
+
+    return {"status": lead.status, "created": created}
+
+
+@frappe.whitelist()
+def advance_lead_stage(lead_id, to_status, payload=None):
+    """Lối tắt chuyển thẳng một stage (kéo-thả). Ghi dữ liệu kèm nếu có rồi onboard."""
+    payload = _parse_payload(payload)
+    lead = _get_doc_checked("Student Lead", lead_id, "write")
+    created = {}
+    if to_status == "Consulting" and payload.get("notes"):
+        created["consultation_log"] = add_consultation_log(
+            lead_id, payload.get("notes"), payload.get("contact_date") or nowdate(),
+            payload.get("next_follow_up"), payload.get("result"),
+        )
+    elif to_status == "Testing" and payload.get("score") not in (None, ""):
+        created["placement_test"] = add_placement_test(
+            lead_id, payload.get("test_date") or nowdate(), payload.get("score"),
+            payload.get("recommended_course"), payload.get("level"), payload.get("test_notes"),
+        )
+    _apply_lead_target(lead, to_status, payload, created)
+    return {"status": lead.status, "created": created}
 
 
 @frappe.whitelist()
@@ -572,6 +621,37 @@ def get_appointments(lead_id):
 
 
 @frappe.whitelist()
+def get_all_appointments(status=None):
+    """Liệt kê toàn bộ Lịch hẹn (Student Appointment) kèm tên/SĐT lead."""
+    if not frappe.has_permission("Student Appointment", "read"):
+        frappe.throw("Bạn không có quyền xem lịch hẹn.", frappe.PermissionError)
+    filters = {}
+    if status:
+        filters["status"] = status
+    appts = frappe.get_list(
+        "Student Appointment",
+        filters=filters,
+        fields=["name", "lead", "appointment_date", "appointment_time", "purpose", "status", "creation"],
+        order_by="appointment_date desc, appointment_time desc",
+    )
+    lead_ids = list({a.lead for a in appts if a.lead})
+    lead_map = {}
+    if lead_ids:
+        for l in frappe.get_all(
+            "Student Lead", filters={"name": ["in", lead_ids]},
+            fields=["name", "lead_name", "phone", "lead_image", "status"],
+        ):
+            lead_map[l.name] = l
+    for a in appts:
+        info = lead_map.get(a.lead) or {}
+        a["lead_name"] = info.get("lead_name") or a.lead
+        a["lead_phone"] = info.get("phone")
+        a["lead_image"] = info.get("lead_image")
+        a["lead_status"] = info.get("status")
+    return appts
+
+
+@frappe.whitelist()
 def get_lead_timeline(lead_id):
     """Gộp Consultation Log + Placement Test + Student Appointment thành một dòng
     thời gian chuẩn hóa, sắp xếp giảm dần theo ngày."""
@@ -584,6 +664,7 @@ def get_lead_timeline(lead_id):
             "date": log.get("contact_date") or log.get("creation"),
             "title": "Ghi nhận tư vấn",
             "detail": log.get("notes"),
+            "result": log.get("result"),
             "status": None,
             "next_follow_up": log.get("next_follow_up"),
             "name": log.get("name"),
@@ -591,12 +672,19 @@ def get_lead_timeline(lead_id):
         })
 
     for test in get_placement_tests(lead_id):
+        detail = f"Điểm: {test.get('score')}"
+        if test.get("level"):
+            detail += f" · Trình độ: {test.get('level')}"
+        if test.get("recommended_course"):
+            detail += f" · Khóa gợi ý: {test.get('recommended_course')}"
+        if test.get("notes"):
+            detail += f"\n{test.get('notes')}"
         items.append({
             "kind": "placement",
             "date": test.get("test_date") or test.get("creation"),
             "title": "Test đầu vào",
-            "detail": f"Điểm: {test.get('score')}"
-                      + (f" · Khóa gợi ý: {test.get('recommended_course')}" if test.get("recommended_course") else ""),
+            "detail": detail,
+            "result": test.get("level"),
             "status": test.get("status"),
             "name": test.get("name"),
             "creation": test.get("creation"),
@@ -616,6 +704,131 @@ def get_lead_timeline(lead_id):
 
     items.sort(key=lambda x: (str(x.get("date") or ""), str(x.get("creation") or "")), reverse=True)
     return items
+
+
+# ===================================================================
+# Xuất / Nhập Excel + form mẫu cho Lead và Học viên
+# ===================================================================
+
+# (fieldname, nhãn cột) — đây cũng là cột của form mẫu & thứ tự đọc khi nhập.
+LEAD_IMPORT_FIELDS = [
+    ("lead_name", "Họ tên *"),
+    ("phone", "Điện thoại"),
+    ("email", "Email"),
+    ("source", "Nguồn (Website/Facebook/Hotline/Word of Mouth/Other)"),
+    ("date_of_birth", "Ngày sinh (YYYY-MM-DD)"),
+    ("gender", "Giới tính (Nam/Nữ/Khác)"),
+    ("occupation", "Nghề nghiệp"),
+    ("guardian_name", "Người giám hộ"),
+    ("guardian_phone", "SĐT người giám hộ"),
+]
+
+STUDENT_IMPORT_FIELDS = [
+    ("full_name", "Họ tên *"),
+    ("phone", "Điện thoại"),
+    ("email", "Email"),
+    ("date_of_birth", "Ngày sinh (YYYY-MM-DD)"),
+    ("gender", "Giới tính (Nam/Nữ/Khác)"),
+    ("source", "Nguồn"),
+    ("occupation", "Nghề nghiệp"),
+    ("student_status", "Trạng thái (Mới nhập học/Đang học/Bảo lưu/Đã tốt nghiệp/Nghỉ học)"),
+    ("health_status", "Tình trạng học tập (Đang học đều/Cần theo dõi/Cảnh báo/Khẩn cấp/Ngừng học)"),
+]
+
+
+def _send_xlsx(rows, filename):
+    """Trả file xlsx về trình duyệt (download)."""
+    from frappe.utils.xlsxutils import make_xlsx
+
+    xlsx = make_xlsx(rows, "Sheet1")
+    frappe.response["filename"] = filename
+    frappe.response["filecontent"] = xlsx.getvalue()
+    frappe.response["type"] = "binary"
+
+
+def _read_xlsx_rows(file_url):
+    from frappe.utils.xlsxutils import read_xlsx_file_from_attached_file
+
+    rows = read_xlsx_file_from_attached_file(file_url=file_url)
+    return rows or []
+
+
+def _import_rows(doctype, fields, file_url):
+    """Đọc xlsx (bỏ dòng tiêu đề) và tạo bản ghi theo thứ tự cột của form mẫu.
+    Mỗi dòng dùng một savepoint riêng: dòng lỗi không làm hỏng cả batch."""
+    _require_create(doctype)
+    rows = _read_xlsx_rows(file_url)
+    keys = [f for f, _ in fields]
+    name_key = keys[0]
+    created, errors = 0, []
+
+    for line, row in enumerate(rows[1:], start=2):  # bỏ dòng tiêu đề
+        values = {}
+        for idx, key in enumerate(keys):
+            cell = row[idx] if idx < len(row) else None
+            if cell is None:
+                continue
+            text = str(cell).strip()
+            if text:
+                values[key] = text
+        if not values.get(name_key):
+            continue  # bỏ dòng trống
+
+        sp = f"imp_{line}"
+        frappe.db.savepoint(sp)
+        try:
+            frappe.get_doc({"doctype": doctype, **values}).insert()
+            created += 1
+        except Exception as e:
+            frappe.db.rollback(save_point=sp)
+            errors.append(f"Dòng {line}: {str(e)}")
+
+    return {"created": created, "errors": errors, "total": max(len(rows) - 1, 0)}
+
+
+@frappe.whitelist()
+def download_lead_template():
+    _send_xlsx([[label for _, label in LEAD_IMPORT_FIELDS]], "mau-nhap-lead.xlsx")
+
+
+@frappe.whitelist()
+def export_leads():
+    if not frappe.has_permission("Student Lead", "read"):
+        frappe.throw("Bạn không có quyền xem danh sách lead.", frappe.PermissionError)
+    cols = [("name", "Mã lead")] + LEAD_IMPORT_FIELDS + [("status", "Trạng thái"), ("creation", "Ngày tạo")]
+    header = [label for _, label in cols]
+    rows = [header]
+    for l in get_leads():
+        rows.append([l.get(f) for f, _ in cols])
+    _send_xlsx(rows, "danh-sach-lead.xlsx")
+
+
+@frappe.whitelist()
+def import_leads(file_url):
+    return _import_rows("Student Lead", LEAD_IMPORT_FIELDS, file_url)
+
+
+@frappe.whitelist()
+def download_student_template():
+    _send_xlsx([[label for _, label in STUDENT_IMPORT_FIELDS]], "mau-nhap-hoc-vien.xlsx")
+
+
+@frappe.whitelist()
+def export_students():
+    if not frappe.has_permission("Student", "read"):
+        frappe.throw("Bạn không có quyền xem danh sách học viên.", frappe.PermissionError)
+    cols = [("name", "Mã học viên")] + STUDENT_IMPORT_FIELDS + [("creation", "Ngày tạo")]
+    header = [label for _, label in cols]
+    rows = [header]
+    for s in get_students():
+        rows.append([s.get(f) for f, _ in cols])
+    _send_xlsx(rows, "danh-sach-hoc-vien.xlsx")
+
+
+@frappe.whitelist()
+def import_students(file_url):
+    return _import_rows("Student", STUDENT_IMPORT_FIELDS, file_url)
+
 
 @frappe.whitelist()
 def get_teachers():
@@ -796,12 +1009,24 @@ def get_session_roster(class_session):
     )
     by_enr = {a.program_enrollment: a for a in existing}
 
+    student_ids = list({e.student for e in enrollments if e.student})
+    student_map = {}
+    if student_ids:
+        for s in frappe.get_all(
+            "Student", filters={"name": ["in", student_ids]},
+            fields=["name", "full_name", "student_image"],
+        ):
+            student_map[s.name] = s
+
     rows = []
     for e in enrollments:
         ex = by_enr.get(e.name)
+        s = student_map.get(e.student) or {}
         rows.append({
             "program_enrollment": e.name,
             "student": e.student,
+            "student_name": s.get("full_name") or e.student,
+            "student_image": s.get("student_image"),
             "status": ex.status if ex else "Present",
             "attendance_type": ex.attendance_type if ex else "Regular",
             "minutes_late": ex.minutes_late if ex else 0,
@@ -1056,18 +1281,19 @@ def get_consultation_logs(lead_id):
     return frappe.get_list(
         "Consultation Log",
         filters={"lead": lead_id},
-        fields=["name", "contact_date", "notes", "next_follow_up", "creation"],
+        fields=["name", "contact_date", "result", "notes", "next_follow_up", "creation"],
         order_by="contact_date desc, creation desc"
     )
 
 @frappe.whitelist()
-def add_consultation_log(lead_id, notes, contact_date, next_follow_up=None):
+def add_consultation_log(lead_id, notes, contact_date, next_follow_up=None, result=None):
     _get_doc_checked("Student Lead", lead_id, "write")
     _require_create("Consultation Log")
     doc = frappe.get_doc({
         "doctype": "Consultation Log",
         "lead": lead_id,
         "contact_date": contact_date,
+        "result": result or None,
         "notes": notes,
         "next_follow_up": next_follow_up or None
     })
@@ -1080,12 +1306,12 @@ def get_placement_tests(lead_id):
     return frappe.get_list(
         "Placement Test",
         filters={"lead": lead_id},
-        fields=["name", "test_date", "score", "recommended_course", "status", "creation"],
+        fields=["name", "test_date", "score", "level", "recommended_course", "notes", "status", "creation"],
         order_by="test_date desc, creation desc"
     )
 
 @frappe.whitelist()
-def add_placement_test(lead_id, test_date, score, recommended_course=None):
+def add_placement_test(lead_id, test_date, score, recommended_course=None, level=None, notes=None):
     _get_doc_checked("Student Lead", lead_id, "write")
     _require_create("Placement Test")
     doc = frappe.get_doc({
@@ -1093,7 +1319,9 @@ def add_placement_test(lead_id, test_date, score, recommended_course=None):
         "lead": lead_id,
         "test_date": test_date,
         "score": float(score),
+        "level": level or None,
         "recommended_course": recommended_course or None,
+        "notes": notes or None,
         "status": "Evaluated"
     })
     doc.insert()
@@ -1310,6 +1538,66 @@ def transfer_enrollment(program_enrollment, to_class, transfer_date=None, reason
 
 
 @frappe.whitelist()
+def get_refunds(status=None):
+    """Liệt kê yêu cầu hoàn phí (Fee Refund) kèm tên học viên — cho màn Tài chính."""
+    if not frappe.has_permission("Fee Refund", "read"):
+        frappe.throw("Bạn không có quyền xem hoàn phí.", frappe.PermissionError)
+    filters = {}
+    if status:
+        filters["status"] = status
+    rows = frappe.get_list(
+        "Fee Refund", filters=filters,
+        fields=["name", "student", "invoice_reference", "refund_amount", "refund_date", "reason", "status", "docstatus", "creation"],
+        order_by="creation desc",
+    )
+    for r in rows:
+        r["student_name"] = _student_name(r.student) if r.get("student") else None
+    return rows
+
+
+@frappe.whitelist()
+def approve_fee_refund(refund):
+    """Duyệt hoàn phí: Fee Refund Draft -> Completed (submit)."""
+    doc = _get_doc_checked("Fee Refund", refund, "submit")
+    if doc.docstatus != 0:
+        frappe.throw("Yêu cầu hoàn phí đã được xử lý.")
+    doc.status = "Completed"
+    doc.submit()
+    return {"name": doc.name, "status": doc.status, "docstatus": doc.docstatus}
+
+
+@frappe.whitelist()
+def reject_fee_refund(refund, reason=None):
+    """Từ chối hoàn phí: đánh dấu Cancelled (giữ bản ghi để truy vết)."""
+    doc = _get_doc_checked("Fee Refund", refund, "write")
+    if doc.docstatus != 0:
+        frappe.throw("Yêu cầu hoàn phí đã được xử lý.")
+    doc.status = "Cancelled"
+    if reason:
+        doc.reason = (doc.reason + " | " if doc.get("reason") else "") + f"Từ chối: {reason}"
+    doc.save()
+    return {"name": doc.name, "status": doc.status, "docstatus": doc.docstatus}
+
+
+SESSION_STATUS_TARGETS = {"Scheduled", "Cancelled"}
+
+
+@frappe.whitelist()
+def set_session_status(class_session, status, reason=None):
+    """Hủy/khôi phục lịch một buổi học (có kiểm soát). Không cho đụng buổi đã Completed/Locked."""
+    if status not in SESSION_STATUS_TARGETS:
+        frappe.throw(f"Trạng thái buổi '{status}' không hợp lệ.")
+    doc = _get_doc_checked("Class Session", class_session, "write")
+    if doc.session_status in ("Completed", "Locked"):
+        frappe.throw(f"Buổi học đã {doc.session_status}, không thể đổi trạng thái.")
+    doc.session_status = status
+    if reason and doc.meta.has_field("lesson_topic") and not doc.get("lesson_topic"):
+        doc.lesson_topic = reason
+    doc.save()
+    return {"name": doc.name, "session_status": doc.session_status}
+
+
+@frappe.whitelist()
 def get_my_context():
     """Xác định người dùng hiện tại là giáo viên/học viên (lấy từ session, không tin client)."""
     from edu.education_erp import permissions as perm
@@ -1356,7 +1644,7 @@ def get_my_student_overview():
         frappe.throw("Tài khoản hiện tại không gắn với hồ sơ học viên.")
     profile = frappe.db.get_value(
         "Student", s,
-        ["full_name", "progress", "attendance_rate", "average_score", "health_status"],
+        ["full_name", "student_image", "progress", "attendance_rate", "average_score", "health_status"],
         as_dict=True,
     )
     cids = perm.student_class_ids(s)
@@ -1764,7 +2052,7 @@ def get_student_profile(student):
     _get_doc_checked("Student", student, "read")
     profile = frappe.db.get_value(
         "Student", student,
-        ["name", "full_name", "student_status", "health_status", "date_of_birth",
+        ["name", "full_name", "student_image", "student_status", "health_status", "date_of_birth",
          "gender", "email", "phone", "source", "occupation", "progress",
          "attendance_rate", "average_score", "guardian"],
         as_dict=True,
@@ -1824,7 +2112,7 @@ def get_class_roster(class_id):
     for e in enrollments:
         s = frappe.db.get_value(
             "Student", e.student,
-            ["full_name", "attendance_rate", "average_score", "health_status"],
+            ["full_name", "student_image", "attendance_rate", "average_score", "health_status"],
             as_dict=True,
         ) or frappe._dict()
         invoices = frappe.get_list(
@@ -1838,6 +2126,7 @@ def get_class_roster(class_id):
             "enrollment": e.name,
             "student": e.student,
             "name": s.get("full_name") or e.student,
+            "student_image": s.get("student_image"),
             "attendance_rate": flt(s.get("attendance_rate")),
             "average_score": s.get("average_score"),
             "health_status": s.get("health_status"),
@@ -1910,6 +2199,7 @@ def get_invoice_detail(invoice):
         "name": inv.name,
         "student": inv.student,
         "student_name": _student_name(inv.student),
+        "student_image": frappe.db.get_value("Student", inv.student, "student_image") if inv.student else None,
         "program_enrollment": inv.program_enrollment,
         "posting_date": inv.posting_date,
         "due_date": inv.due_date,

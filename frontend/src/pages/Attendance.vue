@@ -16,7 +16,17 @@
         <option v-for="(s, i) in sessions" :key="s.name" :value="s.name">Buổi {{ i + 1 }} · {{ formatDate(s.session_date) }}</option>
       </select>
       <SkButton variant="secondary" size="sm" :disabled="!roster.length" @click="markAll('Present')">Có mặt tất cả</SkButton>
+      <template v-if="curSession">
+        <SkBadge v-bind="sesMeta(curSession.session_status)" />
+        <SkButton v-if="!['Completed', 'Cancelled', 'Locked'].includes(curSession.session_status)" size="sm" variant="ghost" left-icon="x" @click="sessAction('Cancelled')">Hủy buổi</SkButton>
+        <SkButton v-else-if="curSession.session_status === 'Cancelled'" size="sm" variant="ghost" left-icon="rotate-ccw" @click="sessAction('Scheduled')">Khôi phục</SkButton>
+      </template>
       <span class="toolbar__hint">{{ roster.length ? `${roster.length} học viên` : 'Chọn lớp và buổi để điểm danh' }}</span>
+    </div>
+
+    <div v-if="curSession" class="subbar">
+      <span class="subbar__l">Chủ đề buổi:</span>
+      <InlineCell doctype="Class Session" :name="curSession.name" field="lesson_topic" v-model="curSession.lesson_topic" placeholder="Chưa có chủ đề" />
     </div>
 
     <!-- body -->
@@ -27,11 +37,12 @@
 
       <div v-else class="roster">
         <div v-for="r in roster" :key="r.program_enrollment" class="att-row">
-          <SkAvatar :name="r.student_name" :size="38" />
+          <SkAvatar :name="r.student_name" :src="r.student_image" :size="38" />
           <div class="att-row__main">
             <div class="att-row__name">{{ r.student_name }}</div>
             <div class="att-row__code tnum">{{ r.student }}</div>
           </div>
+          <input v-if="r.status === 'Late'" v-model.number="r.minutes_late" type="number" min="0" class="att-late" placeholder="phút" title="Số phút đi muộn" />
           <div class="seg">
             <button v-for="o in OPTS" :key="o.value" class="seg__btn" :class="{ 'seg__btn--on': r.status === o.value }"
               :style="r.status === o.value ? { color: o.color, background: '#fff', boxShadow: '0 1px 3px rgba(180,80,120,0.18)' } : {}"
@@ -59,10 +70,13 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { call } from '../api'
 import { formatDate, formatTime } from '../utils/format'
+import { statusMeta } from '../utils/labels'
 import { toast } from '../utils/toast'
 import SkAvatar from '../components/ui/SkAvatar.vue'
 import SkButton from '../components/ui/SkButton.vue'
+import SkBadge from '../components/ui/SkBadge.vue'
 import SkState from '../components/ui/SkState.vue'
+import InlineCell from '../components/common/InlineCell.vue'
 
 const OPTS = [
   { value: 'Present', label: 'Có mặt', color: '#2f8a5d' },
@@ -79,6 +93,20 @@ const names = ref({})
 const loadingRoster = ref(false)
 const saving = ref(false)
 const completing = ref(false)
+
+const sesMeta = (s) => statusMeta('Class Session', 'session_status', s)
+const curSession = computed(() => sessions.value.find((x) => x.name === selectedSession.value) || null)
+
+async function sessAction(status) {
+  if (!curSession.value) return
+  try {
+    await call('set_session_status', { class_session: curSession.value.name, status })
+    curSession.value.session_status = status
+    toast.success(status === 'Cancelled' ? 'Đã hủy buổi' : 'Đã khôi phục buổi')
+  } catch (e) {
+    toast.error('Không đổi được trạng thái buổi', e?.messages?.[0] || e?.message || String(e))
+  }
+}
 
 const sessionLabel = computed(() => {
   const s = sessions.value.find((x) => x.name === selectedSession.value)
@@ -169,6 +197,11 @@ onMounted(load)
 .toolbar { height: 52px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 24px; border-bottom: 1px solid #f4dde5; background: #fffafb; }
 .field--sel { width: auto; min-width: 180px; appearance: none; height: 34px; }
 .toolbar__hint { margin-left: auto; font-size: 12.5px; color: #a98c98; }
+
+.subbar { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 24px; border-bottom: 1px solid #f6e3ea; background: #fffdfe; font-size: 13px; color: #3d2530; }
+.subbar__l { font-size: 12px; font-weight: 600; color: #a07c8a; }
+.att-late { width: 70px; height: 30px; border: 1px solid #ecd0da; border-radius: 7px; background: #fff; padding: 0 8px; font-size: 12.5px; color: #3d2530; outline: none; font-family: inherit; flex: none; }
+.att-late:focus { border-color: #d4567f; }
 
 .ws-body { flex: 1; overflow-y: auto; }
 .roster { padding: 14px 24px 24px; }

@@ -1,58 +1,52 @@
 <template>
   <teleport to="body">
+    <!-- Chat panel -->
     <transition name="fade">
-      <div v-if="isOpen" class="ai-overlay" @click="close">
-        <aside class="ai-drawer" @click.stop>
-          <!-- header -->
-          <div class="ai-head">
-            <div class="ai-logo">
-              <FeatherIcon name="zap" style="width:16px;height:16px;color:#fff;" />
-            </div>
-            <span class="ai-title">AI Assistant</span>
-            <button class="ai-x" aria-label="Đóng" @click="close">
-              <FeatherIcon name="x" style="width:18px;height:18px;" />
+      <div v-if="isOpen" class="aib-panel">
+        <div class="ai-head">
+          <div class="ai-logo">
+            <FeatherIcon name="zap" style="width:16px;height:16px;color:#fff;" />
+          </div>
+          <span class="ai-title">Trợ lý AI</span>
+          <button class="ai-x" aria-label="Đóng" @click="close">
+            <FeatherIcon name="x" style="width:18px;height:18px;" />
+          </button>
+        </div>
+
+        <div ref="scrollRef" class="ai-body sk-scroll">
+          <div class="ai-ctx">Ngữ cảnh: <b>{{ contextLabel }}</b></div>
+
+          <template v-for="(m, i) in messages" :key="i">
+            <div v-if="m.role === 'user'" class="ai-msg ai-msg--user">{{ m.content }}</div>
+            <div v-else class="ai-msg ai-msg--bot" v-html="format(m.content)" />
+          </template>
+
+          <div v-if="loading" class="ai-msg ai-msg--bot ai-typing">
+            <span class="ai-dot" /><span class="ai-dot" /><span class="ai-dot" />
+          </div>
+
+          <div v-if="!messages.length" class="ai-chips">
+            <button v-for="c in chips" :key="c" class="ai-chip" @click="quick(c)">{{ c }}</button>
+          </div>
+
+          <div class="ai-note">AI không tự thay đổi dữ liệu — mọi đề xuất cần bạn xác nhận.</div>
+        </div>
+
+        <div class="ai-foot">
+          <div class="ai-inputwrap">
+            <input v-model="input" class="ai-input" placeholder="Hỏi về học viên, lớp, công nợ…" @keydown.enter="send" />
+            <button class="ai-send" :disabled="!input.trim() || loading" @click="send">
+              <FeatherIcon name="send" style="width:15px;height:15px;" />
             </button>
           </div>
-
-          <!-- messages -->
-          <div ref="scrollRef" class="ai-body sk-scroll">
-            <div class="ai-ctx">
-              Ngữ cảnh: <b>{{ contextLabel }}</b>
-            </div>
-
-            <template v-for="(m, i) in messages" :key="i">
-              <div v-if="m.role === 'user'" class="ai-msg ai-msg--user">{{ m.content }}</div>
-              <div v-else class="ai-msg ai-msg--bot" v-html="format(m.content)" />
-            </template>
-
-            <div v-if="loading" class="ai-msg ai-msg--bot ai-typing">
-              <span class="ai-dot" /><span class="ai-dot" /><span class="ai-dot" />
-            </div>
-
-            <div v-if="!messages.length" class="ai-chips">
-              <button v-for="c in chips" :key="c" class="ai-chip" @click="quick(c)">{{ c }}</button>
-            </div>
-
-            <div class="ai-note">AI không tự thay đổi dữ liệu — mọi đề xuất cần bạn xác nhận.</div>
-          </div>
-
-          <!-- input -->
-          <div class="ai-foot">
-            <div class="ai-inputwrap">
-              <input
-                v-model="input"
-                class="ai-input"
-                placeholder="Hỏi về học viên, lớp, công nợ…"
-                @keydown.enter="send"
-              />
-              <button class="ai-send" :disabled="!input.trim() || loading" @click="send">
-                <FeatherIcon name="send" style="width:15px;height:15px;" />
-              </button>
-            </div>
-          </div>
-        </aside>
+        </div>
       </div>
     </transition>
+
+    <!-- Floating bubble -->
+    <button class="aib-fab" :class="{ 'aib-fab--open': isOpen }" :aria-label="isOpen ? 'Đóng trợ lý AI' : 'Mở trợ lý AI'" @click="toggle">
+      <FeatherIcon :name="isOpen ? 'x' : 'message-circle'" style="width:24px;height:24px;color:#fff;" />
+    </button>
   </teleport>
 </template>
 
@@ -81,11 +75,11 @@ Trả lời ngắn gọn, thân thiện, chuyên nghiệp bằng tiếng Việt.
 function open(ctx) {
   if (ctx) contextLabel.value = ctx
   isOpen.value = true
+  scrollBottom()
 }
-function close() {
-  isOpen.value = false
-}
-defineExpose({ open, close })
+function close() { isOpen.value = false }
+function toggle() { isOpen.value ? close() : open() }
+defineExpose({ open, close, toggle })
 
 function format(t) {
   if (!t) return ''
@@ -100,10 +94,7 @@ async function scrollBottom() {
   if (scrollRef.value) scrollRef.value.scrollTop = scrollRef.value.scrollHeight
 }
 
-function quick(c) {
-  input.value = c
-  send()
-}
+function quick(c) { input.value = c; send() }
 
 async function send() {
   const text = input.value.trim()
@@ -129,14 +120,34 @@ async function send() {
 </script>
 
 <style scoped>
-.ai-overlay { position: fixed; inset: 0; z-index: 65; display: flex; justify-content: flex-end; }
-.ai-drawer { width: 380px; max-width: 92%; height: 100%; display: flex; flex-direction: column; background: #fffdfe; border-left: 1px solid #f1dbe3; box-shadow: -8px 0 24px rgba(160, 60, 100, 0.12); animation: skpop 0.25s ease; }
-.ai-head { height: 56px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 18px; border-bottom: 1px solid #f1dbe3; }
+/* Floating action button — góc dưới bên phải */
+.aib-fab {
+  position: fixed; right: 22px; bottom: 22px; z-index: 70;
+  width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #e87aa3, #d4567f);
+  box-shadow: 0 8px 22px rgba(214, 85, 126, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.aib-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 12px 28px rgba(214, 85, 126, 0.5); }
+.aib-fab--open { background: linear-gradient(135deg, #d4567f, #b8456a); }
+
+/* Chat popup neo góc dưới phải, ngay trên FAB */
+.aib-panel {
+  position: fixed; right: 22px; bottom: 88px; z-index: 70;
+  width: 380px; max-width: calc(100vw - 36px);
+  height: 560px; max-height: calc(100vh - 120px);
+  display: flex; flex-direction: column;
+  background: #fffdfe; border: 1px solid #f1dbe3; border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(160, 60, 100, 0.28); overflow: hidden;
+  animation: skpop 0.2s ease;
+}
+.ai-head { height: 54px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid #f1dbe3; }
 .ai-logo { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #f7a8c4, #d6557e); display: flex; align-items: center; justify-content: center; }
 .ai-title { font-size: 15px; font-weight: 600; color: #3d2530; }
 .ai-x { margin-left: auto; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; background: none; border-radius: 7px; cursor: pointer; color: #b07e90; }
 .ai-x:hover { background: #fbe6ee; }
-.ai-body { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.ai-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .ai-ctx { font-size: 11.5px; color: #a98c98; background: #fdf2f6; border-radius: 8px; padding: 9px 12px; }
 .ai-ctx b { color: #b8456a; }
 .ai-msg { max-width: 90%; padding: 11px 14px; font-size: 13px; line-height: 1.55; }
@@ -150,10 +161,15 @@ async function send() {
 .ai-chip { text-align: left; border: 1px solid #f1d2de; background: #fff; border-radius: 9px; padding: 9px 12px; font-family: inherit; font-size: 12.5px; color: #7a5c68; cursor: pointer; }
 .ai-chip:hover { background: #fdf2f6; }
 .ai-note { font-size: 11px; color: #bd97a5; text-align: center; margin-top: auto; }
-.ai-foot { flex: none; padding: 14px 16px; border-top: 1px solid #f1dbe3; }
+.ai-foot { flex: none; padding: 12px 14px; border-top: 1px solid #f1dbe3; }
 .ai-inputwrap { display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 6px 0 14px; border-radius: 12px; background: #fdf2f6; border: 1px solid #f1d2de; }
 .ai-input { flex: 1; border: none; background: none; outline: none; font-family: inherit; font-size: 13px; color: #3d2530; }
 .ai-input::placeholder { color: #bd8d9c; }
 .ai-send { width: 30px; height: 30px; border: none; border-radius: 8px; background: linear-gradient(135deg, #e87aa3, #d4567f); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .ai-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 480px) {
+  .aib-panel { right: 12px; left: 12px; width: auto; bottom: 84px; }
+  .aib-fab { right: 16px; bottom: 16px; }
+}
 </style>

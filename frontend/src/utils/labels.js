@@ -23,11 +23,18 @@ export const STATUS_MAP = {
   // Student Lead.status (DB tiếng Anh)
   'Student Lead.status': {
     New: S('Mới', 'neutral'),
-    Consulting: S('Đang tư vấn', 'info'),
+    Consulting: S('Tư vấn', 'info'),
     Testing: S('Đang test đầu vào', 'info'),
     Trial: S('Học thử', 'warning'),
-    Enrolled: S('Đã ghi danh', 'success'),
+    Enrolled: S('Đã nhập học', 'success'),
     Lost: S('Thất bại', 'danger'),
+  },
+  // Student Appointment.status
+  'Student Appointment.status': {
+    Scheduled: S('Đã lên lịch', 'info'),
+    Completed: S('Hoàn thành', 'success'),
+    Cancelled: S('Đã hủy', 'danger'),
+    Rescheduled: S('Dời lịch', 'warning'),
   },
   // Class.status
   'Class.status': {

@@ -8,8 +8,11 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AiAssistPanel: typeof import('./src/components/common/AiAssistPanel.vue')['default']
     AIDrawer: typeof import('./src/components/AIDrawer.vue')['default']
     CommandPalette: typeof import('./src/components/CommandPalette.vue')['default']
+    ExcelTools: typeof import('./src/components/ExcelTools.vue')['default']
+    InlineCell: typeof import('./src/components/common/InlineCell.vue')['default']
     LeadDetailDrawer: typeof import('./src/components/admissions/LeadDetailDrawer.vue')['default']
     LeadStageModal: typeof import('./src/components/admissions/LeadStageModal.vue')['default']
     LeadTimeline: typeof import('./src/components/admissions/LeadTimeline.vue')['default']
@@ -24,5 +27,6 @@ declare module 'vue' {
     SkState: typeof import('./src/components/ui/SkState.vue')['default']
     SkStatTile: typeof import('./src/components/ui/SkStatTile.vue')['default']
     SkToaster: typeof import('./src/components/ui/SkToaster.vue')['default']
+    WorkflowModal: typeof import('./src/components/common/WorkflowModal.vue')['default']
   }
 }

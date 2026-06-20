@@ -73,6 +73,22 @@ export const db = {
   },
 }
 
+// URL đầy đủ của một phương thức whitelisted (dùng cho tải file/điều hướng GET).
+export function methodUrl(method) {
+  return `/api/method/${resolve(method)}`
+}
+
+// Kích hoạt tải file từ một endpoint trả binary (xlsx export / form mẫu).
+// Dùng cookie phiên hiện tại; server đặt tên file qua Content-Disposition.
+export function downloadViaUrl(method) {
+  const a = document.createElement('a')
+  a.href = methodUrl(method)
+  a.rel = 'noopener'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+}
+
 // Tải file lên qua endpoint chuẩn của Frappe (/api/method/upload_file).
 // Dùng fetch + FormData: PHẢI tự set CSRF header và KHÔNG set Content-Type
 // (trình duyệt tự thêm boundary multipart). Trả về File doc { name, file_url, ... }.
@@ -112,6 +128,9 @@ export async function uploadFile(file, { isPrivate = false, folder = 'Home', doc
 export const crm = {
   advanceStage(leadId, toStatus, payload = {}) {
     return call('advance_lead_stage', { lead_id: leadId, to_status: toStatus, payload })
+  },
+  recordOutcome(leadId, payload = {}) {
+    return call('record_lead_outcome', { lead_id: leadId, payload })
   },
   timeline(leadId) {
     return call('get_lead_timeline', { lead_id: leadId })

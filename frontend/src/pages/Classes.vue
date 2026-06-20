@@ -57,20 +57,26 @@
               <div>
                 <div class="block__title">Thông tin lớp</div>
                 <div class="info">
+                  <div class="info__c"><div class="info__l">Trạng thái</div><div class="info__v"><InlineCell doctype="Class" :name="selectedId" field="status" type="select" :options="CLASS_STATUS" :display="clsMeta(cur.status).label" v-model="cur.status" @saved="reloadClasses" /></div></div>
                   <div class="info__c"><div class="info__l">Khóa học</div><div class="info__v">{{ cur.course || '—' }}</div></div>
-                  <div class="info__c"><div class="info__l">Giáo viên chính</div><div class="info__v">{{ cur.teacher || '—' }}</div></div>
-                  <div class="info__c"><div class="info__l">Giáo viên thay thế</div><div class="info__v">{{ cur.substitute_teacher || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Giáo viên chính</div><div class="info__v"><InlineCell doctype="Class" :name="selectedId" field="teacher" type="select" :options="teacherOpts" :display="optLabel(teacherOpts, cur.teacher)" v-model="cur.teacher" @saved="reloadClasses" /></div></div>
+                  <div class="info__c"><div class="info__l">Giáo viên thay thế</div><div class="info__v"><InlineCell doctype="Class" :name="selectedId" field="substitute_teacher" type="select" :options="teacherOpts" :display="optLabel(teacherOpts, cur.substitute_teacher)" v-model="cur.substitute_teacher" /></div></div>
                   <div class="info__c"><div class="info__l">Lịch học</div><div class="info__v">{{ schedule }}</div></div>
-                  <div class="info__c"><div class="info__l">Phòng học</div><div class="info__v">{{ cur.classroom || '—' }}</div></div>
-                  <div class="info__c"><div class="info__l">Sĩ số</div><div class="info__v tnum">{{ roster.length }} / {{ cur.max_capacity || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Phòng học</div><div class="info__v"><InlineCell doctype="Class" :name="selectedId" field="classroom" v-model="cur.classroom" /></div></div>
+                  <div class="info__c"><div class="info__l">Sức chứa</div><div class="info__v tnum">{{ roster.length }} / <InlineCell doctype="Class" :name="selectedId" field="max_capacity" type="number" v-model="cur.max_capacity" /></div></div>
                   <div class="info__c"><div class="info__l">Khai giảng</div><div class="info__v">{{ formatDate(cur.start_date) }}</div></div>
                   <div class="info__c"><div class="info__l">Tổng số buổi</div><div class="info__v tnum">{{ cur.total_sessions || sessions.length }} buổi</div></div>
-                  <div class="info__c"><div class="info__l">Học phí chuẩn</div><div class="info__v tnum">{{ formatVND(cur.standard_fee) }}</div></div>
+                  <div class="info__c"><div class="info__l">Học phí chuẩn</div><div class="info__v tnum"><InlineCell doctype="Class" :name="selectedId" field="standard_fee" type="number" :display="formatVND(cur.standard_fee)" v-model="cur.standard_fee" /></div></div>
                 </div>
               </div>
               <div class="progcard">
                 <div class="progcard__top"><span class="progcard__label">Tiến độ khóa học</span><span class="progcard__pct tnum">{{ pct(cur.progress) }}</span></div>
                 <div class="progcard__bar"><span :style="{ width: pct(cur.progress) }" /></div>
+              </div>
+
+              <div>
+                <div class="block__title">Trợ lý AI ✨</div>
+                <AiAssistPanel :actions="CLASS_AI" :context="aiContext" />
               </div>
 
               <div class="flowgrid">
@@ -127,7 +133,7 @@
                   <tbody>
                     <tr v-if="!roster.length"><td colspan="8" class="muted" style="padding:16px;">Lớp chưa có học viên.</td></tr>
                     <tr v-for="r in roster" :key="r.student">
-                      <td><div class="cell-av"><SkAvatar :name="r.name" :size="32" /><span class="tbl__name">{{ r.name }}</span></div></td>
+                      <td><div class="cell-av"><SkAvatar :name="r.name" :src="r.student_image" :size="32" /><span class="tbl__name">{{ r.name }}</span></div></td>
                       <td class="tbl__sub tnum">{{ r.student }}</td>
                       <td><SkBadge v-bind="enrMeta(r.enrollment_status)" /></td>
                       <td class="tbl__name tnum" style="text-align:right;">{{ formatVND(r.net_fee) }}</td>
@@ -155,10 +161,14 @@
                 <div v-for="(s, i) in sessions" :key="s.name" class="sess__row" :class="{ 'sess__row--today': isToday(s.session_date) }">
                   <div class="sess__no">Buổi {{ i + 1 }}</div>
                   <div class="sess__main">
-                    <div class="sess__topic">{{ s.lesson_topic || 'Chưa có chủ đề' }}</div>
+                    <div class="sess__topic"><InlineCell doctype="Class Session" :name="s.name" field="lesson_topic" v-model="s.lesson_topic" placeholder="Chưa có chủ đề" /></div>
                     <div class="sess__date tnum">{{ formatDate(s.session_date) }} · {{ formatTime(s.start_time) }}</div>
                   </div>
                   <SkBadge v-bind="sesMeta(s.session_status)" />
+                  <div class="sess__act">
+                    <SkButton v-if="!['Completed', 'Cancelled', 'Locked'].includes(s.session_status)" size="sm" variant="ghost" left-icon="x" @click="sessAction(s, 'Cancelled')">Hủy</SkButton>
+                    <SkButton v-else-if="s.session_status === 'Cancelled'" size="sm" variant="ghost" left-icon="rotate-ccw" @click="sessAction(s, 'Scheduled')">Khôi phục</SkButton>
+                  </div>
                 </div>
               </div>
             </div>
@@ -307,6 +317,8 @@ import SkBadge from '../components/ui/SkBadge.vue'
 import SkButton from '../components/ui/SkButton.vue'
 import SkModal from '../components/ui/SkModal.vue'
 import SkState from '../components/ui/SkState.vue'
+import InlineCell from '../components/common/InlineCell.vue'
+import AiAssistPanel from '../components/common/AiAssistPanel.vue'
 
 const TABS = [
   { id: 'overview', label: 'Tổng quan' },
@@ -333,6 +345,21 @@ const teacherOptions = ref([])
 const studentOptions = ref([])
 const classForm = ref(defaultClassForm())
 const enrollmentForm = ref(defaultEnrollmentForm())
+
+const CLASS_STATUS = ['Upcoming', 'Ongoing', 'Completed', 'Closed']
+const CLASS_AI = [
+  { label: 'Nhận xét tiến độ lớp', icon: 'trending-up', prompt: 'Nhận xét ngắn gọn tiến độ & chuyên cần của lớp này, nêu điểm cần lưu ý.' },
+  { label: 'Gợi ý hành động', icon: 'compass', prompt: 'Đề xuất 2-3 hành động cho giáo vụ với lớp này (sĩ số, chuyên cần, học phí).' },
+]
+const teacherOpts = computed(() => teacherOptions.value.map((t) => ({ value: t.name, label: t.teacher_name || t.name })))
+const optLabel = (opts, val) => { const o = opts.find((x) => x.value === val); return o ? o.label : (val || '') }
+const aiContext = computed(() => [
+  `Lớp: ${cur.class_name || selectedId.value} (${cur.course || ''})`,
+  `Trạng thái: ${cur.status || ''}`,
+  `Sĩ số: ${roster.value.length}/${cur.max_capacity || '?'}`,
+  `Tiến độ: ${pct(cur.progress)} · ${completedSessions.value}/${sessions.value.length} buổi`,
+  `Công nợ lớp: ${formatVND(feeStats.value.outstanding)}`,
+].join('\n'))
 
 const clsMeta = (s) => statusMeta('Class', 'status', s)
 const sesMeta = (s) => statusMeta('Class Session', 'session_status', s)
@@ -499,6 +526,19 @@ async function generateSessions() {
     toast.error('Không sinh được lịch', e?.messages?.[0] || e?.message || String(e))
   } finally {
     generatingSessions.value = false
+  }
+}
+
+async function reloadClasses() {
+  classes.value = (await call('get_classes')) || classes.value
+}
+async function sessAction(s, status) {
+  try {
+    await call('set_session_status', { class_session: s.name, status })
+    s.session_status = status
+    toast.success(status === 'Cancelled' ? 'Đã hủy buổi' : 'Đã khôi phục buổi')
+  } catch (e) {
+    toast.error('Không đổi được trạng thái buổi', e?.messages?.[0] || e?.message || String(e))
   }
 }
 

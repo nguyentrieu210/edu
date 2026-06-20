@@ -11,6 +11,7 @@ export const NAV_SECTIONS = [
     label: 'Tuyển sinh & học viên',
     items: [
       { label: 'Tuyển sinh', icon: 'user-plus', path: '/admissions' },
+      { label: 'Lịch hẹn', icon: 'clock', path: '/appointments' },
       { label: 'Học viên', icon: 'users', path: '/students' },
     ],
   },
@@ -48,6 +49,7 @@ export const NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items)
 const routes = [
   { path: '/', name: 'Dashboard', component: () => import('./pages/Dashboard.vue') },
   { path: '/admissions', name: 'Admissions', component: () => import('./pages/Admissions.vue') },
+  { path: '/appointments', name: 'Appointments', component: () => import('./pages/Appointments.vue') },
   { path: '/students', name: 'Students', component: () => import('./pages/Students.vue') },
   { path: '/classes', name: 'Classes', component: () => import('./pages/Classes.vue') },
   { path: '/attendance', name: 'Attendance', component: () => import('./pages/Attendance.vue') },

@@ -6,7 +6,7 @@
     <div v-else class="phone sk-anim-pop">
       <div class="ph-head">
         <div class="ph-head__top">
-          <SkAvatar :name="name" :size="46" />
+          <SkAvatar :name="name" :src="p.student_image" :size="46" />
           <div>
             <div class="ph-head__hi">Xin chào,</div>
             <div class="ph-head__name font-display">{{ name }}</div>

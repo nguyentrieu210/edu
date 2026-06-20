@@ -4,6 +4,19 @@
       <span class="ws-head__title">Tuyển sinh · CRM Pipeline</span>
       <div class="ws-head__actions">
         <SkSegmented v-model="view" :options="[{label:'Kanban',value:'kanban'},{label:'Danh sách',value:'list'}]" />
+        <label class="period-wrap" title="Lọc theo ngày tạo lead">
+          <span class="period-cap">Lead mới</span>
+          <select v-model="period" class="period-sel">
+            <option v-for="p in PERIODS" :key="p.value" :value="p.value">{{ p.label }}</option>
+          </select>
+        </label>
+        <ExcelTools
+          label="lead"
+          export-method="export_leads"
+          template-method="download_lead_template"
+          import-method="import_leads"
+          @imported="load"
+        />
         <SkButton variant="solid" leftIcon="plus" @click="openLead">Thêm lead</SkButton>
       </div>
     </header>
@@ -20,12 +33,12 @@
           :key="col.status"
           class="kan-col"
           :class="{ 'kan-col--over': dragOver === col.status }"
+          :style="{ '--col': col.dot, '--tint': TINTS[col.status] || '#fafafa' }"
           @dragover.prevent="dragOver = col.status"
           @dragleave="onColLeave(col.status)"
           @drop="onDrop(col.status)"
         >
           <div class="kan-col__head">
-            <span class="dot" :style="{ background: col.dot }" />
             <span class="kan-col__title">{{ col.label }}</span>
             <span class="kan-col__count">{{ col.cards.length }}</span>
           </div>
@@ -41,7 +54,9 @@
               @click="openDetail(c)"
             >
               <div class="kan-card__top">
-                <SkAvatar :name="c.lead_name" :src="c.lead_image" :size="30" />
+                <SkAvatar :name="c.lead_name" :src="c.lead_image" :size="30"
+                  editable upload-doctype="Student Lead" :upload-name="c.name" upload-field="lead_image"
+                  @update:src="c.lead_image = $event" />
                 <span class="kan-card__name">{{ c.lead_name }}</span>
               </div>
               <div class="kan-card__interest">{{ c.occupation || c.email || c.phone || '—' }}</div>
@@ -64,10 +79,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="l in leads" :key="l.name">
+            <tr v-for="l in visibleLeads" :key="l.name">
               <td class="tbl__name" @click="openDetail(l)">
                 <div class="tbl__id">
-                  <SkAvatar :name="l.lead_name" :src="l.lead_image" :size="26" />
+                  <SkAvatar :name="l.lead_name" :src="l.lead_image" :size="26"
+                    editable upload-doctype="Student Lead" :upload-name="l.name" upload-field="lead_image"
+                    @update:src="l.lead_image = $event" @click.stop />
                   <span>{{ l.lead_name }}</span>
                 </div>
               </td>
@@ -211,8 +228,8 @@
       </template>
     </SkModal>
 
-    <!-- Stage transition (kanban/list) -->
-    <LeadStageModal v-model="stageOpen" :lead="stageLead" :to-status="stageTarget" @done="onStageDone" />
+    <!-- Ghi nhận kết quả & chuyển bước (kanban/list) -->
+    <LeadStageModal v-model="stageOpen" :lead="stageLead" :preset-action="stagePreset" @done="onStageDone" />
 
     <!-- Detail drawer -->
     <LeadDetailDrawer v-model="detailOpen" :lead="selectedLead" @changed="onDrawerChanged" />
@@ -224,6 +241,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
 import { call, db, crm, uploadFile } from '../api'
 import { formatDate } from '../utils/format'
+import { PERIODS, inPeriod } from '../utils/period'
 import { toast } from '../utils/toast'
 import { STAGES, stageLabel } from '../components/admissions/stages'
 import SkButton from '../components/ui/SkButton.vue'
@@ -233,21 +251,31 @@ import SkSegmented from '../components/ui/SkSegmented.vue'
 import SkState from '../components/ui/SkState.vue'
 import LeadStageModal from '../components/admissions/LeadStageModal.vue'
 import LeadDetailDrawer from '../components/admissions/LeadDetailDrawer.vue'
+import ExcelTools from '../components/ExcelTools.vue'
 
 const loading = ref(true)
 const error = ref('')
 const leads = ref([])
 const view = ref('kanban')
+const period = ref('all')
+
+// Lọc theo kỳ (ngày tạo) — áp cho cả Kanban lẫn Danh sách.
+const visibleLeads = computed(() => leads.value.filter((l) => inPeriod(l.creation, period.value)))
 
 const SOURCES = ['Website', 'Facebook', 'Hotline', 'Word of Mouth', 'Other']
 const COLS = [...STAGES, { status: 'Lost', dot: '#c98a9a' }]
 const ALL_STATUSES = COLS.map((c) => c.status)
+// Nền tint nhạt cho từng cột (khác màu theo stage).
+const TINTS = {
+  New: '#f6effa', Consulting: '#eef2fa', Testing: '#fdf5ea',
+  Trial: '#fdeef2', Enrolled: '#edf7f1', Lost: '#fbeef0',
+}
 
 const columns = computed(() =>
   COLS.map((c) => ({
     ...c,
     label: stageLabel(c.status),
-    cards: leads.value.filter((l) => l.status === c.status),
+    cards: visibleLeads.value.filter((l) => l.status === c.status),
   })),
 )
 
@@ -265,13 +293,13 @@ async function onDrawerChanged() {
   if (keep) selectedLead.value = leads.value.find((l) => l.name === keep) || selectedLead.value
 }
 
-/* ---------- Stage transitions ---------- */
+/* ---------- Ghi nhận kết quả & chuyển bước ---------- */
 const stageOpen = ref(false)
 const stageLead = ref(null)
-const stageTarget = ref('')
-function openStageFor(lead, status) {
+const stagePreset = ref('')
+function openStageFor(lead, presetAction = '') {
   stageLead.value = lead
-  stageTarget.value = status
+  stagePreset.value = presetAction
   stageOpen.value = true
 }
 async function onStageDone() {
@@ -484,9 +512,11 @@ async function saveLead() {
   savingLead.value = true
   try {
     const res = await db.insert({ doctype: 'Student Lead', ...cleanPayload(leadForm.value) })
-    // Gắn các tài liệu đã tải vào lead vừa tạo.
-    for (const d of docFiles.value) {
-      try { await crm.attachFile(d.file_url, res.name) } catch { /* bỏ qua lỗi đính kèm lẻ */ }
+    // Gắn avatar + tài liệu đã tải vào lead vừa tạo (tránh file mồ côi / mất sau refresh).
+    const toAttach = [...docFiles.value.map((d) => d.file_url)]
+    if (leadForm.value.lead_image) toAttach.push(leadForm.value.lead_image)
+    for (const url of toAttach) {
+      try { await crm.attachFile(url, res.name) } catch { /* bỏ qua lỗi đính kèm lẻ */ }
     }
     toast.success('Đã thêm lead')
     leadOpen.value = false
@@ -517,17 +547,20 @@ onMounted(load)
 .ws-head { height: 56px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #f1dbe3; }
 .ws-head__title { font-size: 16px; font-weight: 600; color: #3d2530; }
 .ws-head__actions { margin-left: auto; min-width: 0; display: flex; gap: 8px; align-items: center; }
+.period-wrap { display: inline-flex; align-items: center; gap: 6px; }
+.period-cap { font-size: 11.5px; font-weight: 600; color: #a07c8a; white-space: nowrap; }
+.period-sel { height: 34px; border: 1px solid #ecd0da; border-radius: 8px; background: #fff; padding: 0 10px; font-size: 12.5px; color: #7a5c68; font-family: inherit; cursor: pointer; outline: none; }
+.period-sel:focus { border-color: #d4567f; }
 .ws-body { flex: 1; min-height: 0; overflow: auto; padding: 20px 24px; }
 
-.kanban { display: grid; grid-template-columns: repeat(6, minmax(170px, 1fr)); gap: 14px; align-items: stretch; min-width: 0; height: 100%; min-height: 0; }
-.kan-col { min-width: 0; display: flex; flex-direction: column; min-height: 0; border-radius: 10px; transition: background 0.12s ease, box-shadow 0.12s ease; }
-.kan-col--over { background: #fdf0f5; box-shadow: inset 0 0 0 2px #ecbcce; }
-.kan-col__head { display: flex; align-items: center; gap: 8px; padding: 6px 6px 10px; }
-.kan-col__title { min-width: 0; font-size: 13px; font-weight: 600; color: #4a2230; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kan-col__count { font-size: 11px; color: #bd97a5; }
-.kan-col__body { flex: 1; min-height: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 0 4px 6px; }
+.kanban { display: grid; grid-template-columns: repeat(6, minmax(180px, 1fr)); gap: 14px; align-items: stretch; min-width: 0; height: 100%; min-height: 0; }
+.kan-col { min-width: 0; display: flex; flex-direction: column; min-height: 0; background: var(--tint); border: 1px solid #f1dbe3; border-top: 3px solid var(--col); border-radius: 12px; overflow: hidden; transition: box-shadow 0.12s ease; }
+.kan-col--over { box-shadow: inset 0 0 0 2px var(--col); }
+.kan-col__head { flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #f4dde5; background: rgba(255, 255, 255, 0.55); }
+.kan-col__title { min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--col); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-transform: uppercase; letter-spacing: 0.02em; }
+.kan-col__count { margin-left: auto; flex: none; font-size: 11px; font-weight: 700; color: #fff; background: var(--col); border-radius: 999px; padding: 1px 8px; min-width: 22px; text-align: center; }
+.kan-col__body { flex: 1; min-height: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
 .kan-col__empty { font-size: 12px; color: #cbb0bb; text-align: center; padding: 10px 0; }
-.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 
 .kan-card { background: #fff; border: 1px solid #f3d9e1; border-radius: 10px; padding: 12px 13px; cursor: grab; box-shadow: 0 1px 2px rgba(180, 80, 120, 0.06); }
 .kan-card:hover { border-color: #ecbcce; box-shadow: 0 3px 10px rgba(180, 80, 120, 0.12); }

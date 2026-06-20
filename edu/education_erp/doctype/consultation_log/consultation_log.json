@@ -6,6 +6,7 @@
  "field_order": [
   "lead",
   "contact_date",
+  "result",
   "notes",
   "next_follow_up"
  ],
@@ -26,6 +27,13 @@
    "reqd": 1
   },
   {
+   "fieldname": "result",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "K\u1ebft qu\u1ea3 \u0111\u00e1nh gi\u00e1 t\u01b0 v\u1ea5n",
+   "options": "\nTi\u1ec1m n\u0103ng cao\nTi\u1ec1m n\u0103ng trung b\u00ecnh\nC\u1ea7n theo d\u00f5i th\u00eam\nTi\u1ec1m n\u0103ng th\u1ea5p\nKh\u00f4ng quan t\u00e2m"
+  },
+  {
    "fieldname": "notes",
    "fieldtype": "Text Editor",
    "label": "N\u1ed9i dung trao \u0111\u1ed5i"
@@ -38,7 +46,7 @@
   }
  ],
  "links": [],
- "modified": "2026-06-19 02:50:11.601934",
+ "modified": "2026-06-20 09:00:00.000000",
  "modified_by": "Administrator",
  "module": "Education ERP",
  "name": "Consultation Log",

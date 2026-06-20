@@ -8,6 +8,9 @@
       </div>
       <div class="ctx__tools">
         <SkSegmented v-model="filter" :options="['Tất cả', 'Chưa thu', 'Quá hạn', 'Đã thu']" />
+        <SkButton size="sm" variant="secondary" left-icon="corner-up-left" @click="openRefunds">
+          Hoàn phí<template v-if="pendingRefunds"> ({{ pendingRefunds }})</template>
+        </SkButton>
       </div>
       <div class="ctx__list sk-scroll">
         <SkState v-if="loading" state="loading" />
@@ -45,7 +48,7 @@
           <SkState v-if="detailLoading" state="loading" />
           <div v-else class="dtl__inner">
             <div class="who">
-              <SkAvatar :name="cur.student_name" :size="46" />
+              <SkAvatar :name="cur.student_name" :src="cur.student_image" :size="46" />
               <div>
                 <div class="who__name">{{ cur.student_name }}</div>
                 <div class="who__sub">{{ cur.program_enrollment || '—' }}</div>
@@ -73,6 +76,11 @@
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            <div>
+              <div class="block__title">Trợ lý AI ✨</div>
+              <AiAssistPanel :actions="FINANCE_AI" :context="aiContext" />
             </div>
 
             <div>
@@ -115,6 +123,31 @@
         <SkButton variant="solid" :loading="paying" @click="submitPay">Xác nhận thu</SkButton>
       </template>
     </SkModal>
+
+    <!-- HOÀN PHÍ MODAL -->
+    <SkModal v-model="refundOpen" title="Yêu cầu hoàn phí" width="680px">
+      <div v-if="!refunds.length" class="nopay">Chưa có yêu cầu hoàn phí nào.</div>
+      <div v-else class="tblwrap">
+        <table class="tbl">
+          <thead><tr><th>Học viên</th><th>Hóa đơn</th><th style="text-align:right;">Số tiền</th><th>Lý do</th><th>Trạng thái</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="r in refunds" :key="r.name">
+              <td class="tbl__name">{{ r.student_name || r.student }}</td>
+              <td class="tbl__name tnum">{{ r.invoice_reference || '—' }}</td>
+              <td class="tbl__name tnum" style="text-align:right;">{{ formatVND(r.refund_amount) }}</td>
+              <td class="tbl__sub">{{ r.reason || '—' }}</td>
+              <td><SkBadge v-bind="refundMeta(r)" /></td>
+              <td style="text-align:right; white-space:nowrap;">
+                <template v-if="r.docstatus === 0 && r.status === 'Draft'">
+                  <SkButton size="sm" variant="ghost" left-icon="check" :loading="refundBusy === r.name" @click="approveRefund(r)">Duyệt</SkButton>
+                  <SkButton size="sm" variant="ghost" left-icon="x" :loading="refundBusy === r.name" @click="rejectRefund(r)">Từ chối</SkButton>
+                </template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </SkModal>
   </div>
 </template>
 
@@ -131,6 +164,7 @@ import SkSegmented from '../components/ui/SkSegmented.vue'
 import SkStatTile from '../components/ui/SkStatTile.vue'
 import SkState from '../components/ui/SkState.vue'
 import SkModal from '../components/ui/SkModal.vue'
+import AiAssistPanel from '../components/common/AiAssistPanel.vue'
 
 const loading = ref(true)
 const invoices = ref([])
@@ -146,6 +180,59 @@ const pay = reactive({ amount: 0, method: 'Cash', date: new Date().toISOString()
 const METHODS = { Cash: 'Tiền mặt', 'Bank Transfer': 'Chuyển khoản', Card: 'Thẻ', Other: 'Khác' }
 const methodLabel = (m) => METHODS[m] || m || '—'
 const paid = computed(() => (Number(cur.total_amount) || 0) - (Number(cur.outstanding_amount) || 0))
+
+/* ---- Trợ lý AI nhắc nợ ---- */
+const FINANCE_AI = [
+  { label: 'Soạn tin nhắc nợ', icon: 'message-square', prompt: 'Soạn một tin nhắn nhắc đóng học phí lịch sự, ngắn gọn cho phụ huynh/học viên dựa trên hóa đơn này.' },
+  { label: 'Tóm tắt công nợ', icon: 'file-text', prompt: 'Tóm tắt tình trạng công nợ của hóa đơn này và đề xuất bước xử lý.' },
+]
+const aiContext = computed(() => [
+  `Hóa đơn: ${cur.name || ''} · Học viên: ${cur.student_name || ''}`,
+  `Tổng: ${formatVND(cur.total_amount)} · Đã thu: ${formatVND(paid.value)} · Còn nợ: ${formatVND(cur.outstanding_amount)}`,
+  `Hạn thu: ${formatDate(cur.due_date)} · Trạng thái: ${cur.status || ''}`,
+].join('\n'))
+
+/* ---- Hoàn phí (duyệt/từ chối) ---- */
+const refundOpen = ref(false)
+const refunds = ref([])
+const refundBusy = ref('')
+const pendingRefunds = computed(() => refunds.value.filter((r) => r.docstatus === 0 && r.status === 'Draft').length)
+const refundMeta = (r) => {
+  if (r.docstatus === 1) return { label: 'Đã duyệt', variant: 'success' }
+  if (r.status === 'Cancelled') return { label: 'Từ chối', variant: 'danger' }
+  return { label: 'Chờ duyệt', variant: 'warning' }
+}
+async function loadRefunds() {
+  try { refunds.value = (await call('get_refunds')) || [] } catch { refunds.value = [] }
+}
+function openRefunds() {
+  loadRefunds()
+  refundOpen.value = true
+}
+async function approveRefund(r) {
+  refundBusy.value = r.name
+  try {
+    await call('approve_fee_refund', { refund: r.name })
+    toast.success('Đã duyệt hoàn phí')
+    await loadRefunds()
+  } catch (e) {
+    toast.error('Không duyệt được', e?.messages?.[0] || e?.message || String(e))
+  } finally {
+    refundBusy.value = ''
+  }
+}
+async function rejectRefund(r) {
+  refundBusy.value = r.name
+  try {
+    await call('reject_fee_refund', { refund: r.name })
+    toast.success('Đã từ chối hoàn phí')
+    await loadRefunds()
+  } catch (e) {
+    toast.error('Không từ chối được', e?.messages?.[0] || e?.message || String(e))
+  } finally {
+    refundBusy.value = ''
+  }
+}
 
 function invMeta(i) {
   if (isOverdue(i.due_date, i.outstanding_amount)) return statusMeta('Fee Invoice', 'status', 'Overdue')
@@ -208,6 +295,7 @@ async function load(reselect = true) {
   loading.value = true
   try {
     invoices.value = (await call('get_invoices')) || []
+    loadRefunds()
     if (reselect && invoices.value.length) select(invoices.value[0].name)
   } finally {
     loading.value = false

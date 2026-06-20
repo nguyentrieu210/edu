@@ -1,21 +1,33 @@
 <template>
   <div class="sk-app">
-    <!-- ===================== PRIMARY SIDEBAR ===================== -->
-    <aside class="sk-side">
+    <!-- ===================== TOP HEADER ===================== -->
+    <header class="sk-top">
+      <button class="sk-search sk-search--top" @click="palette?.open()">
+        <FeatherIcon name="search" style="width:15px;height:15px;color:#bd8d9c;" />
+        <span>Tìm kiếm học viên, lớp, hóa đơn…</span>
+        <span class="sk-search__kbd">⌘K</span>
+      </button>
+    </header>
+
+    <div class="sk-main">
+      <!-- ===================== PRIMARY SIDEBAR ===================== -->
+      <aside class="sk-side">
       <!-- brand -->
       <div class="sk-brand">
         <div class="sk-brand__logo">
-          <svg width="24" height="24" viewBox="0 0 24 24">
-            <g fill="#fff" stroke="none">
-              <circle cx="12" cy="6" r="3.1" /><circle cx="17.6" cy="10.1" r="3.1" />
-              <circle cx="15.4" cy="16.8" r="3.1" /><circle cx="8.6" cy="16.8" r="3.1" />
-              <circle cx="6.4" cy="10.1" r="3.1" />
+          <svg width="26" height="26" viewBox="0 0 64 64">
+            <g fill="#fff">
+              <path d="M32 13 C28 18 28 26 32 30 C36 26 36 18 32 13Z" transform="rotate(0 32 32)" />
+              <path d="M32 13 C28 18 28 26 32 30 C36 26 36 18 32 13Z" transform="rotate(72 32 32)" />
+              <path d="M32 13 C28 18 28 26 32 30 C36 26 36 18 32 13Z" transform="rotate(144 32 32)" />
+              <path d="M32 13 C28 18 28 26 32 30 C36 26 36 18 32 13Z" transform="rotate(216 32 32)" />
+              <path d="M32 13 C28 18 28 26 32 30 C36 26 36 18 32 13Z" transform="rotate(288 32 32)" />
             </g>
-            <circle cx="12" cy="11.9" r="2.3" fill="#f7a8c4" />
+            <circle cx="32" cy="32" r="4.4" fill="#ffd98e" />
           </svg>
         </div>
         <div class="sk-brand__txt">
-          <div class="sk-brand__name font-display">IKE</div>
+          <div class="sk-brand__name font-display">IKE Ohashi</div>
           <div class="sk-brand__sub">日本語 · Education ERP</div>
         </div>
       </div>
@@ -23,11 +35,6 @@
       <!-- quick actions -->
       <div class="sk-quick">
         <SkButton variant="solid" block left-icon="plus">Tạo mới</SkButton>
-        <button class="sk-search" @click="palette?.open()">
-          <FeatherIcon name="search" style="width:15px;height:15px;color:#bd8d9c;" />
-          <span>Tìm kiếm</span>
-          <span class="sk-search__kbd">⌘K</span>
-        </button>
       </div>
 
       <!-- nav -->
@@ -46,11 +53,6 @@
             <span v-if="item.badge" class="sk-nav__badge">{{ item.badge }}</span>
           </router-link>
         </template>
-
-        <button class="sk-nav__item sk-nav__ai" @click="aiDrawer?.open()">
-          <FeatherIcon name="zap" style="width:18px;height:18px;" />
-          <span>AI Assistant</span>
-        </button>
       </nav>
 
       <!-- user -->
@@ -64,14 +66,15 @@
           <FeatherIcon name="settings" style="width:17px;height:17px;" />
         </button>
       </div>
-    </aside>
+      </aside>
 
-    <!-- ===================== WORKSPACE ===================== -->
-    <router-view v-slot="{ Component }">
-      <transition name="fade" mode="out-in">
-        <component :is="Component" />
-      </transition>
-    </router-view>
+      <!-- ===================== WORKSPACE ===================== -->
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
+    </div>
 
     <!-- ===================== GLOBAL OVERLAYS ===================== -->
     <CommandPalette ref="palette" />
@@ -128,10 +131,17 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
 <style scoped>
 .sk-app {
-  height: 100vh; width: 100vw; display: flex; overflow: hidden;
+  height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden;
   background: linear-gradient(140deg, #fff7fa 0%, #fdedf3 48%, #fbe4ee 100%);
   color: #3d2530; font-size: 14px;
 }
+
+/* top header */
+.sk-top { flex: none; height: 52px; display: flex; align-items: center; justify-content: center; padding: 0 16px; background: rgba(255, 250, 252, 0.92); border-bottom: 1px solid #f2d4df; backdrop-filter: blur(6px); position: relative; z-index: 6; }
+.sk-search--top { width: min(560px, 56vw); height: 38px; }
+
+/* main row = sidebar + workspace */
+.sk-main { flex: 1; min-height: 0; display: flex; overflow: hidden; }
 
 /* sidebar */
 .sk-side { flex: none; width: 250px; display: flex; flex-direction: column; background: linear-gradient(185deg, #fdeef4 0%, #fce0ea 100%); border-right: 1px solid #f2d4df; }

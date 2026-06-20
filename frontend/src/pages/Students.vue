@@ -6,7 +6,16 @@
           <span class="ctx__title">Học viên</span>
           <span class="ctx__count">{{ filtered.length }}</span>
         </div>
-        <SkButton size="sm" variant="solid" left-icon="plus" @click="openCreateStudent">Thêm</SkButton>
+        <div class="ctx__head-act">
+          <ExcelTools
+            label="học viên"
+            export-method="export_students"
+            template-method="download_student_template"
+            import-method="import_students"
+            @imported="load"
+          />
+          <SkButton size="sm" variant="solid" left-icon="plus" @click="openCreateStudent">Thêm</SkButton>
+        </div>
       </div>
 
       <div class="ctx__tools">
@@ -15,6 +24,12 @@
           <input v-model="q" placeholder="Tìm theo tên, mã, SĐT..." />
         </div>
         <SkSegmented v-model="filter" :options="FILTERS" />
+        <label class="period-wrap" title="Lọc theo ngày nhập học (ngày tạo hồ sơ)">
+          <span class="period-cap">Nhập học</span>
+          <select v-model="period" class="period-sel">
+            <option v-for="p in PERIODS" :key="p.value" :value="p.value">{{ p.label }}</option>
+          </select>
+        </label>
       </div>
 
       <div class="ctx__list sk-scroll">
@@ -42,7 +57,9 @@
           :class="{ 'srow--active': s.name === selectedId }"
           @click="select(s.name)"
         >
-          <SkAvatar :name="s.full_name" :size="38" />
+          <SkAvatar :name="s.full_name" :src="s.student_image" :size="38"
+            editable upload-doctype="Student" :upload-name="s.name" upload-field="student_image"
+            @update:src="s.student_image = $event" @click.stop />
           <div class="srow__main">
             <div class="srow__top">
               <span class="srow__name">{{ s.full_name }}</span>
@@ -67,7 +84,9 @@
 
       <template v-else-if="selectedId">
         <header class="dtl__head">
-          <SkAvatar :name="profileName" :size="36" />
+          <SkAvatar :name="profileName" :src="prof.profile.student_image" :size="36"
+            editable upload-doctype="Student" :upload-name="prof.profile.name" upload-field="student_image"
+            @update:src="prof.profile.student_image = $event" />
           <div class="dtl__id">
             <span class="dtl__name">{{ profileName }}</span>
             <span class="dtl__slash">/</span>
@@ -112,13 +131,20 @@
                   <div class="info__c"><div class="info__l">Họ và tên</div><div class="info__v">{{ profileName }}</div></div>
                   <div class="info__c"><div class="info__l">Mã học viên</div><div class="info__v tnum">{{ selectedId }}</div></div>
                   <div class="info__c"><div class="info__l">Ngày sinh</div><div class="info__v">{{ formatDate(prof.profile.date_of_birth) }}</div></div>
-                  <div class="info__c"><div class="info__l">Điện thoại</div><div class="info__v">{{ prof.profile.phone || '—' }}</div></div>
-                  <div class="info__c"><div class="info__l">Email</div><div class="info__v">{{ prof.profile.email || '—' }}</div></div>
-                  <div class="info__c"><div class="info__l">Nghề nghiệp</div><div class="info__v">{{ prof.profile.occupation || '—' }}</div></div>
+                  <div class="info__c"><div class="info__l">Điện thoại</div><div class="info__v"><InlineCell doctype="Student" :name="prof.profile.name" field="phone" v-model="prof.profile.phone" @saved="reloadStudents" /></div></div>
+                  <div class="info__c"><div class="info__l">Email</div><div class="info__v"><InlineCell doctype="Student" :name="prof.profile.name" field="email" v-model="prof.profile.email" /></div></div>
+                  <div class="info__c"><div class="info__l">Nghề nghiệp</div><div class="info__v"><InlineCell doctype="Student" :name="prof.profile.name" field="occupation" v-model="prof.profile.occupation" /></div></div>
                   <div class="info__c"><div class="info__l">Nguồn</div><div class="info__v">{{ prof.profile.source || '—' }}</div></div>
-                  <div class="info__c"><div class="info__l">Tình trạng học tập</div><div class="info__v"><SkBadge v-bind="healthMeta(prof.profile.health_status)" /></div></div>
-                  <div class="info__c"><div class="info__l">Trạng thái vòng đời</div><div class="info__v"><SkBadge v-bind="statusMeta('Student', 'student_status', prof.profile.student_status)" /></div></div>
+                  <div class="info__c"><div class="info__l">Tình trạng học tập</div><div class="info__v"><InlineCell doctype="Student" :name="prof.profile.name" field="health_status" type="select" :options="HEALTH_STATUS" v-model="prof.profile.health_status" @saved="reloadStudents" /></div></div>
+                  <div class="info__c"><div class="info__l">Trạng thái vòng đời</div><div class="info__v"><InlineCell doctype="Student" :name="prof.profile.name" field="student_status" type="select" :options="STUDENT_STATUS" v-model="prof.profile.student_status" @saved="reloadStudents" /></div></div>
                 </div>
+              </div>
+
+              <div class="block">
+                <div class="block__head">
+                  <div class="block__title">Trợ lý AI ✨</div>
+                </div>
+                <AiAssistPanel :actions="STUDENT_AI" :context="aiContext" />
               </div>
 
               <div class="divider" />
@@ -171,6 +197,7 @@
                 </div>
                 <div class="enr__actions">
                   <SkBadge v-bind="enrMeta(e.enrollment_status)" />
+                  <SkButton v-if="['Active', 'Deferred'].includes(e.enrollment_status)" size="sm" variant="solid" left-icon="git-branch" @click="openEnrWorkflow(e)">Thao tác</SkButton>
                   <SkButton size="sm" variant="ghost" @click="openEnrollmentDesk(e.name)">Mở</SkButton>
                 </div>
               </div>
@@ -391,6 +418,8 @@
       </template>
     </SkModal>
 
+    <WorkflowModal v-model="wfOpen" :title="wfTitle" :subtitle="wfSub" :actions="wfActions" @done="onWfDone" />
+
     <SkModal v-model="paymentOpen" title="Thu học phí" width="520px">
       <form class="form" @submit.prevent="savePayment">
         <div class="form-grid">
@@ -443,10 +472,15 @@ import { toast } from '../utils/toast'
 import SkAvatar from '../components/ui/SkAvatar.vue'
 import SkBadge from '../components/ui/SkBadge.vue'
 import SkButton from '../components/ui/SkButton.vue'
+import ExcelTools from '../components/ExcelTools.vue'
+import { PERIODS, inPeriod } from '../utils/period'
 import SkModal from '../components/ui/SkModal.vue'
 import SkSegmented from '../components/ui/SkSegmented.vue'
 import SkStatTile from '../components/ui/SkStatTile.vue'
 import SkState from '../components/ui/SkState.vue'
+import InlineCell from '../components/common/InlineCell.vue'
+import WorkflowModal from '../components/common/WorkflowModal.vue'
+import AiAssistPanel from '../components/common/AiAssistPanel.vue'
 
 const TABS = [
   { id: 'overview', label: 'Tổng quan' },
@@ -465,6 +499,7 @@ const error = ref('')
 const students = ref([])
 const q = ref('')
 const filter = ref('Tất cả')
+const period = ref('all')
 const selectedId = ref(null)
 const tab = ref('overview')
 const today = () => new Date().toISOString().slice(0, 10)
@@ -502,8 +537,9 @@ const filtered = computed(() => {
       [x.full_name, x.name, x.phone, x.email].some((v) => String(v || '').toLowerCase().includes(s)),
     )
   }
-  if (filter.value === 'Đang học') list = list.filter((x) => x.student_status === 'Đang học')
+  if (filter.value === 'Đang học') list = list.filter((x) => x.health_status === 'Đang học đều')
   else if (filter.value === 'Cảnh báo') list = list.filter((x) => ['Cảnh báo', 'Khẩn cấp'].includes(x.health_status))
+  if (period.value !== 'all') list = list.filter((x) => inPeriod(x.creation, period.value))
   return list
 })
 
@@ -673,6 +709,73 @@ async function savePayment() {
   }
 }
 
+/* ---- Trợ lý AI ---- */
+const STUDENT_AI = [
+  { label: 'Tóm tắt hồ sơ', icon: 'file-text', prompt: 'Tóm tắt ngắn gọn tình hình học viên này (học lực, chuyên cần, học phí).' },
+  { label: 'Cảnh báo rủi ro', icon: 'alert-triangle', prompt: 'Đánh giá rủi ro bỏ học/cần can thiệp của học viên này và đề xuất 2-3 hành động cụ thể.' },
+]
+const aiContext = computed(() => {
+  const p = prof.profile
+  return [
+    `Tên: ${p.full_name || ''}`,
+    `Trạng thái: ${p.student_status || ''} / ${p.health_status || ''}`,
+    `Chuyên cần: ${pct(p.attendance_rate)}`,
+    `Điểm TB: ${score(p.average_score)}`,
+    `Tiến độ: ${p.progress || ''}`,
+    `Công nợ: ${formatVND(prof.fees?.outstanding || 0)}`,
+    `Số đăng ký lớp: ${prof.enrollments?.length || 0}`,
+  ].join('\n')
+})
+
+/* ---- Workflow đăng ký lớp (bảo lưu / tiếp tục / chuyển lớp / nghỉ học) ---- */
+const wfOpen = ref(false)
+const wfTitle = ref('')
+const wfSub = ref('')
+const wfActions = ref([])
+
+function openEnrWorkflow(e) {
+  wfTitle.value = 'Thao tác đăng ký lớp'
+  wfSub.value = `${e.class_id} · ${e.name} · ${e.enrollment_status}`
+  const classOpts = classOptions.value.map((c) => ({ value: c.name, label: c.class_name || c.name }))
+  const actions = []
+  if (e.enrollment_status === 'Active') {
+    actions.push({
+      value: 'defer', label: 'Bảo lưu', successMsg: 'Đã bảo lưu',
+      fields: [
+        { key: 'leave_from_date', label: 'Từ ngày', type: 'date', required: true, default: today() },
+        { key: 'leave_to_date', label: 'Đến ngày', type: 'date', required: true },
+        { key: 'reason', label: 'Lý do', type: 'textarea', full: true },
+      ],
+      run: (f) => call('defer_enrollment', { program_enrollment: e.name, leave_from_date: f.leave_from_date, leave_to_date: f.leave_to_date, reason: f.reason }),
+    })
+    actions.push({
+      value: 'transfer', label: 'Chuyển lớp', successMsg: 'Đã chuyển lớp',
+      hint: 'Đóng đăng ký hiện tại (Transferred) và tạo đăng ký mới ở lớp đích.',
+      fields: [
+        { key: 'to_class', label: 'Lớp mới', type: 'select', options: classOpts, required: true, full: true },
+        { key: 'transfer_date', label: 'Ngày chuyển', type: 'date', default: today() },
+        { key: 'reason', label: 'Lý do', type: 'textarea', full: true },
+      ],
+      run: (f) => call('transfer_enrollment', { program_enrollment: e.name, to_class: f.to_class, transfer_date: f.transfer_date, reason: f.reason }),
+    })
+  }
+  if (e.enrollment_status === 'Deferred') {
+    actions.push({ value: 'resume', label: 'Tiếp tục học', successMsg: 'Đã tiếp tục học', run: () => call('resume_enrollment', { program_enrollment: e.name }) })
+  }
+  actions.push({
+    value: 'drop', label: 'Nghỉ học', successMsg: 'Đã cho nghỉ học',
+    hint: 'Đánh dấu nghỉ học. Hoàn phí (nếu có) sẽ duyệt ở màn Tài chính.',
+    fields: [{ key: 'reason', label: 'Lý do', type: 'textarea', full: true }],
+    run: (f) => call('drop_enrollment', { program_enrollment: e.name, reason: f.reason }),
+  })
+  wfActions.value = actions
+  wfOpen.value = true
+}
+async function onWfDone() {
+  await reloadStudents()
+  await loadDetail(selectedId.value)
+}
+
 function openDesk() {
   if (selectedId.value) window.open(`/app/student/${selectedId.value}`, '_blank')
 }
@@ -739,6 +842,11 @@ onMounted(load)
 
 .ctx { flex: none; width: 326px; display: flex; flex-direction: column; background: rgba(255, 252, 253, 0.82); border-right: 1px solid #f2d4df; }
 .ctx__head { height: 56px; flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px 0 18px; border-bottom: 1px solid #f4dde5; }
+.ctx__head-act { display: flex; align-items: center; gap: 8px; }
+.period-wrap { display: inline-flex; align-items: center; gap: 6px; }
+.period-cap { font-size: 11.5px; font-weight: 600; color: #a07c8a; white-space: nowrap; }
+.period-sel { height: 32px; border: 1px solid #ecd0da; border-radius: 8px; background: #fff; padding: 0 9px; font-size: 12px; color: #7a5c68; font-family: inherit; cursor: pointer; outline: none; }
+.period-sel:focus { border-color: #d4567f; }
 .ctx__title { font-size: 16px; font-weight: 600; color: #4a2230; }
 .ctx__count { margin-left: 8px; font-size: 11.5px; color: #a98c98; }
 .ctx__tools { padding: 12px 14px 10px; display: flex; flex-direction: column; gap: 10px; }
