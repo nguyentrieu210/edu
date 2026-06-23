@@ -54,6 +54,7 @@
 import { ref, nextTick } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
 import { call } from '../api'
+import branding from '../config/branding'
 
 const isOpen = ref(false)
 const loading = ref(false)
@@ -68,7 +69,7 @@ const chips = [
   'Tổng công nợ hiện tại',
 ]
 
-const systemPrompt = `Bạn là trợ lý AI của IKE Ohashi — hệ thống ERP giáo dục tiếng Nhật.
+const systemPrompt = `Bạn là trợ lý AI của ${branding.brandName} — ${branding.brandSub}.
 Giúp giáo vụ về: học viên, lớp học, điểm danh, học phí, CRM tuyển sinh.
 Trả lời ngắn gọn, thân thiện, chuyên nghiệp bằng tiếng Việt. Không bịa số liệu.`
 

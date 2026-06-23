@@ -12,7 +12,7 @@
             <path d="M32 13 C28 18 28 26 32 30 C36 26 36 18 32 13Z" transform="rotate(288 32 32)" />
           </g><circle cx="32" cy="32" r="4.4" fill="#ffd98e" /></svg>
         </div>
-        <span class="lp-nav__name font-display">IKE Ohashi</span>
+        <span class="lp-nav__name font-display">{{ branding.brandName }}</span>
       </div>
       <nav class="lp-nav__links">
         <a href="#features">Tính năng</a>
@@ -25,9 +25,9 @@
     <!-- Hero -->
     <section class="lp-hero">
       <div class="lp-hero__txt">
-        <div class="lp-eyebrow">日本語 · Education ERP</div>
-        <h1 class="font-display">Quản lý trung tâm giáo dục<br>thông minh & trọn vẹn</h1>
-        <p>Tuyển sinh, đào tạo, tài chính, cổng giáo viên – học viên và trợ lý AI — tất cả trong một nền tảng cho IKE Ohashi.</p>
+        <div class="lp-eyebrow">{{ branding.brandSub }}</div>
+        <h1 class="font-display" v-html="branding.heroTitle"></h1>
+        <p>{{ branding.heroDesc }}</p>
         <div class="lp-hero__cta">
           <button class="lp-btn lp-btn--solid" @click="scrollTo('contact')">Đăng ký tư vấn</button>
           <button class="lp-btn lp-btn--ghost" @click="goLogin">Đăng nhập hệ thống</button>
@@ -76,7 +76,7 @@
     </section>
 
     <footer class="lp-foot">
-      <div>© IKE Ohashi · Education ERP</div>
+      <div>{{ branding.copyright }}</div>
       <div class="lp-foot__links"><a href="#features">Tính năng</a> · <button class="lp-foot__link" @click="goLogin">Đăng nhập</button></div>
     </footer>
   </div>
@@ -87,6 +87,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { FeatherIcon } from 'frappe-ui'
 import { call } from '../api'
+import branding from '../config/branding'
 import dashboardImg from '../assets/edu-dashboard.png'
 
 const router = useRouter()

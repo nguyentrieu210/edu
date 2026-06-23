@@ -238,6 +238,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
+import branding from '../config/branding'
 import { FeatherIcon } from 'frappe-ui'
 import { call, db, crm, uploadFile } from '../api'
 import { formatDate } from '../utils/format'
@@ -457,7 +458,7 @@ async function parseWithAi() {
   if (!aiRawText.value.trim()) return
   parsing.value = true
   try {
-    const systemPrompt = `Bạn là trợ lý AI của IKE Ohashi. Hãy phân tích thông tin của học viên mới từ văn bản thô của người dùng và trích xuất thành một đối tượng JSON chính xác có cấu trúc sau:
+    const systemPrompt = `Bạn là trợ lý AI của ${branding.brandName}. Hãy phân tích thông tin của học viên mới từ văn bản thô của người dùng và trích xuất thành một đối tượng JSON chính xác có cấu trúc sau:
 {
   "lead_name": "Họ và tên",
   "phone": "Số điện thoại",

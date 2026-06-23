@@ -374,11 +374,11 @@ def submit_consultation(full_name, phone, email=None, note=None):
         try:
             frappe.sendmail(
                 recipients=[doc.email],
-                subject="Cảm ơn bạn đã đăng ký tư vấn — IKE Ohashi",
+                subject="Cảm ơn bạn đã đăng ký tư vấn — Kairo Education",
                 message=(f"<p>Chào {full_name},</p>"
-                         "<p>Cảm ơn bạn đã quan tâm tới <b>IKE Ohashi Education</b>. "
+                         "<p>Cảm ơn bạn đã quan tâm tới <b>Kairo Education</b>. "
                          "Bộ phận tuyển sinh sẽ liên hệ với bạn trong thời gian sớm nhất.</p>"
-                         "<p>Trân trọng,<br>IKE Ohashi</p>"),
+                         "<p>Trân trọng,<br>Kairo Education</p>"),
                 now=True,
             )
         except Exception:
@@ -1953,7 +1953,7 @@ def ai_chat(messages, temperature=0.7, max_tokens=1024, response_format=None, mo
 
 
 LEAD_PARSE_SYSTEM_PROMPT = (
-    "Bạn là trợ lý AI của IKE Ohashi. Hãy phân tích thông tin của học viên mới từ "
+    "Bạn là trợ lý AI của Kairo Education. Hãy phân tích thông tin của học viên mới từ "
     "tài liệu (ảnh chụp/giấy tờ/tin nhắn) và trích xuất thành một đối tượng JSON chính "
     "xác có cấu trúc sau:\n"
     "{\n"

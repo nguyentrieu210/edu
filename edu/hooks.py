@@ -1,7 +1,7 @@
 app_name = "edu"
 app_title = "Education ERP"
-app_publisher = "IKE Ohashi"
-app_description = "Education ERP for IKE Ohashi"
+app_publisher = "Kairo"
+app_description = "Education ERP — Hệ thống quản lý trung tâm giáo dục"
 app_email = "admin@ike.test"
 app_license = "mit"
 

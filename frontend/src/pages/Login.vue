@@ -15,8 +15,8 @@
             <circle cx="32" cy="32" r="4.4" fill="#ffd98e" />
           </svg>
         </div>
-        <div class="login__title font-display">IKE Ohashi</div>
-        <div class="login__sub">日本語 · Education ERP</div>
+        <div class="login__title font-display">{{ branding.brandName }}</div>
+        <div class="login__sub">{{ branding.brandSub }}</div>
       </div>
 
       <form class="login__form" @submit.prevent="submit">
@@ -37,12 +37,13 @@
         <a class="login__forgot" href="/update-password">Quên mật khẩu?</a>
       </form>
     </div>
-    <div class="login__foot">© IKE Ohashi · Education ERP</div>
+    <div class="login__foot">{{ branding.copyright }}</div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import branding from '../config/branding'
 
 const usr = ref('')
 const pwd = ref('')

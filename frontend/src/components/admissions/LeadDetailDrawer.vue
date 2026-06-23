@@ -77,6 +77,7 @@ import { ref, watch } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
 import { call, crm, db } from '../../api'
 import { toast } from '../../utils/toast'
+import branding from '../../config/branding'
 import { statusMeta } from '../../utils/labels'
 import { stageLabel } from './stages'
 import SkDrawer from '../ui/SkDrawer.vue'
@@ -198,7 +199,7 @@ async function runAi(kind) {
       {
         role: 'system',
         content:
-          'Bạn là chuyên viên tư vấn tuyển sinh của IKE Ohashi (trung tâm tiếng Nhật). ' +
+          `Bạn là chuyên viên tư vấn tuyển sinh của ${branding.brandName} Education. ` +
           'Trả lời ngắn gọn, thực tế bằng tiếng Việt, không lan man.',
       },
       { role: 'user', content: `${PROMPTS[kind]}\n\nThông tin lead:\n${leadContext()}` },

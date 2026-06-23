@@ -17,11 +17,12 @@ import { ref } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
 import { call } from '../../api'
 import { toast } from '../../utils/toast'
+import branding from '../../config/branding'
 
 const props = defineProps({
   // [{ label, icon?, prompt }]
   actions: { type: Array, default: () => [] },
-  systemPrompt: { type: String, default: 'Bạn là trợ lý của trung tâm tiếng Nhật IKE Ohashi. Trả lời ngắn gọn, thực tế bằng tiếng Việt.' },
+  systemPrompt: { type: String, default: `Bạn là trợ lý của ${branding.brandName} Education. Trả lời ngắn gọn, thực tế bằng tiếng Việt.` },
   context: { type: String, default: '' }, // dữ liệu nền do trang cung cấp
   temperature: { type: Number, default: 0.5 },
   maxTokens: { type: Number, default: 700 },

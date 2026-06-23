@@ -20,8 +20,8 @@
           </svg>
         </div>
         <div class="sk-brand__txt">
-          <div class="sk-brand__name font-display">IKE Ohashi</div>
-          <div class="sk-brand__sub">日本語 · Education ERP</div>
+          <div class="sk-brand__name font-display">{{ branding.brandName }}</div>
+          <div class="sk-brand__sub">{{ branding.brandSub }}</div>
         </div>
       </div>
 
@@ -108,6 +108,8 @@ import { FeatherIcon } from 'frappe-ui'
 import { navSectionsFor, setUserRoles, setAuthed } from './router'
 import { call } from './api'
 import { toast } from './utils/toast'
+import { DEFAULT_LOGO_SVG } from './config/branding'
+import branding from './config/branding'
 import SkButton from './components/ui/SkButton.vue'
 import SkAvatar from './components/ui/SkAvatar.vue'
 import SkModal from './components/ui/SkModal.vue'

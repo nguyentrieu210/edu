@@ -34,10 +34,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { FeatherIcon } from 'frappe-ui'
+import branding from '../config/branding'
 
 const KEY = 'edu_onboarded_v1'
 const STEPS = [
-  { icon: 'compass', title: 'Chào mừng đến Education ERP', desc: 'Hệ thống quản lý trung tâm của IKE Ohashi. Đi nhanh qua các tính năng chính trong 1 phút nhé!' },
+  { icon: 'compass', title: 'Chào mừng đến Education ERP', desc: `Hệ thống quản lý trung tâm của ${branding.brandName}. Đi nhanh qua các tính năng chính trong 1 phút nhé!` },
   { icon: 'grid', title: 'Bảng điều khiển', desc: 'Trang Dashboard hiển thị realtime: học viên đang học, lớp vận hành, chuyên cần, công nợ, lịch hôm nay và cảnh báo cần xử lý.' },
   { icon: 'user-plus', title: 'Tuyển sinh (CRM)', desc: 'Quản lý lead theo pipeline kéo-thả, đổi giai đoạn (Tư vấn → Test → Học thử → Nhập học), đặt lịch hẹn và ghi nhật ký tư vấn.' },
   { icon: 'users', title: 'Học viên', desc: 'Hồ sơ học viên, người giám hộ, đăng ký lớp (tự sinh học phí + hóa đơn), theo dõi chuyên cần & điểm trung bình.' },
